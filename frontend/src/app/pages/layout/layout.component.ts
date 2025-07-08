@@ -6,7 +6,7 @@ import { LeftMenuComponent } from '../../components/left-menu/left-menu.componen
 
 @Component({
   selector: 'app-layout',
-  imports: [HeaderComponent,LeftMenuComponent, CommonModule, RouterOutlet],
+  imports: [HeaderComponent, LeftMenuComponent, CommonModule, RouterOutlet],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss',
 })

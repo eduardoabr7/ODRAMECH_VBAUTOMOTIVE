@@ -17,12 +17,12 @@ export class LeftMenuComponent implements OnInit {
   botoes: BotoesMenuLateral[] = [
     { nome: 'Home', fontAwesomeIcon: 'fa-solid fa-house' },
     { nome: 'Serviços', fontAwesomeIcon: 'fa-solid fa-wrench' },
-    { nome: 'Faturamento', fontAwesomeIcon: 'fa-solid fa-file-lines' },
-    { nome: 'Notificações', fontAwesomeIcon: 'fa-solid fa-file-lines' }
+    { nome: 'Faturamento', fontAwesomeIcon: 'fa-solid fa-file' },
+    { nome: 'Notificações', fontAwesomeIcon: 'fa-solid fa-envelope' }
   ]
 
   ngOnInit(): void {
-    console.log(this.botoes);
+
   }
 
 }
