@@ -1,0 +1,16 @@
+.header {
+  position: relative;
+  z-index: 10; 
+  box-shadow: 0 2.5px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+app-left-menu {
+  display: inline-block;
+}
+
+@media (max-width: 576px) {
+  app-left-menu.open {
+    width: 100%;
+    position: absolute;
+  }
+}

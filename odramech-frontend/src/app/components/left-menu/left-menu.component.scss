@@ -1,0 +1,88 @@
+small {
+    color: #acacac;
+    font-size: 12px;
+}
+
+/* Estilização do menu aberto */
+
+.sidebar {
+    width: 240px;
+    height: calc(100vh - 62px);
+    background-color: rgb(255, 255, 255);
+    transition: width 0.3s ease;
+    overflow-x: hidden;
+    border-right: #ececec solid 1px;
+}
+
+.menu {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px;
+}
+
+.toggle-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+ul {
+    padding: 0;
+    list-style: none;
+}
+
+li {
+    display: flex;
+    padding: 15px;
+    color: #5b9cff;
+    cursor: pointer;
+    padding-left: 22px;
+}
+
+li:hover {
+    background-color: #a6bbff;
+    color: white;
+}
+
+li i {
+    font-size: 20px;
+    margin-right: 15px;
+}
+
+.link-text {
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* Estilização do menu fechado */
+
+.sidebar.collapsed {
+    width: 70px;
+}
+
+.sidebar.collapsed .menu {
+    justify-content: center;
+}
+
+.sidebar.collapsed .link-text {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+}
+
+.sidebar.collapsed .user-profile {
+    display: none;
+}
+
+/* Responsividade para telas menores, quando a tela for menor que 576 o menu aberto irá ocupar 100% da tela */
+@media (max-width: 576px) {
+    .sidebar {
+        width: 100%;
+    }
+
+    .link-text {
+        display: block;
+    }
+}

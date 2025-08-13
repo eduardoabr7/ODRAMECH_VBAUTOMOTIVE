@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { LeftMenuComponent } from '../../components/left-menu/left-menu.component'
-
 @Component({
   selector: 'app-homepage',
   imports: [LeftMenuComponent],
