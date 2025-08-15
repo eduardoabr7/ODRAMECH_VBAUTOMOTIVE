@@ -10,15 +10,11 @@ import { env } from '../../../environments/environment'
 })
 
 export class LoginComponent implements OnInit {
+  
   nomeEstabelecimento: any;
 
   ngOnInit(): void {
     this.nomeEstabelecimento = env.nomeEstabelecimento;
-  }
-  showPassword: boolean = false;
-
-  togglePassword(): void {
-    this.showPassword = !this.showPassword;
   }
 }
 
