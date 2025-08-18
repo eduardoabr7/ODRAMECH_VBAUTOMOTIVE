@@ -10,8 +10,10 @@ datasource db {
 model Usuario {
   id        Int      @id @default(autoincrement())
   nome      String
+  email     String
   username  String   @unique
   password  String
+  role      String
 
   @@map("cad_usuario")
 }

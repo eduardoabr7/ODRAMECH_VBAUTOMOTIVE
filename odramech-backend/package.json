@@ -27,6 +27,7 @@
     "@nestjs/typeorm": "^11.0.0",
     "@prisma/client": "^6.13.0",
     "@types/cookie-parser": "^1.4.9",
+    "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.7",
     "joi": "^18.0.0",
     "mysql2": "^3.14.1",
