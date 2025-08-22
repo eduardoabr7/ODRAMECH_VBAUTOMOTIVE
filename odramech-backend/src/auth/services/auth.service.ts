@@ -10,7 +10,7 @@ export class AuthService {
     async login(data: LoginDTO) {
         if(!data.email && !data.username) throw new BadRequestException ('Informe usuário ou e-mail');
     
-        const usuarioEncontrado = await this._prisma.usuario.findFirst({
+        const usuarioEncontrado = await this._prisma.user.findFirst({
           where: {
             OR: [
               { username: data.username },
