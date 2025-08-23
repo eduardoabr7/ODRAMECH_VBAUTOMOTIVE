@@ -5,9 +5,10 @@ CREATE TYPE "odramech"."Role" AS ENUM ('ADMIN', 'USER', 'WORKER');
 CREATE TABLE "odramech"."cad_user" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
+    "email" TEXT,
     "username" TEXT NOT NULL,
     "password" TEXT NOT NULL,
+    "phone" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

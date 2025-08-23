@@ -1,12 +1,25 @@
 import { PrismaClient } from "@prisma/client"
+import { CreateUserDto } from "../src/user/dto/create-user.dto";
+import * as bcrypt from "bcrypt";
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
+
+const saltRounds = 11;
+
+async function hashPassword(password): Promise<string> {
+    return await bcrypt.hash(password, saltRounds);
+}
+
+async function getHashedPassword() {
+  return await hashPassword("odramin");
+}
 
 const data = {
+    id: 1,
     name: "Administrador",
     email: "odramechenterprise@gmail.com",
     username: "admin",
-    password: "odradmin",
+    password: ""
 }
 
 async function userExists(username: string) {
@@ -18,7 +31,10 @@ async function userExists(username: string) {
 
 async function createAdmin() {
     try {
-        const user = await prisma.user.create({ data })
+        const user = await prisma.user.create({ data: {
+            ...data,
+            password: await getHashedPassword()
+        } });
         console.log(`Usuário inicial ${data.username} criado com sucesso`)
     } catch (err) {
         if (err instanceof Error) {

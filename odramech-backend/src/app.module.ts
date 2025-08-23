@@ -3,10 +3,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { validationSchema } from './variables-required';
-import { AuthController } from './auth/controllers/auth.controller';
-import { AuthService } from './auth/services/auth.service';
-import { PrismaService } from './prisma/prisma-service';
-
+import { UserModule } from './user/user.module';
+import { AuthModule } from './auth/auth.module';
+import { CustomLogger } from './shared/custom-logger.service';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -16,9 +15,11 @@ import { PrismaService } from './prisma/prisma-service';
         allowUnknown: true,
         abortEarly: true
       }
-    })
+    }),
+    UserModule,
+    AuthModule,
   ],
-  controllers: [AppController, AuthController],
-  providers: [AppService, AuthService, PrismaService],
+  controllers: [AppController],
+  providers: [AppService, CustomLogger],
 })
 export class AppModule {}

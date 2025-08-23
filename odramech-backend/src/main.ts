@@ -1,11 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger } from '@nestjs/common';
+import { CustomLogger } from './shared/custom-logger.service'
 import * as dotenv from 'dotenv';
 import * as cookieParser from 'cookie-parser';
 dotenv.config()
 
 async function bootstrap() {
+
+  const logger = new CustomLogger();
 
   const frontendUrl = `http://${process.env.FRONTEND_HOST}:${process.env.FRONTEND_PORT}`;
 
@@ -22,6 +24,6 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3000; 
   await app.listen(port);
 
-  Logger.log(`🚀🚀🚀 Backend-Nest rodando na porta ${port} 🚀🚀🚀`);
+  logger.log(`🚀🚀🚀 Backend-Nest rodando na porta ${port} 🚀🚀🚀`, '#00b8b9');
 }
 bootstrap();
