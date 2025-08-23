@@ -19,7 +19,8 @@ export class AuthController {
 
     @Post('login')
     login(@Req() request: Request, @Body() data: LoginDTO) {
-        this.logger.log(`Tentativa de login: `+this._emailMaskService.mask(data.email),'#89cdce')
+        if(data.email) this.logger.warn(`Tentativa de login: `+this._emailMaskService.mask(data.email))
+        else this.logger.log(`Tentativa de login: usuário `+data.username)
         return this._authService.login(data);    
     }
 }

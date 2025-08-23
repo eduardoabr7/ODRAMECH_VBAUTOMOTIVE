@@ -1,11 +1,11 @@
-import { IsOptional, IsString } from "class-validator";
+import { IsEmail, IsOptional, IsString } from "class-validator";
 
 export class LoginDTO {
     @IsString()
     @IsOptional()
     username
 
-    @IsString()
+    @IsEmail({}, { message: "O email informado não é válido" })
     @IsOptional()
     email
 
