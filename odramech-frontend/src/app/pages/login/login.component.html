@@ -1,4 +1,4 @@
-<section class="gradient-form" style="background-color: #eee; min-height: 100dvh;">
+<section class="gradient-form" style="overflow-y: auto; background-color: rgb(221, 239, 255);">
   <div class="container py-5">
     <div class="row d-flex justify-content-center align-items-center">
       <div class="col-xl-10">
@@ -14,25 +14,44 @@
                   <h6 class="mb-5"> {{ nomeEstabelecimento }}</h6>
                 </div>
 
-                <form>
+                <form (ngSubmit)="retryLogin()" #formLogin="ngForm">
                   <div data-mdb-input-init class="form-outline mb-4">
                     <label class="form-label" for="form2Example11">Usuário</label>
-                    <input type="email" id="form2Example11" class="form-control"
-                      placeholder="E-mail ou usuário" />
+                    <input 
+                      type="email" 
+                      id="form2Example11" 
+                      class="form-control"
+                      placeholder="E-mail ou usuário" 
+                      name="dataUserOrEmail" 
+                      [(ngModel)]="dataUserOrEmail"
+                      required/>
                   </div>
 
                   <div data-mdb-input-init class="form-outline mb-4">
                     <label class="form-label" for="form2Example22">Senha</label>
-                    <input type="password" id="form2Example22" class="form-control" />
+                    <input 
+                      type="password" 
+                      id="form2Example22" 
+                      class="form-control" 
+                      placeholder="Insira sua senha"
+                      name="password"
+                      [(ngModel)]="password"
+                      required/>
                   </div>
 
                   <div class="text-center pt-1 mb-5 pb-1 d-flex justify-content-between align-items-center">
                     <a class="text-muted" href="#!">Forgot password?</a>
-                    <button data-mdb-button-init data-mdb-ripple-init class="btn btn-primary btn-block fa-lg gradient-custom-2 mb-3" type="button">Login</button>
+                    <div class="button-wrapper" [style.cursor]="formLogin.invalid ? 'not-allowed' : 'pointer'">
+                      <button 
+                        data-mdb-button-init data-mdb-ripple-init class="btn btn-primary btn-block fa-lg gradient-custom-2" 
+                        type="submit" 
+                        [disabled]="formLogin.invalid"
+                      >Login</button>
+                    </div>
                   </div>
 
                   <div class="d-flex align-items-center justify-content-center pb-4">
-                    <p class="mb-0 me-2">Don't have an account?</p>
+                    <p class="mb-0 me-2">Não tem conta?</p>
                     <button  type="button" data-mdb-button-init data-mdb-ripple-init class="btn btn-outline-primary">Create new</button>
                   </div>
 
@@ -43,7 +62,7 @@
             <div class="col-lg-6 d-flex align-items-center gradient-custom-2">
               <div class="text-white px-3 py-4 p-md-5 mx-md-4">
                 <h4 class="mb-4">ODRAMECH CHEGOU!</h4>
-                <p class="small mb-0">A nova era das oficinas mecânicas começou. Mais controle, mais velocidade, mais resultados — tudo em um único sistema que vai mudar o jogo!</p>
+                <p class="small mb-0">A nova era das oficinas mecânicas começou. Mais controle, mais velocidade, mais resultados — tudo em um único sistema que vai mudar o seu jogo!</p>
               </div>
             </div>
           </div>

@@ -19,7 +19,6 @@ const data = {
     name: "Administrador",
     email: "odramechenterprise@gmail.com",
     username: "admin",
-    password: ""
 }
 
 async function userExists(username: string) {

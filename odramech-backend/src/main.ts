@@ -1,8 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { CustomLogger } from './shared/custom-logger.service'
+import { CustomLogger } from './shared/services/custom-logger.service'
 import * as dotenv from 'dotenv';
 import * as cookieParser from 'cookie-parser';
+import { ValidationPipe } from '@nestjs/common';
 dotenv.config()
 
 async function bootstrap() {
@@ -20,6 +21,14 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // remove campos não declarados no DTO
+      forbidNonWhitelisted: true, // erro se passar campo não esperado
+      transform: true, // transforma para a classe DTO
+    }),
+  );
 
   const port = process.env.PORT ?? 3000; 
   await app.listen(port);

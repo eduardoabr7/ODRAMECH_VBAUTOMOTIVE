@@ -5,8 +5,8 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const envSchema = Joi.object({
-  hostBackend: Joi.string().required(),
-  portBackend: Joi.number().required(),
+  HOST_BACKEND: Joi.string().required(),
+  PORT_BACKEND: Joi.string().required(),
 }).unknown(true);
 
 async function validateAndStart() {

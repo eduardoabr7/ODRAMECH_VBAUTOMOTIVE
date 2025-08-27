@@ -1,9 +1,10 @@
 import { LoginDTO } from "../dto/login.dto";
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, Req } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma-service";
 import { BcryptService } from "src/crypto/bcrypt.service";
 import { JWTService } from "./jwt.service"
-import { EmailMaskService } from "../../shared/mask-email.service"
+import { Response } from 'express';
+import { LoggedUser } from "../dto/logged-user.dto";
 
 @Injectable()
 export class AuthService {
@@ -12,10 +13,9 @@ export class AuthService {
       private readonly _prisma : PrismaService,
       private readonly _bcryptService : BcryptService,
       private readonly _jwtService: JWTService,
-      private readonly _emailMaskService: EmailMaskService 
     ) {};
 
-    async login(data: LoginDTO) {
+    async login(data: LoginDTO, res: Response) {
       try {
         const userFound = await this._prisma.user.findFirst({
           where: {
@@ -25,6 +25,7 @@ export class AuthService {
             ],
           },
           select: {
+            id: true,
             email: true,
             username: true,
             password: true,
@@ -34,9 +35,18 @@ export class AuthService {
         // se não existe usuário e a senha for inválida
         if(!userFound || !(await this._bcryptService.hashPasswordCompare(data.password, userFound.password))) throw new BadRequestException('Invalid credentials')
 
-        const token = await this._jwtService.generateToken({ role: 'admin' });
+        const payload = { sub: userFound.id }
 
-        return { message: 'Authorized' }
+        const token = await this._jwtService.generateToken(payload);
+
+        res.cookie('access', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 5400000 // 1 hora e 30 min, passou disso o navegador remove o cookie
+        })
+
+        return { message: 'Authenticated' }
 
       } catch (err) {
         throw new BadRequestException('Invalid credentials')

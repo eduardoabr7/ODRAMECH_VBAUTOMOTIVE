@@ -5,8 +5,8 @@ import { PrismaService } from "src/prisma/prisma-service";
 import { BcryptService } from "src/crypto/bcrypt.service";
 import { JwtModule } from "@nestjs/jwt";
 import { JWTService } from "./services/jwt.service";
-import { CustomLogger } from "src/shared/custom-logger.service";
-import { EmailMaskService } from "src/shared/mask-email.service";
+import { CustomLogger } from "src/shared/services/custom-logger.service";
+import { EmailMaskService } from "src/shared/services/mask-email.service";
 
 @Module({
     imports: [
@@ -24,6 +24,10 @@ import { EmailMaskService } from "src/shared/mask-email.service";
         CustomLogger,
         EmailMaskService
     ],
+    exports: [
+        JWTService,
+        PrismaService
+    ]
 })
 
 export class AuthModule {}

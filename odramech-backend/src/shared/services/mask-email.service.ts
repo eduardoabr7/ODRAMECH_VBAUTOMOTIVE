@@ -5,12 +5,12 @@ export class EmailMaskService {
 
         if (localPart.length <= 6) {
           // Caso o localPart seja muito curto, mostramos só a primeira e última letra
-          return localPart[0] + "***" + localPart.slice(-1) + "@" + (domain? domain : '*****');
+          return localPart[0] + "***" + localPart.slice(-1) + "@" + domain;
         }
 
         const firstThree = localPart.slice(0, 3);
         const lastThree = localPart.slice(-3);
 
-        return `${firstThree}*****${lastThree}@${(domain? domain : '*****')}`;
+        return `${firstThree}***${lastThree}@${domain}`;
     }
 }

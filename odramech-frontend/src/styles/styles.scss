@@ -7,10 +7,9 @@
 }
 
 html, body {
-}
-
-app-root{
-    width: 100vw;
-    height: 100vh;
-    display: block;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }

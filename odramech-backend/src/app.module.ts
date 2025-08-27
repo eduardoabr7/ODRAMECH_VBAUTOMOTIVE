@@ -5,7 +5,10 @@ import { ConfigModule } from '@nestjs/config';
 import { validationSchema } from './variables-required';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
-import { CustomLogger } from './shared/custom-logger.service';
+import { CustomLogger } from './shared/services/custom-logger.service';
+import { APP_GUARD } from '@nestjs/core'
+import { NoPublicRoutesGuard } from './shared/guards/no-public-routes.guard'
+import { SharedModule } from './shared/shared.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -18,8 +21,16 @@ import { CustomLogger } from './shared/custom-logger.service';
     }),
     UserModule,
     AuthModule,
+    SharedModule
   ],
   controllers: [AppController],
-  providers: [AppService, CustomLogger],
+  providers: [
+    AppService, 
+    CustomLogger,
+    {
+      provide: APP_GUARD,
+      useClass: NoPublicRoutesGuard
+    }
+  ],
 })
 export class AppModule {}
