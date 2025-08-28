@@ -2,6 +2,12 @@
     background-color: rgb(255, 255, 255);
 }
 
+.menu-mobile {
+    top: 50%;
+    left: 3px;
+    transform: translateY(-50%);
+}
+
 // maior que 576
 @media (min-width: 577px) {
     .toggle-btn {

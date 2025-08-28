@@ -4,7 +4,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ToastrModule } from 'ngx-toastr';
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
-import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ConnectionInterceptor } from '@shared/services/connection-interceptor.service';
 
 export const appConfig: ApplicationConfig = {
@@ -13,13 +13,10 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideClientHydration(withEventReplay()),
     provideHttpClient(
-      withInterceptorsFromDi() //'withInterceptorsFromDi' para injetar interceptores baseados em classes
+      withInterceptors([
+        ConnectionInterceptor,
+      ])
     ),
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: ConnectionInterceptor,
-      multi: true
-    },
     importProvidersFrom(
       BrowserAnimationsModule,
       ToastrModule.forRoot({

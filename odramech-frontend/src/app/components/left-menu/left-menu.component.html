@@ -1,50 +1,55 @@
 <div class="sidebar" [ngClass]="{'collapsed': isCollapsed}">
 
-    <div class="menu">
-        <button class="toggle-btn" (click)="toggleCollapse()">
-            <i
-            class="fa-solid" 
-            [ngClass]="{
-                'fa-bars': isCollapsed, 
-                'fa-xmark': !isCollapsed
-            }"></i>
-        </button>
-    </div>
+  <div class="menu">
+    <button class="toggle-btn" (click)="toggleCollapse()">
+      <i class="fa-solid"
+        [ngClass]="{
+          'fa-bars': isCollapsed,
+          'fa-xmark': !isCollapsed
+        }">
+      </i>
+    </button>
+  </div>
 
-    <div class="user-profile pb-4">
-        <div class="row m-0">
-            <div class="col-2 col-sm-4">
-              <img 
-                src="{{ urlPhotoUser }}"
-                alt="photo-user" 
-                class="rounded-circle"
-                style="
-                  width: 60px;
-                  height: 60px;
-                  object-fit: cover;
-                  cursor: pointer;
-                "
-              >
-            </div>
-            <div class="col-10 col-sm-8">
-                <div class="row m-0">
-                    Eduardo Abreu
-                </div>
-                <div class="row m-0">
-                    <small class="p-0">
-                        Administrador
-                    </small>
-                </div>
-            </div>
+  <div class="user-profile pb-4">
+    <div class="container-fluid m-0">
+      <div class="row">
+        <div class="col-4">
+          <img 
+            src="{{ urlPhotoUser }}"
+            alt="photo-user" 
+            class="rounded-circle"
+            style="
+              width: 60px;
+              height: 60px;
+              object-fit: cover;
+              cursor: pointer;
+            "
+          >
         </div>
+        <div class="col-8">
+          <div class="row m-0">
+            Eduardo Abreu
+          </div>
+          <div class="row m-0">
+            <small class="p-0">
+              Administrador
+            </small>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div class="navigation">
-        <ul>
-            <li *ngFor="let button of buttons">
-                <i [ngClass]="button.fontAwesomeIcon"></i>
-                <span class="link-text">{{ button.nome }}</span>
-            </li>
-        </ul>
+  <div class="navigation">
+    <div class="container-fluid m-0">
+      <ul class="row">
+        <li class="col-12" *ngFor="let button of buttons">
+          <i [ngClass]="button.fontAwesomeIcon"></i>
+          <span class="link-text">{{ button.nome }}</span>
+        </li>
+      </ul>
     </div>
+  </div>
+
 </div>

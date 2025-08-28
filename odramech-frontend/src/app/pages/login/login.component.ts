@@ -50,10 +50,6 @@ export class LoginComponent implements OnInit {
     try{
       await this._authService.login(this.dataToSend)
 
-      const userLogged : UserLogged = await this._authService.getUserLogged()
-
-      this._toastr.info(`Usuário: ${userLogged.name}`);
-
       this._route.navigateByUrl('/home')
 
       this.loadingLogin = false;
