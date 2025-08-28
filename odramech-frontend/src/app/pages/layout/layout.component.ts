@@ -10,9 +10,9 @@ import { RouterModule } from '@angular/router';
   styleUrl: './layout.component.scss'
 })
 export class LayoutComponent {
-  menuAberto = false;
+  closeMenu = true;
 
-  onEstadoMenuChange(aberto: boolean) {
-    this.menuAberto = aberto;
+  onEstadoMenuChange() {
+    this.closeMenu = !this.closeMenu;
   }
 }

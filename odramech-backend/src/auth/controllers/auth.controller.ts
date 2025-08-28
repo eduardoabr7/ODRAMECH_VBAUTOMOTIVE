@@ -21,7 +21,7 @@ export class AuthController {
     }
 
     @Post('login')
-    @Public()
+    @Public() // rotas que não são @Public só podem ser acessadas com token de autenticação
     login(@Body() data: LoginDTO, @Res({ passthrough: true }) res: Response) {
         if (data.email) this.logger.log(`Tentativa de login: ` + this._emailMaskService.mask(data.email), '#89cdce')
         else this.logger.log(`Tentativa de login: usuário ` + data.username, '#89cdce')
@@ -29,11 +29,23 @@ export class AuthController {
         return this._authService.login(data, res);
     }
 
-    @Get()
+    @Get('user')
     getUserLogged(@Req() request: RequestWithUser): LoggedUser {
         const userLogged = request.user
         this.logger.log('Dados de usuário autenticado enviado na requisição', '#3980b0')
         return userLogged
+    }
+
+    @Get('status/section')
+    statusSection(){
+        this.logger.log('[VERIFICA STATUS] Mensagem: Autenticated enviada na requisição', '#b7eeff')
+        return { message: 'Authenticated' }
+    }
+
+    @Get('status/connection')
+    @Public()
+    statusConnection() {
+        return { message: 'connected' } 
     }
 
 }

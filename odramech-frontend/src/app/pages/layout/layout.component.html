@@ -1,13 +1,17 @@
 <div class="main-layout">
   <div class="row header m-0">
-    <app-header class="col-12 p-0"></app-header>
+    <app-header
+    class="col-12 p-0"
+    (estadoMenuChange)="onEstadoMenuChange()"
+    ></app-header>
   </div>
 
   <div class="main-body" style="display: flex; height: calc(100vh - 60px);">
     <!-- Left menu -->
     <app-left-menu 
-      [class.open]="menuAberto" 
-      (estadoMenuChange)="onEstadoMenuChange($event)">
+      [class.open]="!closeMenu" 
+      [isCollapsed]="closeMenu"
+      (estadoMenuChange)="onEstadoMenuChange()">
     </app-left-menu>
 
     <div class="content-area" style="flex: 1; overflow-y: auto; background-color: rgb(252, 252, 252);">

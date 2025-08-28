@@ -4,6 +4,10 @@ import { env } from '../../../environments/environment'
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '@shared/services/auth.service';
 import { LoginData } from '@shared/models/LoginData';
+import { ToastrService } from 'ngx-toastr';
+import { UserLogged } from '@shared/models/UserLogged';
+import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 @Component({
   selector: 'app-login',
   imports: [CommonModule, FormsModule],
@@ -13,7 +17,9 @@ import { LoginData } from '@shared/models/LoginData';
 
 export class LoginComponent implements OnInit {
   constructor(
-    private readonly _authService: AuthService
+    private readonly _authService: AuthService,
+    private readonly _toastr: ToastrService,
+    private readonly _route: Router
   ){}
   
   nomeEstabelecimento: any;
@@ -29,7 +35,7 @@ export class LoginComponent implements OnInit {
   }
 
   
-  async retryLogin(){
+  async tryLogin(){
     this.loadingLogin = true;
 
     if(!this.dataUserOrEmail || !this.password) return
@@ -41,7 +47,23 @@ export class LoginComponent implements OnInit {
       password: this.password
     };
 
-    await this._authService.login(this.dataToSend)
+    try{
+      await this._authService.login(this.dataToSend)
+
+      const userLogged : UserLogged = await this._authService.getUserLogged()
+
+      this._toastr.info(`Usuário: ${userLogged.name}`);
+
+      this._route.navigateByUrl('/home')
+
+      this.loadingLogin = false;
+    } catch(err) {
+      this.loadingLogin = false;
+
+      if (!(err instanceof HttpErrorResponse)) return;
+
+      this._toastr.error('Credenciais inválidas', 'Acesso negado');
+    }
   }
 
 

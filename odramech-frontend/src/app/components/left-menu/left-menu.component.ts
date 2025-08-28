@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 interface BotoesMenuLateral{
@@ -14,9 +14,9 @@ interface BotoesMenuLateral{
 })
 export class LeftMenuComponent implements OnInit {
   @Output() estadoMenuChange = new EventEmitter<boolean>();
+  @Input() isCollapsed = true;
 
   urlPhotoUser: string | null = null;
-  isCollapsed = true;
 
   buttons: BotoesMenuLateral[] = [
     { nome: 'Home', fontAwesomeIcon: 'fa-solid fa-house' },

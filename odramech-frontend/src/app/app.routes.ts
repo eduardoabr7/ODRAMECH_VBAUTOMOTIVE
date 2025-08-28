@@ -7,11 +7,6 @@ import { LayoutComponent } from './pages/layout/layout.component';
 export const routes: Routes = [
 
   {
-    path: 'login',
-    component: LoginComponent
-  },
-
-  {
     path: '',
     component: LayoutComponent,
     children: [
@@ -19,6 +14,12 @@ export const routes: Routes = [
       { path: 'home', component: HomepageComponent },
     ]
   },
+
+  {
+    path: 'login',
+    component: LoginComponent
+  },
+
 
   {
     path: '**',

@@ -8,10 +8,23 @@ import { firstValueFrom } from 'rxjs';
 })
 export class AuthService {
     constructor(
-        private readonly _nestApi: NestAPI
+      private readonly _nestApi: NestAPI
     ) {}
 
     async login(data: LoginData): Promise<any> {
-        return await firstValueFrom(this._nestApi.post('auth/login', data));
+      return await firstValueFrom(this._nestApi.post('auth/login', data));
+    }
+
+    async isAuthenticated(): Promise<boolean> {
+      try {
+        await firstValueFrom(this._nestApi.get('auth/status/section'));
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    async getUserLogged(): Promise<any> {
+      return await firstValueFrom(this._nestApi.get('auth/user'));
     }
 }

@@ -1,5 +1,5 @@
-<section class="gradient-form" style="overflow-y: auto; background-color: rgb(221, 239, 255);">
-  <div class="container py-5">
+<section class="gradient-form" style="overflow-y: auto;">
+  <div class="container py-5 mt-5">
     <div class="row d-flex justify-content-center align-items-center">
       <div class="col-xl-10">
         <div class="card rounded-3 text-black">
@@ -8,13 +8,13 @@
               <div class="card-body p-md-5 mx-md-4">
 
                 <div class="text-center">
-                  <img src="../../../assets/logo_odramech.png"
+                  <img src="../../../assets/logo_odramech-sem-fundo.png"
                     style="width: 300px;" alt="logo">
                   <h6 class="mt-5 pb-1">Você está fazendo login em</h6>
                   <h6 class="mb-5"> {{ nomeEstabelecimento }}</h6>
                 </div>
 
-                <form (ngSubmit)="retryLogin()" #formLogin="ngForm">
+                <form (ngSubmit)="tryLogin()" #formLogin="ngForm">
                   <div data-mdb-input-init class="form-outline mb-4">
                     <label class="form-label" for="form2Example11">Usuário</label>
                     <input 
@@ -45,8 +45,13 @@
                       <button 
                         data-mdb-button-init data-mdb-ripple-init class="btn btn-primary btn-block fa-lg gradient-custom-2" 
                         type="submit" 
-                        [disabled]="formLogin.invalid"
-                      >Login</button>
+                        [disabled]="formLogin.invalid || loadingLogin"
+                      >
+                        Login
+                        <span *ngIf="loadingLogin">
+                          <i class="fa-solid fa-circle-notch fa-spin"></i>
+                        </span>
+                      </button>
                     </div>
                   </div>
 

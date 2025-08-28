@@ -1,0 +1,129 @@
+@import 'themes/themes';
+@import 'ngx-toastr/toastr';
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.toggle-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #8d8d8d;
+}
+
+// estilização dos toasts de mensagem
+
+.ngx-toastr {
+  border-radius: 8px !important;
+  background-color: #ffffff;
+  min-width: 350px;
+  max-width: 400px !important;
+  width: auto !important;
+  overflow-wrap: break-word !important;
+  position: relative;
+  
+  // Adiciona um padding à esquerda para dar espaço ao ícone
+  padding: 15px 20px 15px 50px !important; 
+
+  // Estilo da barra lateral usando o pseudo-elemento ::before
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 4px;
+    bottom: 0;
+    width: 4px;
+    height: 85%;
+    border-radius: 8px;
+    background-color: #ffffff;
+  }
+  
+  &::after {
+    content: '\f05a'; // Exemplo: ícone de informação do Font Awesome
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    top: 50%;
+    left: 20px; // Posição do ícone à esquerda
+    transform: translateY(-50%);
+    color: #000000; // Cor global do ícone, mude para a que desejar
+    font-size: 20px;
+  }
+}
+
+  .toast-message {
+    flex-grow: 1; // Permite que o texto ocupe o espaço disponível
+    font-size: 15px !important; // Tamanho da fonte
+    line-height: 1.4 !important; // Espaçamento entre linhas
+    color: #333333 !important; // Cor do texto
+    margin-top: 5px; // Pequeno espaçamento para o título
+  }
+  // Título do toast
+  .toast-title {
+    font-weight: 600 !important; // Mais negrito
+    font-size: 16px !important; // Um pouco maior que a mensagem
+    color: #333333 !important; // Cor do texto
+    margin-bottom: 5px;
+  }
+
+// separados por categoria
+
+  .toast-info {
+    &::before {
+      background-color: #007bff;
+    }
+    .toast-title {
+      color: #007bff !important;
+    }
+    &::after {
+      color: #007bff;
+    }
+  }
+
+  .toast-error {
+    &::before {
+      background-color: #ff0000;
+    }
+    .toast-title {
+      color: #ff0000 !important;
+    }
+    &::after {
+      color: #ff0000;
+    }
+  }
+
+  .toast-warning {
+    &::before {
+      background-color: #ffbb00;
+    }
+    .toast-title {
+      color: #ffbb00 !important;
+    }
+    &::after {
+      color: #ffbb00;
+    }
+  }
+
+  .toast-success {
+    &::before {
+      background-color: #4faf42;
+    }
+    .toast-title {
+      color: #4faf42 !important;
+    }
+    &::after {
+      color: #4faf42;
+    }
+  }

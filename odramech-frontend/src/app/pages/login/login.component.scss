@@ -1,18 +1,22 @@
+.gradient-form {
+    background: linear-gradient(to left, #9aa7e4, #5185e6, #6ea1ff);
+}
+
 .gradient-custom-2 {
-background: #fccb90;
+    background: #fccb90;
 
-background: -webkit-linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593);
+    background: -webkit-linear-gradient(to right, #9aa7e4, #5185e6, #1164ff);
 
-background: linear-gradient(to right, #9aa7e4, #5185e6, #1164ff);
+    background: linear-gradient(to right, #9aa7e4, #5185e6, #1164ff);
 }
 
 .gradient-form {
-height: 100vh !important;
+    height: 100vh !important;
 }
 
 @media (min-width: 769px) {
 .gradient-custom-2 {
-border-top-right-radius: .3rem;
-border-bottom-right-radius: .3rem;
+    border-top-right-radius: .3rem;
+    border-bottom-right-radius: .3rem;
 }
 }

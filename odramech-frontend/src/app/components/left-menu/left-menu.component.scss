@@ -20,13 +20,6 @@ small {
     padding: 10px;
 }
 
-.toggle-btn {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-}
-
 ul {
     padding: 0;
     list-style: none;
@@ -78,6 +71,11 @@ li i {
 
 /* Responsividade para telas menores, quando a tela for menor que 576 o menu aberto irá ocupar 100% da tela */
 @media (max-width: 576px) {
+
+    .sidebar.collapsed {
+        display: none;
+    }
+    
     .sidebar {
         width: 100%;
     }
