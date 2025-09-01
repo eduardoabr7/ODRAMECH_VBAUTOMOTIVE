@@ -28,14 +28,23 @@ ul {
 li {
     display: flex;
     padding: 15px;
-    color: #5b9cff;
+    color: #001757;
     cursor: pointer;
     padding-left: 22px;
 }
 
 li:hover {
-    background-color: #a6bbff;
+    background-color: #77b2ff;
     color: white;
+}
+
+li.logout{
+    color: rgb(255, 75, 75)
+}
+
+li.logout:hover{
+    background-color: #ffc5c5;
+    color: rgb(255, 75, 75)
 }
 
 li i {

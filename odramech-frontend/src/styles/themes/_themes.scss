@@ -1,7 +1,15 @@
-:root{
-    --background: #ffffff;
+$background-light: #ffffff;
+$text-light: #333333;
+
+$background-dark: #000000;
+$text-dark: #f8f8f8;
+
+:root {
+  --background: #{$background-light};
+  --text-color: #{$text-light};
 }
 
-[tema='dark']{
-    --background: #000000;
+[tema='dark'] {
+  --background: #{$background-dark};
+  --text-color: #{$text-dark};
 }

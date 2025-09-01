@@ -29,6 +29,11 @@ export class AuthController {
         return this._authService.login(data, res);
     }
 
+    @Post('logout')
+    logout(@Res({ passthrough: true }) res: Response) {
+        return this._authService.logout(res);
+    }
+
     @Get('user')
     getUserLogged(@Req() request: RequestWithUser): LoggedUser {
         const userLogged = request.user
@@ -41,11 +46,5 @@ export class AuthController {
         this.logger.log('[VERIFICA STATUS] Mensagem: Autenticated enviada na requisição', '#b7eeff')
         return { message: 'Authenticated' }
     }
-
-    @Get('status/connection')
-    @Public()
-    statusConnection() {
-        return { message: 'connected' } 
-    }
-
+    
 }

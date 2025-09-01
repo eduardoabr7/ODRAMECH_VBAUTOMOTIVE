@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { HeaderComponent } from '../../components/header/header.component';
-import { LeftMenuComponent } from '../../components/left-menu/left-menu.component';
+import { HeaderComponent } from '../../shared/components/header/header.component';
+import { LeftMenuComponent } from '../../shared/components/left-menu/left-menu.component';
 import { RouterModule } from '@angular/router';
 
 @Component({

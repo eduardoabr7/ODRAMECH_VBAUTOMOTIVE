@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { LeftMenuComponent } from '../../components/left-menu/left-menu.component'
+import { LeftMenuComponent } from '../../shared/components/left-menu/left-menu.component'
 import { AuthService } from '@shared/services/auth.service';
 @Component({
   selector: 'app-homepage',

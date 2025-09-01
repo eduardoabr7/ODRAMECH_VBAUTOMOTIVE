@@ -52,4 +52,9 @@ export class AuthService {
         throw new BadRequestException('Invalid credentials')
       } 
     }
+
+    async logout(res: Response) {
+      res.clearCookie('access');
+      return { message: 'Session terminated' }
+    }
 }

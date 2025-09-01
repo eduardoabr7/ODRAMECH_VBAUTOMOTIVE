@@ -16,7 +16,7 @@
       <div class="row">
         <div class="col-4">
           <img 
-            src="{{ urlPhotoUser }}"
+            [src]="urlPhotoUser ? urlPhotoUser : '../../../../../../assets/no-photo-user-default.png'"
             alt="photo-user" 
             class="rounded-circle"
             style="
@@ -47,6 +47,11 @@
         <li class="col-12" *ngFor="let button of buttons">
           <i [ngClass]="button.fontAwesomeIcon"></i>
           <span class="link-text">{{ button.nome }}</span>
+        </li>
+        <!-- button logout -->
+        <li class="col-12 logout" (click)="logout()" *ngIf="!isCollapsed">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span class="link-text">Logout</span>
         </li>
       </ul>
     </div>

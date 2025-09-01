@@ -5,9 +5,10 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '@shared/services/auth.service';
 import { LoginData } from '@shared/models/LoginData';
 import { ToastrService } from 'ngx-toastr';
-import { UserLogged } from '@shared/models/UserLogged';
 import { Router } from '@angular/router';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { switchMap, tap } from 'rxjs';
+import { UserLogged } from '@shared/models/UserLogged';
 @Component({
   selector: 'app-login',
   imports: [CommonModule, FormsModule],
@@ -38,7 +39,10 @@ export class LoginComponent implements OnInit {
   async tryLogin(){
     this.loadingLogin = true;
 
-    if(!this.dataUserOrEmail || !this.password) return
+    if(!this.dataUserOrEmail || !this.password){
+      this.loadingLogin = false;
+      return
+    }
 
     const isEmail = this.dataUserOrEmail.includes('@')
 
@@ -47,19 +51,22 @@ export class LoginComponent implements OnInit {
       password: this.password
     };
 
-    try{
-      await this._authService.login(this.dataToSend)
+    this._authService.login(this.dataToSend).pipe(
+        switchMap(() => this._authService.getUserLogged()),
+        tap((userLogged: UserLogged) => {
+            sessionStorage.setItem('user', JSON.stringify(userLogged));
+        })
+    ).subscribe({
+        next: () => {
+            this._route.navigateByUrl('/home');
+            this.loadingLogin = false;
+        },
+        error: (err: HttpErrorResponse) => {
+            this.loadingLogin = false;
+            this._toastr.error('Credenciais inválidas', 'Acesso negado');
+        }
+    });
 
-      this._route.navigateByUrl('/home')
-
-      this.loadingLogin = false;
-    } catch(err) {
-      this.loadingLogin = false;
-
-      if (!(err instanceof HttpErrorResponse)) return;
-
-      this._toastr.error('Credenciais inválidas', 'Acesso negado');
-    }
   }
 
 

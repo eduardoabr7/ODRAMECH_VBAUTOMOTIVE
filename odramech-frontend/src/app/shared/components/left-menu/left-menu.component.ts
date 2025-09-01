@@ -1,5 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '@shared/services/auth.service';
+import { ToastrService } from 'ngx-toastr';
 
 interface BotoesMenuLateral{
   nome: string,
@@ -13,6 +15,14 @@ interface BotoesMenuLateral{
   styleUrl: './left-menu.component.scss',
 })
 export class LeftMenuComponent implements OnInit {
+
+  constructor(
+    private readonly _authService : AuthService,
+    private readonly _toast : ToastrService
+  ) {
+
+  }
+
   @Output() estadoMenuChange = new EventEmitter<boolean>();
   @Input() isCollapsed = true;
 
@@ -27,12 +37,19 @@ export class LeftMenuComponent implements OnInit {
   ]
 
   ngOnInit(): void {
-    this.getUserPhotoURL()
-    console.log(this.urlPhotoUser)
   }
 
   getUserPhotoURL(): void {
     this.urlPhotoUser = '../../../assets/remover_foto.jpeg'
+  }
+
+  logout() {
+    this._authService.logout().subscribe({
+      // Opcional: `complete` ou um `next`, caso precise alguma reação
+      // complete: () => {
+      //   console.log('Logout completado!');
+      // }
+    });
   }
 
   toggleCollapse(): void {

@@ -18,8 +18,9 @@ export class NestAPI {
     return this._httpClient.get<T>(`${this.baseAPI}/${endpoint}`, { withCredentials: true });
   }
 
-  post<T>(endpoint: string, body: any) {
-    return this._httpClient.post<T>(`${this.baseAPI}/${endpoint}`, body, { withCredentials: true });
+  post<T>(endpoint: string, body?: any) {
+    const url = `${this.baseAPI}/${endpoint}`;
+    return this._httpClient.post<T>(url, body ?? null, { withCredentials: true });
   }
 
   put<T>(endpoint: string, body: any) {
