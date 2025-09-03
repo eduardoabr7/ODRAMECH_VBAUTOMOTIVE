@@ -43,16 +43,26 @@
 
   <div class="navigation">
     <div class="container-fluid m-0">
+
       <ul class="row">
         <li class="col-12" *ngFor="let button of buttons">
           <i [ngClass]="button.fontAwesomeIcon"></i>
           <span class="link-text">{{ button.nome }}</span>
         </li>
-        <!-- button logout -->
+      </ul>
+
+      <ul class="row configurations" style="border-top: 1px solid rgb(231, 231, 231);">
+
+        <li class="col-12">
+          <i class="fa-solid fa-gear"></i>
+          <span class="link-text">Configurações</span>
+        </li>
+
         <li class="col-12 logout" (click)="logout()" *ngIf="!isCollapsed">
           <i class="fa-solid fa-arrow-right-from-bracket"></i>
           <span class="link-text">Logout</span>
         </li>
+
       </ul>
     </div>
   </div>
