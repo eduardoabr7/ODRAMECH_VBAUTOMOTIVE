@@ -45,7 +45,7 @@
     <div class="container-fluid m-0">
 
       <ul class="row">
-        <li class="col-12" *ngFor="let button of buttons">
+        <li class="col-12" *ngFor="let button of buttons" (click)="navigateUrl(button)">
           <i [ngClass]="button.fontAwesomeIcon"></i>
           <span class="link-text">{{ button.nome }}</span>
         </li>

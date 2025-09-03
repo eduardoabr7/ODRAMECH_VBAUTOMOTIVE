@@ -2,10 +2,12 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '@shared/services/auth.service';
 import { ToastrService } from 'ngx-toastr';
+import { Router } from '@angular/router';
 
 interface BotoesMenuLateral{
   nome: string,
-  fontAwesomeIcon: string
+  fontAwesomeIcon: string,
+  route?: string
 }
 
 @Component({
@@ -18,7 +20,7 @@ export class LeftMenuComponent implements OnInit {
 
   constructor(
     private readonly _authService : AuthService,
-    private readonly _toast : ToastrService
+    private readonly _router: Router
   ) {
 
   }
@@ -33,7 +35,8 @@ export class LeftMenuComponent implements OnInit {
     { nome: 'Serviços', fontAwesomeIcon: 'fa-solid fa-wrench' },
     { nome: 'Meus veículos', fontAwesomeIcon: 'fa-solid fa-car-side' },
     { nome: 'Faturamento', fontAwesomeIcon: 'fa-solid fa-file' },
-    { nome: 'Notificações', fontAwesomeIcon: 'fa-solid fa-envelope' }
+    { nome: 'Notificações', fontAwesomeIcon: 'fa-solid fa-envelope' },
+    { nome: 'Clientes', fontAwesomeIcon: 'fa-solid fa-users', route: '/clients' }
   ]
 
   ngOnInit(): void {
@@ -50,6 +53,10 @@ export class LeftMenuComponent implements OnInit {
       //   console.log('Logout completado!');
       // }
     });
+  }
+
+  navigateUrl(optionSelected: BotoesMenuLateral) {
+    this._router.navigateByUrl(optionSelected.route)
   }
 
   toggleCollapse(): void {

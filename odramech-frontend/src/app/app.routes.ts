@@ -4,6 +4,7 @@ import { NotFoundPageComponent } from './pages/not-found-page/not-found-page.com
 import { HomepageComponent } from './pages/homepage/homepage.component';
 import { LayoutComponent } from './pages/layout/layout.component';
 import { AuthGuard } from './guards/Authentication.guard';
+import { ClientsComponent } from './pages/clients/clients.component';
 
 export const routes: Routes = [
 
@@ -14,6 +15,7 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'home', pathMatch: 'full' },
       { path: 'home', component: HomepageComponent },
+      { path: 'clients', component: ClientsComponent }
     ]
   },
 
