@@ -9,6 +9,8 @@ import { CustomLogger } from './shared/services/custom-logger.service';
 import { APP_GUARD } from '@nestjs/core'
 import { NoPublicRoutesGuard } from './shared/guards/no-public-routes.guard'
 import { SharedModule } from './shared/shared.module';
+import { EnterpriseModule } from './enterprise/enterprise.module';
+import { EstablishmentModule } from './enterprise/establishment/establishment.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -21,7 +23,9 @@ import { SharedModule } from './shared/shared.module';
     }),
     UserModule,
     AuthModule,
-    SharedModule
+    SharedModule,
+    EnterpriseModule,
+    EstablishmentModule
   ],
   controllers: [AppController],
   providers: [

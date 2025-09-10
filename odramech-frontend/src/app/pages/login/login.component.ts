@@ -51,12 +51,7 @@ export class LoginComponent implements OnInit {
       password: this.password
     };
 
-    this._authService.login(this.dataToSend).pipe(
-        switchMap(() => this._authService.getUserLogged()),
-        tap((userLogged: UserLogged) => {
-            sessionStorage.setItem('user', JSON.stringify(userLogged));
-        })
-    ).subscribe({
+    this._authService.login(this.dataToSend).subscribe({
         next: () => {
             this._route.navigateByUrl('/home');
             this.loadingLogin = false;
