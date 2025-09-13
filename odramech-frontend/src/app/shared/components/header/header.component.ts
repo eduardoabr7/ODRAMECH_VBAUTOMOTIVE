@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '@shared/services/auth.service';
 import { ToastrService } from 'ngx-toastr';
@@ -10,7 +10,7 @@ import { ToastrService } from 'ngx-toastr';
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss'
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
 
   constructor(
     private readonly _authService: AuthService,
@@ -19,9 +19,18 @@ export class HeaderComponent {
   ) {}
 
   @Output() estadoMenuChange = new EventEmitter<boolean>();
+  urlPhotoUser: string | null = null;
+
+  ngOnInit(): void {
+    this.getUserPhotoURL()
+  }
 
   toggleCollapse(): void {
     this.estadoMenuChange.emit()
+  }
+
+  getUserPhotoURL(): void {
+    this.urlPhotoUser = '../../../assets/remover_foto.jpeg'
   }
 
   logout() {

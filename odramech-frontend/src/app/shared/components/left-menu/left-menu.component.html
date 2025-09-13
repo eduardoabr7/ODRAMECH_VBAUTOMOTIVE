@@ -1,4 +1,4 @@
-<div class="sidebar" [ngClass]="{'collapsed': isCollapsed}">
+<div class="sidebar" [ngClass]="{'collapsed': isCollapsed}" style="position: inherit; z-index: 1;">
 
   <div class="menu">
     <button class="toggle-btn" (click)="toggleCollapse()">
@@ -29,7 +29,7 @@
         </div>
         <div class="col-8">
           <div class="row m-0">
-            Eduardo Abreu
+            {{ userLogged.name }}
           </div>
           <div class="row m-0">
             <small class="p-0">
@@ -46,14 +46,14 @@
 
       <ul class="row">
         <li class="col-12" *ngFor="let button of buttons" (click)="navigateUrl(button)">
-          <i [ngClass]="button.fontAwesomeIcon"></i>
+          <i [ngClass]="button.icon" style="min-width: 25px;"></i>
           <span class="link-text">{{ button.nome }}</span>
         </li>
       </ul>
 
       <ul class="row configurations" style="border-top: 1px solid rgb(231, 231, 231);">
 
-        <li class="col-12">
+        <li class="col-12" (click)="navigateToSettings()">
           <i class="fa-solid fa-gear"></i>
           <span class="link-text">Configurações</span>
         </li>

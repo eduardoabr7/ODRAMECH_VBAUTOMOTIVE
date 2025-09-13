@@ -6,9 +6,9 @@ import { AuthService } from '@shared/services/auth.service';
 import { LoginData } from '@shared/models/LoginData';
 import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
-import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { switchMap, tap } from 'rxjs';
-import { UserLogged } from '@shared/models/UserLogged';
+import { HttpErrorResponse } from '@angular/common/http';
+import { BsModalService } from 'ngx-bootstrap/modal';
+import { ModalUserCorporationComponent } from '@shared/components/modals/modal-user-corporation/modal-user-corporation.component';
 @Component({
   selector: 'app-login',
   imports: [CommonModule, FormsModule],
@@ -20,7 +20,8 @@ export class LoginComponent implements OnInit {
   constructor(
     private readonly _authService: AuthService,
     private readonly _toastr: ToastrService,
-    private readonly _route: Router
+    private readonly _route: Router,
+    private readonly _bsModalService: BsModalService
   ){}
   
   nomeEstabelecimento: any;
@@ -53,12 +54,25 @@ export class LoginComponent implements OnInit {
 
     this._authService.login(this.dataToSend).subscribe({
         next: () => {
-            this._route.navigateByUrl('/home');
-            this.loadingLogin = false;
+            //this._route.navigateByUrl('/home');
+
+            const modalRef = this._bsModalService.show(ModalUserCorporationComponent, {
+              initialState: {
+                title: 'Criar matriz',
+              },
+              class: 'modal-sm'
+            });
+
+            // Opcional: para saber quando o modal foi fechado
+            modalRef.onHidden?.subscribe(() => {
+              this.loadingLogin = false;
+            });
         },
         error: (err: HttpErrorResponse) => {
             this.loadingLogin = false;
-            this._toastr.error('Credenciais inválidas', 'Acesso negado');
+            if (err.status !== 0) {
+                this._toastr.error('Credenciais inválidas', 'Acesso negado');
+            }
         }
     });
 

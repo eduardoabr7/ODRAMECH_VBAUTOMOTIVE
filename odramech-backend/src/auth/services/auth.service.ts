@@ -43,7 +43,7 @@ export class AuthService {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'strict',
-          maxAge: 5400000 // 1 hora e 30 min, passou disso o navegador remove o cookie
+          maxAge: 900000 // 15 minutos
         })
 
         return { message: 'Authenticated' }

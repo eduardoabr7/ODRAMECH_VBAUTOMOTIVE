@@ -24,7 +24,7 @@
 
   <div class="user-icon dropdown">
     <img 
-      src="../../../../assets/no-photo-user-default.png"
+      [src]="urlPhotoUser ? urlPhotoUser : '../../../../../../assets/no-photo-user-default.png'"
       alt="Ícone do Usuário" 
       data-bs-toggle="dropdown"
       aria-expanded="false"

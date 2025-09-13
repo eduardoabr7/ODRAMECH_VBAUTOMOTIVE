@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '@shared/services/auth.service';
 import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
-
+import { UserLogged } from '@shared/models/UserLogged';
+import { Subscription } from 'rxjs';
 interface BotoesMenuLateral{
   nome: string,
-  fontAwesomeIcon: string,
+  icon: string,
   route?: string
 }
 
@@ -28,18 +29,26 @@ export class LeftMenuComponent implements OnInit {
   @Output() estadoMenuChange = new EventEmitter<boolean>();
   @Input() isCollapsed = true;
 
+  userLogged: UserLogged | null = null;
   urlPhotoUser: string | null = null;
 
+  private userSubscription: Subscription | null = null;
+
   buttons: BotoesMenuLateral[] = [
-    { nome: 'Home', fontAwesomeIcon: 'fa-solid fa-house' },
-    { nome: 'Serviços', fontAwesomeIcon: 'fa-solid fa-wrench' },
-    { nome: 'Meus veículos', fontAwesomeIcon: 'fa-solid fa-car-side' },
-    { nome: 'Faturamento', fontAwesomeIcon: 'fa-solid fa-file' },
-    { nome: 'Notificações', fontAwesomeIcon: 'fa-solid fa-envelope' },
-    { nome: 'Clientes', fontAwesomeIcon: 'fa-solid fa-users', route: '/clients' }
+    { nome: 'Home', icon: 'fa-solid fa-house' },
+    { nome: 'Serviços', icon: 'fa-solid fa-wrench' },
+    { nome: 'Meus veículos', icon: 'fa-solid fa-car-side' },
+    { nome: 'Faturamento', icon: 'fa-solid fa-file' },
+    { nome: 'Notificações', icon: 'fa-solid fa-envelope' },
+    { nome: 'Clientes', icon: 'fa-solid fa-users', route: '/clients' }
   ]
 
   ngOnInit(): void {
+    this.userSubscription = this._authService.user$.subscribe(user => {
+      this.userLogged = user;
+      // Chame a lógica da foto do usuário aqui, se necessário
+      this.getUserPhotoURL();
+    });
   }
 
   getUserPhotoURL(): void {
@@ -57,6 +66,10 @@ export class LeftMenuComponent implements OnInit {
 
   navigateUrl(optionSelected: BotoesMenuLateral) {
     this._router.navigateByUrl(optionSelected.route)
+  }
+
+  navigateToSettings() {
+    this._router.navigateByUrl('/settings')
   }
 
   toggleCollapse(): void {
