@@ -8,7 +8,11 @@ import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BsModalService } from 'ngx-bootstrap/modal';
-import { ModalUserCorporationComponent } from '@shared/components/modals/modal-user-corporation/modal-user-corporation.component';
+import { ModalCreateEnterprise } from '@shared/components/modals/modal-create-enterprise/modal-create-enterprise.component';
+import { UserLogged } from '@shared/models/UserLogged';
+import { CorporationService } from '@shared/services/corporation.service';
+import { switchMap } from 'rxjs';
+import { ModalSelectEstablishment } from '@shared/components/modals/modal-select-establishment/modal-select-establishment.component';
 @Component({
   selector: 'app-login',
   imports: [CommonModule, FormsModule],
@@ -21,7 +25,8 @@ export class LoginComponent implements OnInit {
     private readonly _authService: AuthService,
     private readonly _toastr: ToastrService,
     private readonly _route: Router,
-    private readonly _bsModalService: BsModalService
+    private readonly _bsModalService: BsModalService,
+    private readonly _corporationService : CorporationService
   ){}
   
   nomeEstabelecimento: any;
@@ -53,19 +58,63 @@ export class LoginComponent implements OnInit {
     };
 
     this._authService.login(this.dataToSend).subscribe({
-        next: () => {
-            //this._route.navigateByUrl('/home');
+        next: () => { // se autenticar segue aqui
 
-            const modalRef = this._bsModalService.show(ModalUserCorporationComponent, {
-              initialState: {
-                title: 'Criar matriz',
-              },
-              class: 'modal-sm'
-            });
+            let userId: number
 
-            // Opcional: para saber quando o modal foi fechado
-            modalRef.onHidden?.subscribe(() => {
-              this.loadingLogin = false;
+            this._authService.getUserLogged().pipe(
+              switchMap((user: UserLogged) => {
+                userId = user.id
+                return this._corporationService.getUserCorporation(userId);
+              })
+            ).subscribe(dataReceived => {
+
+              let userCorporations = dataReceived; 
+
+
+              // para fins de testes com cad_empresa
+              // userCorporations = [
+              //   {
+              //     establishments: [
+              //       {
+              //         id: 1,
+              //         name: 'VB-Automotive',
+              //         email: 'eduardopradoabreu@gmail.com'
+              //       },
+              //       // {
+              //       //   id: 2,
+              //       //   name: 'VB-Automotive Unidade POA',
+              //       //   email: 'eduardopradoabreu@gmail.com'
+              //       // }                    
+              //     ]
+              //   },
+              // ]
+
+              if (userId === 1 && userCorporations.length === 0) { // se o usuário for admin e não tiver nenhuma empresa vinculada a ele (implementação do zero)
+
+                const modalRef = this._bsModalService.show(ModalCreateEnterprise, {
+                  initialState: {
+                    title: 'Criar empresa'
+                  },
+                  class: 'modal-lg'
+                });
+
+                // Opcional: para saber quando o modal foi fechado
+                modalRef.onHidden?.subscribe(() => {
+                  this.loadingLogin = false;
+                });
+              } else if (userCorporations[0].establishments.length > 1) { // se possuir cadastro em mais de um estabelecimento, abre a modal para escolher em qual deseja se logar
+                const modalRef = this._bsModalService.show(ModalSelectEstablishment, {
+                  initialState: {
+                    title: 'Estabelecimento'
+                  },
+                  class: 'modal-lg'
+                })
+
+              } else {
+                this.loadingLogin = false;
+                this._route.navigateByUrl('/home')
+              }
             });
         },
         error: (err: HttpErrorResponse) => {

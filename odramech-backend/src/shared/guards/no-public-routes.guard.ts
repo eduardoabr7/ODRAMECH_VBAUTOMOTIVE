@@ -51,6 +51,7 @@ export class NoPublicRoutesGuard implements CanActivate {
         id: tokenDecodified.sub
       },
       select: {
+        id: true,
         name: true,
         username: true,
         email: true,

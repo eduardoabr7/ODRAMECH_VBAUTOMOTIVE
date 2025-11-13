@@ -1,7 +1,10 @@
 
-import { IsEmail, IsString } from "class-validator"
+import { IsEmail, IsNumber, IsString } from "class-validator"
 
 export class LoggedUser {
+    @IsNumber()
+    id: number
+
     @IsString()
     name: string
 

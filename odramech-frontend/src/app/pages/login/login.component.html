@@ -8,8 +8,7 @@
               <div class="card-body p-md-5 mx-md-4">
 
                 <div class="text-center">
-                  <img src="../../../assets/logo_odramech-sem-fundo.png"
-                    style="width: 300px;" alt="logo">
+                  <img src="../../../assets/logo_odramech-sem-fundo.png" style="width: 300px;" alt="logo">
                   <h6 class="mt-5 pb-1">Você está fazendo login em</h6>
                   <h6 class="mb-5"> {{ nomeEstabelecimento }}</h6>
                 </div>
@@ -17,36 +16,22 @@
                 <form (ngSubmit)="tryLogin()" #formLogin="ngForm">
                   <div data-mdb-input-init class="form-outline mb-4">
                     <label class="form-label" for="form2Example11">Usuário</label>
-                    <input 
-                      type="email" 
-                      id="form2Example11" 
-                      class="form-control"
-                      placeholder="E-mail ou usuário" 
-                      name="dataUserOrEmail" 
-                      [(ngModel)]="dataUserOrEmail"
-                      required/>
+                    <input type="email" id="form2Example11" class="form-control" placeholder="E-mail ou usuário"
+                      name="dataUserOrEmail" [(ngModel)]="dataUserOrEmail" required />
                   </div>
 
                   <div data-mdb-input-init class="form-outline mb-4">
                     <label class="form-label" for="form2Example22">Senha</label>
-                    <input 
-                      type="password" 
-                      id="form2Example22" 
-                      class="form-control" 
-                      placeholder="Insira sua senha"
-                      name="password"
-                      [(ngModel)]="password"
-                      required/>
+                    <input type="password" id="form2Example22" class="form-control" placeholder="Insira sua senha"
+                      name="password" [(ngModel)]="password" required />
                   </div>
 
                   <div class="text-center pt-1 mb-5 pb-1 d-flex justify-content-between align-items-center">
                     <a class="text-muted" href="#!">Esqueceu a senha?</a>
                     <div class="button-wrapper" [style.cursor]="formLogin.invalid ? 'not-allowed' : 'pointer'">
-                      <button 
-                        data-mdb-button-init data-mdb-ripple-init class="btn btn-primary btn-block fa-lg gradient-custom-2" 
-                        type="submit" 
-                        [disabled]="formLogin.invalid || loadingLogin"
-                      >
+                      <button data-mdb-button-init data-mdb-ripple-init
+                        class="btn btn-primary btn-block fa-lg gradient-custom-2" type="submit"
+                        [disabled]="formLogin.invalid || loadingLogin">
                         Login
                         <span *ngIf="loadingLogin">
                           <i class="fa-solid fa-circle-notch fa-spin"></i>
@@ -66,7 +51,8 @@
             <div class="col-lg-6 d-flex align-items-center gradient-custom-2">
               <div class="text-white px-3 py-4 p-md-5 mx-md-4">
                 <h4 class="mb-4">ODRAMECH CHEGOU!</h4>
-                <p class="small mb-0">A nova era das oficinas mecânicas começou. Mais controle, mais velocidade, mais resultados — tudo em um único sistema que vai mudar o seu jogo!</p>
+                <p class="small mb-0">A nova era das oficinas mecânicas começou. Mais controle, mais velocidade, mais
+                  resultados — tudo em um único sistema que vai mudar o seu jogo!</p>
               </div>
             </div>
           </div>

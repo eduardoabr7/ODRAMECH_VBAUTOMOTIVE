@@ -30,6 +30,7 @@ CREATE TABLE "odramech"."cad_establishment" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT,
+    "phone" TEXT NOT NULL,
 
     CONSTRAINT "cad_establishment_pkey" PRIMARY KEY ("id")
 );

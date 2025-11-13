@@ -3,10 +3,11 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
 export class BaseModalComponent {
   title?: string;
   message?: string;
-
   hasUnsavedChanges = false;
 
-  constructor(public bsModalRef: BsModalRef) {}
+  constructor(
+    public bsModalRef: BsModalRef
+  ) {}
 
 
   // function genérica, pode sobrescrever nos componentes filhos com override hideModal()
@@ -20,5 +21,13 @@ export class BaseModalComponent {
     } else { // se não tiver alterações, pode simplesmente chamar o fechamento da modal
       this.bsModalRef.hide();
     }
+  }
+
+  closeModal(){
+    this.hideModal()
+  }
+
+  confirm() {
+    
   }
 }

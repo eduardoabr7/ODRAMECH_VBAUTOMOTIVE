@@ -38,6 +38,7 @@ model Establishment {
   id                          Int                           @id @default(autoincrement())
   name                        String
   email                       String?
+  phone                       String
 
   enterpriseRelations         EnterpriseEstablishment[]
   users                       UserCorporation[]
@@ -66,7 +67,7 @@ model UserCorporation {
 
   user                        User                          @relation(fields: [id_user], references: [id])
   enterprise                  Enterprise                    @relation(fields: [id_enterprise], references: [id])
-  establishment               Establishment?                @relation(fields: [id_establishment], references: [id])
+  establishment               Establishment                @relation(fields: [id_establishment], references: [id])
 
   @@id([id_user, id_enterprise, id_establishment])
 
