@@ -68,6 +68,22 @@
               email>
           </div>
         </div>
+
+        <div class="row">
+          <div class="col-12 mb-4">
+            <label for="phone" class="form-label">Telefone para contato</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="phone" 
+              name="phone"
+              placeholder="Telefone para contato"
+              [(ngModel)]="phone"
+              required
+              email>
+          </div>
+        </div>
+
       </div>
 
       <div class="modal-footer">
@@ -81,7 +97,6 @@
         <button 
           type="submit"
           class="btn btn-primary"
-          (click)="prosseguir(form)"
           [disabled]="form.invalid">
           Prosseguir
         </button>

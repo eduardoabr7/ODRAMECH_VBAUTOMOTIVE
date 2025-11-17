@@ -8,69 +8,91 @@ datasource db {
 }
 
 model User {
-  id                          Int                           @id @default(autoincrement())
-  name                        String                      
-  email                       String?                       @unique
-  username                    String                        @unique
-  password                    String
-  phone                       String?                      
-  createdAt                   DateTime                      @default(now())
-  updatedAt                   DateTime                      @updatedAt
+  id              Int               @id @default(autoincrement())
+  name            String
+  email           String?           @unique
+  username        String            @unique
+  password        String
+  phone           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  addressId       Int?              @unique
 
-  userCorporation             UserCorporation[]
+  address         Address?          @relation(fields: [addressId], references: [id])
+  userCorporation UserCorporation[]
 
   @@map("cad_user")
 }
 
 model Enterprise {
-  id                          Int                           @id @default(autoincrement())
-  logoUrl                     String?
-  name                        String
-  email                       String
+  id                Int                         @id @default(autoincrement())
+  logoUrl           String?
+  name              String
+  email             String
+  addressId         Int                         @unique
 
-  establishments              EnterpriseEstablishment[]
-  users                       UserCorporation[]
+  address           Address                     @relation(fields: [addressId], references: [id])
+  establishments    EnterpriseEstablishment[]
+  users             UserCorporation[]
 
   @@map("cad_enterprise")
 }
 
 model Establishment {
-  id                          Int                           @id @default(autoincrement())
-  name                        String
-  email                       String?
-  phone                       String
+  id                    Int                         @id @default(autoincrement())
+  name                  String
+  email                 String?
+  phone                 String
+  addressId             Int                         @unique
 
-  enterpriseRelations         EnterpriseEstablishment[]
-  users                       UserCorporation[]
+  address               Address                     @relation(fields: [addressId], references: [id])
+  enterpriseRelations   EnterpriseEstablishment[]
+  users                 UserCorporation[]
 
   @@map("cad_establishment")
 }
 
+model Address {
+  id            Int             @id @default(autoincrement())
+  street        String
+  number        String
+  complement    String?
+  district      String
+  city          String
+  state         String
+  zipCode       String
+  country       String
+
+  user          User?
+  enterprise    Enterprise?
+  establishment Establishment?
+
+  @@map("cad_address")
+}
+
 model EnterpriseEstablishment {
-  id_enterprise               Int
-  id_establishment            Int
+  idEnterprise     Int
+  idEstablishment  Int
 
-  enterprise                  Enterprise                    @relation(fields: [id_enterprise], references: [id])
-  establishment               Establishment                 @relation(fields: [id_establishment], references: [id])
+  enterprise       Enterprise    @relation(fields: [idEnterprise], references: [id])
+  establishment    Establishment @relation(fields: [idEstablishment], references: [id])
 
-  @@id([id_enterprise, id_establishment])
-
+  @@id([idEnterprise, idEstablishment])
   @@map("cad_enterprise_establishment")
 }
 
 model UserCorporation {
-  id_user                     Int
-  id_enterprise               Int
-  id_establishment            Int
+  idUser            Int
+  idEnterprise      Int
+  idEstablishment   Int
 
-  role                        Role
+  role              Role
 
-  user                        User                          @relation(fields: [id_user], references: [id])
-  enterprise                  Enterprise                    @relation(fields: [id_enterprise], references: [id])
-  establishment               Establishment                @relation(fields: [id_establishment], references: [id])
+  user              User          @relation(fields: [idUser], references: [id])
+  enterprise        Enterprise    @relation(fields: [idEnterprise], references: [id])
+  establishment     Establishment @relation(fields: [idEstablishment], references: [id])
 
-  @@id([id_user, id_enterprise, id_establishment])
-
+  @@id([idUser, idEnterprise, idEstablishment])
   @@map("cad_user_corporation")
 }
 

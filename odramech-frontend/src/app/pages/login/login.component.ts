@@ -11,7 +11,7 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { ModalCreateEnterprise } from '@shared/components/modals/modal-create-enterprise/modal-create-enterprise.component';
 import { UserLogged } from '@shared/models/UserLogged';
 import { CorporationService } from '@shared/services/corporation.service';
-import { switchMap } from 'rxjs';
+import { of, switchMap, tap } from 'rxjs';
 import { ModalSelectEstablishment } from '@shared/components/modals/modal-select-establishment/modal-select-establishment.component';
 @Component({
   selector: 'app-login',
@@ -42,91 +42,117 @@ export class LoginComponent implements OnInit {
   }
 
   
-  async tryLogin(){
+  tryLogin() {
     this.loadingLogin = true;
 
-    if(!this.dataUserOrEmail || !this.password){
+    if (!this.dataUserOrEmail || !this.password) {
       this.loadingLogin = false;
-      return
+      this._toastr.error('Preencha todas as informações', 'Acesso negado');
+      return;
     }
 
-    const isEmail = this.dataUserOrEmail.includes('@')
+    const isEmail = this.dataUserOrEmail.includes('@');
 
     this.dataToSend = {
       [isEmail ? 'email' : 'username']: this.dataUserOrEmail,
       password: this.password
     };
 
-    this._authService.login(this.dataToSend).subscribe({
-        next: () => { // se autenticar segue aqui
+    this._authService.login(this.dataToSend).pipe(
 
-            let userId: number
+      switchMap((user: UserLogged) =>
+        this._corporationService.getUserCorporation(user.id).pipe(
 
-            this._authService.getUserLogged().pipe(
-              switchMap((user: UserLogged) => {
-                userId = user.id
-                return this._corporationService.getUserCorporation(userId);
-              })
-            ).subscribe(dataReceived => {
+          switchMap(corporationsRaw => {
 
-              let userCorporations = dataReceived; 
+            let userCorporations = corporationsRaw;
 
 
-              // para fins de testes com cad_empresa
-              // userCorporations = [
-              //   {
-              //     establishments: [
-              //       {
-              //         id: 1,
-              //         name: 'VB-Automotive',
-              //         email: 'eduardopradoabreu@gmail.com'
-              //       },
-              //       // {
-              //       //   id: 2,
-              //       //   name: 'VB-Automotive Unidade POA',
-              //       //   email: 'eduardopradoabreu@gmail.com'
-              //       // }                    
-              //     ]
-              //   },
-              // ]
+            // mocks para teste
+            //nenhuma empresa, deve abrir modal de criar empresa
+            // userCorporations = [];
 
-              if (userId === 1 && userCorporations.length === 0) { // se o usuário for admin e não tiver nenhuma empresa vinculada a ele (implementação do zero)
+            //vários estabelecimentos, deve abrir modal de seleção
+            // userCorporations = [
+            //   {
+            //     establishments: [
+            //       {
+            //         id: 1,
+            //         name: 'VB-Automotive',
+            //         email: 'eduardopradoabreu@gmail.com'
+            //       },
+            //       {
+            //         id: 2,
+            //         name: 'VB-Automotive Unidade POA',
+            //         email: 'eduardopradoabreu@gmail.com'
+            //       }
+            //     ]
+            //   }
+            // ];
 
-                const modalRef = this._bsModalService.show(ModalCreateEnterprise, {
-                  initialState: {
-                    title: 'Criar empresa'
-                  },
-                  class: 'modal-lg'
-                });
+            // apenas 1 estabelecimento ⇒ deve ir pro home
+            // userCorporations = [
+            //   {
+            //     establishments: [
+            //       {
+            //         id: 1,
+            //         name: 'VB-Automotive',
+            //         email: 'eduardopradoabreu@gmail.com'
+            //       }
+            //     ]
+            //   }
+            // ];
 
-                // Opcional: para saber quando o modal foi fechado
-                modalRef.onHidden?.subscribe(() => {
-                  this.loadingLogin = false;
-                });
-              } else if (userCorporations[0].establishments.length > 1) { // se possuir cadastro em mais de um estabelecimento, abre a modal para escolher em qual deseja se logar
-                const modalRef = this._bsModalService.show(ModalSelectEstablishment, {
-                  initialState: {
-                    title: 'Estabelecimento'
-                  },
-                  class: 'modal-lg'
-                })
-
-              } else {
-                this.loadingLogin = false;
-                this._route.navigateByUrl('/home')
-              }
-            });
-        },
-        error: (err: HttpErrorResponse) => {
-            this.loadingLogin = false;
-            if (err.status !== 0) {
-                this._toastr.error('Credenciais inválidas', 'Acesso negado');
+            if (user.id === 1 && userCorporations.length === 0) {
+              return this.openCreateEnterpriseModal();
             }
-        }
-    });
 
+            if (userCorporations[0].establishments.length > 1) {
+              return this.openSelectEstablishmentModal();
+            }
+
+            this._route.navigateByUrl('/home');
+            return of(null);
+          })
+        )
+      ),
+
+      tap(() => this.loadingLogin = false)
+
+    ).subscribe({
+      next: () => {},
+      error: () => {
+        this.loadingLogin = false;
+        this._toastr.error('Credenciais inválidas', 'Acesso negado');
+      }
+    });
   }
 
+  openCreateEnterpriseModal() {
+    const modalRef = this._bsModalService.show(ModalCreateEnterprise, {
+      initialState: { title: 'Criar empresa' },
+      class: 'modal-md'
+    });
+
+    modalRef.onHidden?.subscribe(() => {
+      this.loadingLogin = false;
+    });
+
+    return modalRef.content.onClose.asObservable();
+  }
+
+  openSelectEstablishmentModal() {
+    const modalRef = this._bsModalService.show(ModalSelectEstablishment, {
+      initialState: { title: 'Estabelecimento' },
+      class: 'modal-lg'
+    });
+
+    modalRef.onHidden?.subscribe(() => {
+      this.loadingLogin = false;
+    });
+
+    return modalRef.content.onClose.asObservable();
+  }
 
 
 }

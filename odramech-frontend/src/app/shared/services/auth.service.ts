@@ -30,14 +30,11 @@ export class AuthService {
       return this._nestApi.post('auth/login', data).pipe(
         switchMap(() => this.getUserLogged().pipe(
           catchError((err: HttpErrorResponse) => {
-            // Se a chamada getUserLogged falhar, define o usuário como null
             this.setUserLogged(null);
-            // Retorne um Observable vazio para que o fluxo não quebre
             return throwError(() => err); 
           })
         )),
         tap((user: UserLogged) => {
-          // Quando o login for bem-sucedido, define o usuário
           this.setUserLogged(user);
         })
       );
