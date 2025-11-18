@@ -29,6 +29,7 @@ model Enterprise {
   logoUrl           String?
   name              String
   email             String
+  cnpj              String                      @unique
   addressId         Int                         @unique
 
   address           Address                     @relation(fields: [addressId], references: [id])
@@ -43,6 +44,7 @@ model Establishment {
   name                  String
   email                 String?
   phone                 String
+  cnpj                  String                      @unique
   addressId             Int                         @unique
 
   address               Address                     @relation(fields: [addressId], references: [id])

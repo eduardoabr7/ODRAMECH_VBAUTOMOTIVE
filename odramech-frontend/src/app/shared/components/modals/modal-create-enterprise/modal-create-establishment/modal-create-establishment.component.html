@@ -5,38 +5,31 @@
       type="button"
       class="btn-close btn-close-white"
       aria-label="Close"
-      (click)="attemptClose()"
+      (click)="attemptClose(true)"
     ></button>
   </div>
 
   <div class="modal-body bg-light">
     <form #form="ngForm">
       <div class="container">
-
-        <div class="row">
-          <div class="col-12 imgUp">
-            <div class="imagePreview">
-              <img 
-                [src]="imageUrl ? imageUrl : '../../../../../assets/no-photo-user-default.png'" 
-                alt="User image"/>
-            </div>
-            <label class="btn btn-primary upload"> Selecionar foto
+      
+        <div class="row" style="padding-left: 0;">
+          <div class="imagePreview" style="padding-left: 0;">
+            <img 
+              [src]="imageUrl ? imageUrl : '../../../../../assets/no-photo-user-default.png'" 
+              alt="User image"/>
+            <label class="btn btn-primary upload" style="margin-bottom: 0 !important;"> Selecionar foto
               <input 
                 type="file" 
-                class="uploadFile img" 
-                value="Upload Photo" 
+                class="inputSelectPhoto" 
                 accept="image/png, image/jpeg"
-                (change)="generatePreview($event)"
-                style="
-                  width: 0px;
-                  height: 0px;
-                  overflow: hidden;">
+                (change)="generatePreview($event)">
             </label>
           </div>
         </div>
-
-        <div class="row">
-          <div class="col-12 mb-4">
+      
+        <div class="input-group row mt-4">
+          <div class="col-12 mb-3">
             <label for="name" class="form-label m-0">Nome</label>
             <input 
               type="text" 
@@ -48,14 +41,13 @@
               [(ngModel)]="name"
               required
               pattern="^[A-Za-zÀ-ÿ0-9]+(?:[ -][A-Za-zÀ-ÿ0-9]+)*$">
+          
             <span *ngIf="nameRef.invalid && nameRef.value" class="text-danger">
               Insira um nome válido
             </span>
           </div>
-        </div>
-
-        <div class="row">
-          <div class="col-12 mb-4">
+        
+          <div class="col-12 mb-3">
             <label for="email" class="form-label">Email</label>
             <input 
               type="email" 
@@ -64,33 +56,18 @@
               name="email"
               placeholder="E-mail da empresa"
               [(ngModel)]="email"
-              required
-              email>
+              required>
           </div>
+        
         </div>
-
-        <div class="row">
-          <div class="col-12 mb-4">
-            <label for="phone" class="form-label">Telefone para contato</label>
-            <input 
-              type="text" 
-              class="form-control" 
-              id="phone" 
-              name="phone"
-              placeholder="Telefone para contato"
-              [(ngModel)]="phone"
-              required
-              email>
-          </div>
-        </div>
-
+      
       </div>
 
       <div class="modal-footer">
         <button
           type="button"
           class="btn btn-secondary closeModal"
-          (click)="attemptClose()">
+          (click)="attemptClose(true)">
           Fechar
         </button>
 

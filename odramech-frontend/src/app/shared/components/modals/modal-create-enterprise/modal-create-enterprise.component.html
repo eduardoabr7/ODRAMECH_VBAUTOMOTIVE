@@ -12,62 +12,124 @@
   <div class="modal-body bg-light">
     <form #form="ngForm">
       <div class="container">
+      
+        <div class="row" style="padding-left: 0;">
 
-        <div class="row">
-          <div class="col-12 imgUp">
-            <div class="imagePreview">
+          <div class="
+            col-12 
+            offset-sm-0
+            col-sm-6
+            col-lg-4">
+            <h5 class="title p-0">Foto de perfil</h5>
+            <div class="imagePreview" style="padding-left: 0;">
               <img 
                 [src]="imageUrl ? imageUrl : '../../../../../assets/no-photo-user-default.png'" 
                 alt="User image"/>
+              <label class="btn btn-primary upload" style="margin-bottom: 0 !important;"> Selecionar foto
+                <input 
+                  type="file" 
+                  class="inputSelectPhoto" 
+                  accept="image/png, image/jpeg"
+                  (change)="generatePreview($event)">
+              </label>
             </div>
-            <label class="btn btn-primary upload"> Selecionar foto
-              <input 
-                type="file" 
-                class="uploadFile img" 
-                value="Upload Photo" 
-                accept="image/png, image/jpeg"
-                (change)="generatePreview($event)"
-                style="
-                  width: 0px;
-                  height: 0px;
-                  overflow: hidden;">
-            </label>
           </div>
-        </div>
 
-        <div class="row">
-          <div class="col-12 mb-4">
-            <label for="name" class="form-label m-0">Nome</label>
+          <div class="
+            col-12 
+            mt-3
+            col-sm-6 
+            col-lg-8
+            mt-sm-0">
+            <div class="input-group row ml-2">
+              <h5 class="title">Informações</h5>
+              <div class="col-12">
+                <label for="name" class="form-label">Nome</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  autocomplete="off"
+                  id="name" 
+                  name="name"
+                  #nameRef="ngModel"
+                  placeholder="Insira o nome"
+                  [(ngModel)]="name"
+                  required
+                  pattern="^[A-Za-zÀ-ÿ0-9]+(?:[ -][A-Za-zÀ-ÿ0-9]+)*$">
+                <span *ngIf="nameRef.invalid && nameRef.value" class="text-danger">
+                  Insira um nome válido
+                </span>
+              </div>
+              <div class="col-12">
+                <label for="email" class="form-label">E-mail</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  autocomplete="off"
+                  id="email" 
+                  name="email"
+                  placeholder="Insira o e-mail"
+                  [(ngModel)]="email"
+                  required
+                  email>
+              </div>
+              <div class="col-12">
+                <label for="phone" class="form-label">Telefone</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  autocomplete="off"
+                  id="phone" 
+                  name="phone"
+                  placeholder="Insira o telefone"
+                  [(ngModel)]="phone"
+                  required
+                  email>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      
+        <div class="input-group row mt-4">
+          <h5 class="title p-l-2">Endereço</h5>
+          <div class="
+            col-12
+            mb-3
+            col-sm-6 
+            mb-sm-0"
+          >
+            <label for="state" class="form-label m-0">Estado</label>
             <input 
               type="text" 
               class="form-control" 
-              id="name" 
-              #nameRef="ngModel"
-              name="name"
-              placeholder="Nome da empresa"
-              [(ngModel)]="name"
-              required
-              pattern="^[A-Za-zÀ-ÿ0-9]+(?:[ -][A-Za-zÀ-ÿ0-9]+)*$">
-            <span *ngIf="nameRef.invalid && nameRef.value" class="text-danger">
-              Insira um nome válido
-            </span>
+              id="state" 
+              name="state"
+              autocomplete="off"
+              [(ngModel)]="state"
+              required>
           </div>
-        </div>
-
-        <div class="row">
-          <div class="col-12 mb-4">
-            <label for="email" class="form-label">Email</label>
+        
+          <div class="
+            col-12 
+            mb-3
+            col-sm-6 
+            mb-sm-0"
+          >
+            <label for="city" class="form-label">Cidade</label>
             <input 
-              type="email" 
+              type="text" 
               class="form-control" 
-              id="email" 
-              name="email"
-              placeholder="E-mail da empresa"
-              [(ngModel)]="email"
+              autocomplete="off"
+              id="city" 
+              name="city"
+              [(ngModel)]="city"
               required
               email>
           </div>
+        
         </div>
+      
       </div>
 
       <div class="modal-footer">
@@ -82,7 +144,7 @@
           type="submit"
           class="btn btn-primary"
           (click)="prosseguir(form)"
-          [disabled]="form.invalid">
+          >
           Prosseguir
         </button>
       </div>

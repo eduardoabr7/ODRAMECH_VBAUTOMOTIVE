@@ -26,7 +26,9 @@ export class BaseModalComponent<T = any> {
   /** 🟡 Fechar com verificação de alterações não salvas */
   attemptClose(questWantToExit?: boolean): void {
 
+    console.log('atempt e questwant: ', questWantToExit)
     if (this.hasUnsavedChanges || questWantToExit) {
+      console.log('caiu aqui')
       const wantsToExit = confirm(
         'Você tem certeza que quer sair sem salvar? As alterações serão perdidas.'
       );

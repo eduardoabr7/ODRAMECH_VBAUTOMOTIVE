@@ -14,6 +14,30 @@ html, body {
   overflow: hidden;
 }
 
+.inputSelectPhoto {
+  width: 0px;
+  height: 0px;
+  overflow: hidden;
+  border: 0 !important;
+  border-bottom-left-radius: 10px !important;
+  border-bottom-right-radius: 10px !important;
+}
+
+.imagePreview {
+  border-bottom-left-radius: 10px !important;
+  border-bottom-right-radius: 10px !important; 
+}
+
+.imagePreview, .imagePreview > img {
+  border-top-left-radius: 10px !important;
+  border-top-right-radius: 10px !important;
+}
+
+.imagePreview, .imagePreview > label {
+  border-bottom-left-radius: 10px !important;
+  border-bottom-right-radius: 10px !important;  
+}
+
 [disabled] {
   cursor: not-allowed !important;
   pointer-events: all !important;
@@ -21,6 +45,16 @@ html, body {
 
 .text-danger{
   font-size: 12px;
+}
+
+h5.title {
+  color: #414141;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+}
+
+.input-group label {
+  color: #7a7a7a;
 }
 
 .toggle-btn {
@@ -163,3 +197,136 @@ html, body {
       color: #4faf42;
     }
   }
+
+  /* ============================================
+   MODAL GLOBAL — APLICA A TODAS AS MODAIS
+   ============================================ */
+
+/* Conteúdo principal */
+.modal-content {
+  border-radius: 16px !important;
+  border: none !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.22) !important;
+  background-color: #efefef !important;
+}
+
+/* Cabeçalho */
+.modal-header {
+  background: transparent !important;
+  border-bottom: none !important;
+  padding-bottom: 10px !important;
+  margin-bottom: 5px !important;
+}
+
+.modal-title {
+  font-size: 20px !important;
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+  font-weight: 600 !important;
+  color: #4e4e4e !important;
+}
+
+/* Ícone de fechar */
+.modal-header .btn-close,
+.modal-header .close {
+  filter: brightness(0) saturate(0%) !important;
+  opacity: 0.65 !important;
+  transition: 0.2s ease;
+}
+
+.modal-header .btn-close:hover,
+.modal-header .close:hover {
+  opacity: 1 !important;
+  transform: scale(1.1);
+}
+
+/* Corpo */
+.modal-body {
+  padding-top: 5px !important;
+  background-color: #efefef !important;
+  border-radius: 50px;
+}
+
+/* Inputs */
+.modal-content .form-control {
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  font-size: 15px !important;
+  border: 1px solid #c9c9c9 !important;
+  background-color: #fafafa !important;
+  transition: 0.18s ease !important;
+}
+
+.modal-content .form-control:focus {
+  border-color: #2873c5 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(40,115,197,0.22) !important;
+}
+
+/* Labels */
+.modal-content label {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  margin-bottom: 4px !important;
+}
+
+/* Rodapé */
+.modal-footer {
+  border-top: none !important;
+  padding-top: 5px !important;
+}
+
+/* Botão cancelar */
+.modal-footer .btn-secondary,
+.btn-cancel {
+  background-color: #b6b6b6 !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  border: none !important;
+  padding: 7px 20px !important;
+  font-size: 15px !important;
+  transition: 0.2s ease !important;
+}
+
+.modal-footer .btn-secondary:hover,
+.btn-cancel:hover {
+  background-color: #9a9a9a !important;
+}
+
+/* Botão principal */
+.modal-footer .btn-primary {
+  background-color: #2873c5 !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  padding: 7px 22px !important;
+  font-size: 15px !important;
+  border: none !important;
+  transition: 0.2s ease !important;
+}
+
+.modal-footer .btn-primary:hover {
+  background-color: #1e5ba1 !important;
+}
+
+/* Títulos de seção dentro da modal */
+.modal-section-title {
+  font-size: 17px !important;
+  font-weight: 600 !important;
+  color: #3b3b3b !important;
+  margin-top: 10px !important;
+  margin-bottom: 10px !important;
+}
+
+/* Scroll suave para modais longas */
+.modal-body {
+  scrollbar-color: #ccc #f2f2f2;
+  scrollbar-width: thin;
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 20px;
+}

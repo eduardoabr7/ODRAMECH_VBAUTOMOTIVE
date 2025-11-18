@@ -130,8 +130,11 @@ export class LoginComponent implements OnInit {
 
   openCreateEnterpriseModal() {
     const modalRef = this._bsModalService.show(ModalCreateEnterprise, {
-      initialState: { title: 'Criar empresa' },
-      class: 'modal-md'
+      initialState: { 
+        title: 'Criar empresa', 
+        withCreateEstablisment: true 
+      },
+      class: 'modal-lg'
     });
 
     modalRef.onHidden?.subscribe(() => {

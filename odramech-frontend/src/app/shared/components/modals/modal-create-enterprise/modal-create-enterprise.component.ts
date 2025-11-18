@@ -5,6 +5,7 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
 import { ModalCreateEstablishmentComponent } from './modal-create-establishment/modal-create-establishment.component';
+import { Address } from '@shared/models/Address';
 
 @Component({
   selector: 'app-modal-create-enterprise',
@@ -25,9 +26,14 @@ export class ModalCreateEnterprise extends BaseModalComponent {
 
   name: string;
   email: string;
+  state: string;
+  city: string;
+  phone: string;
+  address: Address
+
   file: File | null = null; //binary file
   imageUrl: string | ArrayBuffer | null = null;
-  withCreateEstablisment: boolean = true;
+  withCreateEstablisment: boolean = false;
 
   ngOnInit() {
   }
@@ -48,18 +54,14 @@ export class ModalCreateEnterprise extends BaseModalComponent {
   }
 
   prosseguir(form: NgForm) {
-    if (form.invalid || !this.email || !this.name) {
-      this._toastr.error('Preencha todos os campos obrigatórios.','Impossível prosseguir, preencha todos os campos');
-      return;
-    }
-
+    console.log(form.value)
     if (this.withCreateEstablisment) {
 
       this.bsModalRef.hide()
 
       this._bsModalSvc.show(ModalCreateEstablishmentComponent, {
         initialState: { title: 'Criar estabelecimento' },
-        class: 'modal-md',
+        class: 'modal-lg',
       })
     }
   }

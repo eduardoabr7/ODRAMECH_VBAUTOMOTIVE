@@ -1,28 +1,69 @@
-// arquivo de base
-
 <div class="modal-content">
   <div class="modal-header text-white">
-    <h5 class="modal-title">{{ title }}</h5>
+    <h5 class="modal-title">{{ title || 'Cadastro' }}</h5>
     <button
       type="button"
       class="btn-close btn-close-white"
       aria-label="Close"
-      (click)="hideModal()"
+      (click)=""
     ></button>
   </div>
 
   <div class="modal-body bg-light">
-    content
-  </div>
+    <form #form="ngForm">
+      <div class="container">
+      
+        <div class="row mt-4">
+          <div class="col-12 mb-3">
+            <label for="name" class="form-label m-0">Nome</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="name" 
+              #nameRef="ngModel"
+              name="name"
+              placeholder="Nome da empresa"
+              [(ngModel)]="name"
+              required
+              pattern="^[A-Za-zÀ-ÿ0-9]+(?:[ -][A-Za-zÀ-ÿ0-9]+)*$">
+          
+            <span *ngIf="nameRef.invalid" class="text-danger">
+              Insira um nome válido
+            </span>
+          </div>
+        
+          <div class="col-12 mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input 
+              type="email" 
+              class="form-control" 
+              id="email" 
+              name="email"
+              placeholder="E-mail da empresa"
+              [(ngModel)]="email"
+              required
+              email>
+          </div>
+        
+        </div>
+      
+      </div>
 
-  <div class="modal-footer">
-    <button
-      type="button"
-      class="btn btn-secondary closeModal"
-      (click)="hideModal()"
-    >
-      Fechar
-    </button>
-    <button type="button" class="btn btn-primary">Salvar</button>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary closeModal"
+          (click)="">
+          Fechar
+        </button>
+
+        <button 
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="form.invalid">
+          Prosseguir
+        </button>
+      </div>
+    </form>
   </div>
 </div>
