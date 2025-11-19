@@ -43,7 +43,7 @@
             <div class="input-group row ml-2">
               <h5 class="title">Informações</h5>
               <div class="col-12">
-                <label for="name" class="form-label">Nome Empresa</label>
+                <label for="name" class="form-label">Nome Estabelecimento</label>
                 <input 
                   type="text" 
                   class="form-control" 
@@ -52,7 +52,7 @@
                   name="name"
                   #nameRef="ngModel"
                   placeholder="Insira o nome"
-                  [(ngModel)]="enterprise.name"
+                  [(ngModel)]="formData.name"
                   required
                   pattern="^[A-Za-zÀ-ÿ0-9]+(?:[ -][A-Za-zÀ-ÿ0-9]+)*$">
                 <span *ngIf="nameRef.invalid && nameRef.value" class="text-danger">
@@ -60,7 +60,7 @@
                 </span>
               </div>
               <div class="col-12">
-                <label for="email" class="form-label">E-mail Empresarial</label>
+                <label for="email" class="form-label">E-mail</label>
                 <input 
                   type="email" 
                   class="form-control" 
@@ -68,7 +68,7 @@
                   id="email" 
                   name="email"
                   placeholder="Insira o e-mail"
-                  [(ngModel)]="enterprise.email"
+                  [(ngModel)]="formData.email"
                   required
                   email>
               </div>
@@ -81,7 +81,7 @@
                   id="phone" 
                   name="phone"
                   placeholder="Insira o telefone"
-                  [(ngModel)]="enterprise.phone"
+                  [(ngModel)]="formData.phone"
                   required
                   >
               </div>
@@ -94,7 +94,7 @@
                   id="cnpj" 
                   name="cnpj"
                   placeholder="Insira o CNPJ"
-                  [(ngModel)]="enterprise.cnpj"
+                  [(ngModel)]="formData.cnpj"
                   required
                   >
               </div>
@@ -119,7 +119,7 @@
               id="country" 
               name="country"
               autocomplete="off"
-              [(ngModel)]="enterprise.address.country"
+              [(ngModel)]="formData.address.country"
               required>
           </div>
 
@@ -136,7 +136,7 @@
               id="zipCode" 
               name="zipCode"
               autocomplete="off"
-              [(ngModel)]="enterprise.address.zipCode"
+              [(ngModel)]="formData.address.zipCode"
               required>
           </div>
 
@@ -153,7 +153,7 @@
               id="district" 
               name="district"
               autocomplete="off"
-              [(ngModel)]="enterprise.address.district"
+              [(ngModel)]="formData.address.district"
               required>
           </div>
         
@@ -170,7 +170,7 @@
               autocomplete="off"
               id="city" 
               name="city"
-              [(ngModel)]="enterprise.address.city"
+              [(ngModel)]="formData.address.city"
               required
               >
           </div>
@@ -189,7 +189,7 @@
               id="street" 
               name="street"
               required
-              [(ngModel)]="enterprise.address.street"
+              [(ngModel)]="formData.address.street"
               >
           </div>
 
@@ -207,7 +207,7 @@
               id="number" 
               name="number"
               required
-              [(ngModel)]="enterprise.address.number"
+              [(ngModel)]="formData.address.number"
               >
           </div>
 
@@ -224,7 +224,7 @@
               autocomplete="off"
               id="complement" 
               name="complement"
-              [(ngModel)]="enterprise.address.complement"
+              [(ngModel)]="formData.address.complement"
               >
           </div>
         
@@ -233,22 +233,32 @@
       </div>
 
       <div class="modal-footer">
-        <button
-          type="button"
-          class="btn btn-secondary closeModal"
-          (click)="attemptClose()">
-          Fechar
-        </button>
+        <ng-container *ngIf="!withCadEnterprise; else btnCancelar">
+          <button
+            type="button"
+            class="btn btn-secondary closeModal"
+            (click)="attemptClose(true)">
+            Fechar
+          </button>
+        </ng-container>
 
         <button 
           type="submit"
           class="btn btn-primary"
-          (click)="prosseguir(form)"
           [disabled]="form.invalid"
-          >
+          (click)="prosseguir(form)">
           Prosseguir
         </button>
       </div>
     </form>
   </div>
 </div>
+
+<ng-template #btnCancelar>
+  <button
+    type="button"
+    class="btn btn-secondary closeModal"
+    (click)="attemptClose(true)">
+    Voltar
+  </button>
+</ng-template>

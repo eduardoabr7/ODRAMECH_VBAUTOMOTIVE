@@ -10,7 +10,8 @@ import { APP_GUARD } from '@nestjs/core'
 import { NoPublicRoutesGuard } from './shared/guards/no-public-routes.guard'
 import { SharedModule } from './shared/shared.module';
 import { EnterpriseModule } from './enterprise/enterprise.module';
-import { EstablishmentModule } from './enterprise/establishment/establishment.module';
+import { EstablishmentModule } from './establishment/establishment.module';
+import { UserCorporationModule } from './user-corporations/user-corporations.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -25,7 +26,8 @@ import { EstablishmentModule } from './enterprise/establishment/establishment.mo
     AuthModule,
     SharedModule,
     EnterpriseModule,
-    EstablishmentModule
+    EstablishmentModule,
+    UserCorporationModule
   ],
   controllers: [AppController],
   providers: [

@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { CustomLogger } from './shared/services/custom-logger.service'
 import * as dotenv from 'dotenv';
 import * as cookieParser from 'cookie-parser';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 dotenv.config()
 
 async function bootstrap() {
@@ -27,6 +27,43 @@ async function bootstrap() {
       whitelist: true, // remove campos não declarados no DTO
       forbidNonWhitelisted: true, // erro se passar campo não esperado
       transform: true, // transforma para a classe DTO
+      exceptionFactory: (errors) => {
+        // Função recursiva para extrair TODOS os erros
+        const extractErrors = (errors: any[], parentPath = ''): any[] => {
+          const allErrors: any[] = [];
+          
+          errors.forEach(error => {
+            const currentPath = parentPath 
+              ? `${parentPath}.${error.property}` 
+              : error.property;
+            
+            if (error.constraints) {
+              allErrors.push({
+                property: currentPath,
+                value: error.value,
+                constraints: error.constraints
+              });
+            }
+            
+            if (error.children && error.children.length > 0) {
+              allErrors.push(...extractErrors(error.children, currentPath));
+            }
+          });
+          
+          return allErrors;
+        };
+        
+        const detailedErrors = extractErrors(errors);
+        
+        console.log('\n🔴 ERROS DE VALIDAÇÃO DETALHADOS:');
+        console.log(JSON.stringify(detailedErrors, null, 2));
+        
+        return new BadRequestException({
+          statusCode: 400,
+          message: 'Validation failed',
+          errors: detailedErrors
+        });
+      },
     }),
   );
 

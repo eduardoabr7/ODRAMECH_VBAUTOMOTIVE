@@ -10,7 +10,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { ModalCreateEnterprise } from '@shared/components/modals/modal-create-enterprise/modal-create-enterprise.component';
 import { UserLogged } from '@shared/models/UserLogged';
-import { CorporationService } from '@shared/services/corporation.service';
+import { UserCorporationService } from '@shared/services/user-corporation.service';
 import { of, switchMap, tap } from 'rxjs';
 import { ModalSelectEstablishment } from '@shared/components/modals/modal-select-establishment/modal-select-establishment.component';
 @Component({
@@ -26,7 +26,7 @@ export class LoginComponent implements OnInit {
     private readonly _toastr: ToastrService,
     private readonly _route: Router,
     private readonly _bsModalService: BsModalService,
-    private readonly _corporationService : CorporationService
+    private readonly _corporationService : UserCorporationService
   ){}
   
   nomeEstabelecimento: any;
@@ -47,7 +47,7 @@ export class LoginComponent implements OnInit {
 
     if (!this.dataUserOrEmail || !this.password) {
       this.loadingLogin = false;
-      this._toastr.error('Preencha todas as informações', 'Acesso negado');
+      this._toastr.warning('Preencha todas as informações', 'Acesso negado');
       return;
     }
 
@@ -104,7 +104,7 @@ export class LoginComponent implements OnInit {
             // ];
 
             if (user.id === 1 && userCorporations.length === 0) {
-              return this.openCreateEnterpriseModal();
+              return this.openCreateEnterpriseModal(user.id);
             }
 
             if (userCorporations[0].establishments.length > 1) {
@@ -128,20 +128,19 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  openCreateEnterpriseModal() {
+  async openCreateEnterpriseModal(idUser?: number) {
     const modalRef = this._bsModalService.show(ModalCreateEnterprise, {
       initialState: { 
         title: 'Criar empresa', 
-        withCreateEstablisment: true 
+        withCreateEstablisment: true,
+        userId: idUser
       },
       class: 'modal-lg'
     });
 
-    modalRef.onHidden?.subscribe(() => {
-      this.loadingLogin = false;
-    });
+    const result = await modalRef.content.onHide()
 
-    return modalRef.content.onClose.asObservable();
+    if(!!result) this._route.navigateByUrl('/home');
   }
 
   openSelectEstablishmentModal() {

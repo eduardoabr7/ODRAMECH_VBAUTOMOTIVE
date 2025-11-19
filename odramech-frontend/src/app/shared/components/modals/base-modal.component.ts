@@ -2,8 +2,8 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
 import { Subject } from 'rxjs';
 
 export class BaseModalComponent<T = any> {
-  title?: string;
-  message?: string;
+  title: string;
+  message: string;
   hasUnsavedChanges = false;
   onClose: Subject<T | null> = new Subject<T | null>();
 
@@ -26,9 +26,7 @@ export class BaseModalComponent<T = any> {
   /** 🟡 Fechar com verificação de alterações não salvas */
   attemptClose(questWantToExit?: boolean): void {
 
-    console.log('atempt e questwant: ', questWantToExit)
     if (this.hasUnsavedChanges || questWantToExit) {
-      console.log('caiu aqui')
       const wantsToExit = confirm(
         'Você tem certeza que quer sair sem salvar? As alterações serão perdidas.'
       );
@@ -39,6 +37,12 @@ export class BaseModalComponent<T = any> {
     }
 
     this.cancel();
+  }
+
+  onHide(): Promise<any> {
+    return new Promise(resolve => {
+      this.onClose.subscribe(result => resolve(result));
+    });
   }
 
   /** ⚫ Fecha a modal direto (uso interno) */

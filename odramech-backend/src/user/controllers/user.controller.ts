@@ -10,7 +10,7 @@ export class UserController {
 
     @Get('corporations/:idUser')
     getTeste(@Param('idUser', ParseIntPipe) idUser: number){
-        return this._userService.userCorporationById(idUser);
+        return this._userService.getUserCorporationById(idUser);
     }
 
 }

@@ -8,7 +8,7 @@ export class UserService {
         private readonly _prismaService: PrismaService
     ){}
     
-    async userCorporationById(idUser: number) {
+    async getUserCorporationById(idUser: number) {
         const user = await this._prismaService.user.findUnique({ 
             where: {
                 id: idUser

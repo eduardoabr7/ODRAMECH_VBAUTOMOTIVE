@@ -1,6 +1,7 @@
-import { Controller, Get, LoggerService, Param } from "@nestjs/common";
+import { Body, Controller, Get, LoggerService, Param, Post } from "@nestjs/common";
 import { EnterpriseService } from "../services/enterprise.service";
 import { CustomLogger } from "src/shared/services/custom-logger.service";
+import { EnterpriseWithEstablishmentDTO } from "../dto/enterprise-with-establishment.dto";
 
 @Controller('enterprise')
 export class EnterpriseController {
@@ -27,6 +28,12 @@ export class EnterpriseController {
     getAllEstablishmentsFromEnterprise(@Param('idEnterprise') idEnterprise: number){
         this._logger.log('Retornando estabelecimentos da empresa ID: '+idEnterprise, '#00ffb2');
         return this._enterpriseService.getAllEstablishmentsFromEnterprise(idEnterprise);
+    }
+
+    @Post('establishment')
+    createEnterpriseWithEstablishment(
+        @Body() body: EnterpriseWithEstablishmentDTO) {
+        return this._enterpriseService.createEnterpriseWithEstablishment(body)
     }
 
 }

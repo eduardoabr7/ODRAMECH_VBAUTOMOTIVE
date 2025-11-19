@@ -269,16 +269,33 @@ h5.title {
   margin-bottom: 4px !important;
 }
 
+/* Aplicar a todas as labels (geral) */
+label:has(+ input[required]), 
+label:has(+ textarea[required]), 
+label:has(+ select[required]) {
+    position: relative;
+}
+
+/* Insere o asterisco vermelho após o texto da label */
+label:has(+ input[required])::after,
+label:has(+ textarea[required])::after,
+label:has(+ select[required])::after {
+    content: ' *';
+    color: rgb(201, 83, 83); 
+    font-weight: bold;
+}
+
 /* Rodapé */
 .modal-footer {
   border-top: none !important;
-  padding-top: 5px !important;
+  padding-top: 20px !important;
+  padding-bottom: 0 !important;
 }
 
 /* Botão cancelar */
 .modal-footer .btn-secondary,
 .btn-cancel {
-  background-color: #b6b6b6 !important;
+  background-color: #344c77 !important;
   color: #fff !important;
   border-radius: 8px !important;
   border: none !important;
@@ -289,7 +306,7 @@ h5.title {
 
 .modal-footer .btn-secondary:hover,
 .btn-cancel:hover {
-  background-color: #9a9a9a !important;
+  background-color: #203150 !important;
 }
 
 /* Botão principal */

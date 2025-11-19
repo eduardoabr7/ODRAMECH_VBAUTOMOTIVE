@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
-import { BaseModalComponent } from '../../base-modal.component';
+import { BaseModalComponent } from '../base-modal.component';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
+import { Establishment } from '@shared/models/Establishment';
 
 @Component({
   selector: 'app-modal-create-establishment',
@@ -20,11 +21,26 @@ export class ModalCreateEstablishmentComponent extends BaseModalComponent {
       super(bsModalRef);
   }
 
-  name: string;
-  email: string;
-  phone: string;
   imageUrl: string | ArrayBuffer | null = null;
   file: File | null = null; //binary file
+
+  withCadEnterprise: boolean = false;
+
+  formData: Establishment = {
+    name: '',
+    email: '',
+    phone: '',
+    cnpj: '',
+    address: {
+      street: '',
+      number: '',
+      complement: '',
+      city: '',
+      district: '',
+      zipCode: '',
+      country: ''
+    }
+  };
 
   generatePreview(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -39,5 +55,18 @@ export class ModalCreateEstablishmentComponent extends BaseModalComponent {
       };
       reader.readAsDataURL(file);
     }
+  }
+
+  prosseguir(form: NgForm) {
+
+    if(form.invalid){
+      this._toastr.error('Preencha corretamente todas as informações obrigatórias.', 'Erro de Validação');
+
+      return
+    }
+
+    // se foi chamado juntamente ao cadastro de empresa, só confirma pra fechar o modal enviando os dados pra modal pai
+    if(this.withCadEnterprise)
+      this.confirm(this.formData)
   }
 }

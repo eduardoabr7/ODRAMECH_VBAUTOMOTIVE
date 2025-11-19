@@ -1,13 +1,14 @@
+label, input {
+    font-size: 12px;
+}
+
 .gradient-form {
-    background: linear-gradient(to left, #9aa7e4, #5185e6, #6ea1ff);
+    background-color: #3d5685;
 }
 
 .gradient-custom-2 {
-    background: #fccb90;
-
-    background: -webkit-linear-gradient(to right, #9aa7e4, #5185e6, #1164ff);
-
-    background: linear-gradient(to right, #9aa7e4, #5185e6, #1164ff);
+    background-color: #223557;
+    color: white;
 }
 
 .gradient-form {

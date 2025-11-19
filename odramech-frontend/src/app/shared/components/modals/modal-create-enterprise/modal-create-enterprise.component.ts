@@ -1,11 +1,24 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
 import { BaseModalComponent } from '../base-modal.component';
 import { FormsModule, NgForm } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
-import { ModalCreateEstablishmentComponent } from './modal-create-establishment/modal-create-establishment.component';
+import { ModalCreateEstablishmentComponent } from '../modal-create-establishment/modal-create-establishment.component';
 import { Address } from '@shared/models/Address';
+import { Enterprise } from '@shared/models/Enterprise';
+import { Establishment } from '@shared/models/Establishment';
+import { NestAPI } from '@shared/services/nest-api.service';
+import { EnterpriseService } from '@shared/services/enterprise.service';
+import { EnterpriseWithEstablishment } from '@shared/models/EnterpriseWithEstablishment';
+import { HttpErrorResponse } from '@angular/common/http';
+import { UserCorporation, Role } from '@shared/models/UserCorporation';
+import { UserCorporationService } from '@shared/services/user-corporation.service';
+
+interface IdsReturn {
+  idEtp: number,
+  idEst: number
+}
 
 @Component({
   selector: 'app-modal-create-enterprise',
@@ -19,21 +32,33 @@ export class ModalCreateEnterprise extends BaseModalComponent {
   constructor(
     bsModalRef: BsModalRef,
     private readonly _bsModalSvc: BsModalService,
-    private readonly _toastr: ToastrService
+    private readonly _toastr: ToastrService,
+    private readonly _enterpriseService: EnterpriseService,
+    private readonly _userCorporationService: UserCorporationService
   ) {
       super(bsModalRef);
   }
 
-  name: string;
-  email: string;
-  state: string;
-  city: string;
-  phone: string;
-  address: Address
-
+  @Input() userId: number;
+  
   file: File | null = null; //binary file
   imageUrl: string | ArrayBuffer | null = null;
   withCreateEstablisment: boolean = false;
+
+  enterprise: Enterprise = {
+    name: '',
+    email: '',
+    phone: '',
+    cnpj: '',
+    address: {
+      street: '',
+      district: '',
+      number: '',
+      city: '',
+      zipCode: '',
+      country: ''
+    }
+  };
 
   ngOnInit() {
   }
@@ -53,16 +78,76 @@ export class ModalCreateEnterprise extends BaseModalComponent {
     }
   }
 
-  prosseguir(form: NgForm) {
-    console.log(form.value)
-    if (this.withCreateEstablisment) {
+  afterCreateEstablishment(): boolean {
+    return this.withCreateEstablisment
+  }
 
-      this.bsModalRef.hide()
+  async openModalCreateEstablishment() {
 
-      this._bsModalSvc.show(ModalCreateEstablishmentComponent, {
-        initialState: { title: 'Criar estabelecimento' },
-        class: 'modal-lg',
-      })
+    const bsModalRef = this._bsModalSvc.show(ModalCreateEstablishmentComponent, {
+      initialState: { 
+        title: 'Criar estabelecimento',
+        withCadEnterprise: true,
+      },
+      class: 'modal-lg',
+    })
+    return await bsModalRef.content.onHide()
+    
+  }
+
+  haveLoadPhoto(): boolean {
+    return !!this.file
+  }
+
+  createFirstUserAdminCorporation(idsEstEtp: IdsReturn) {
+    if(!this.userId) return
+
+    const { idEtp, idEst } = idsEstEtp
+
+    const dataToSend: UserCorporation = {
+      idUser: this.userId,
+      idEnterprise: idEtp,
+      idEstablishment: idEst,
+      role: Role.ADMIN
+    }
+
+    this._userCorporationService.createUserCorporation(dataToSend).subscribe(() => {
+      this.confirm(true);
+    })
+  }
+
+  async prosseguir(form: NgForm) {
+
+    if(form.valid) {
+
+      if (this.afterCreateEstablishment()) {
+        // captura e guarda os dados de empresa
+        const formEnterprise = this.enterprise
+
+        //espera retornar o estabelecimento
+        const formEstablishment = await this.openModalCreateEstablishment()
+
+        if(!formEstablishment) return
+
+        const dataToSend: EnterpriseWithEstablishment = {
+          enterprise: formEnterprise,
+          establishment: formEstablishment
+        }
+
+        this._enterpriseService.createEnterpriseWithEstablishment(dataToSend).subscribe({
+          next: (rtrn) => {
+            this.createFirstUserAdminCorporation(rtrn)
+          },
+          error: (err: HttpErrorResponse) => {
+            this._toastr.error(err.message,'Erro ao criar empresa')
+          }
+        });
+      }
+
+    }
+
+    else {
+      this._toastr.error('Preencha corretamente todas as informações obrigatórias.', 'Erro de Validação');
     }
   }
 
