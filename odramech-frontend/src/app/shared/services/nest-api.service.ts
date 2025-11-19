@@ -1,8 +1,8 @@
 // src/app/shared/services/nest-api.service.ts
 
-import { HttpClient, HttpEvent, HttpHandlerFn, HttpRequest } from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { env } from '../../../environments/environment'; // Importe o arquivo de ambiente
+import { env } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'

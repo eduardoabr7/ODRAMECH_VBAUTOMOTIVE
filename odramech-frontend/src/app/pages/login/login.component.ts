@@ -138,9 +138,16 @@ export class LoginComponent implements OnInit {
       class: 'modal-lg'
     });
 
+    modalRef.onHidden?.subscribe(() => { // quando fecha no esc ou clicando no backdrop
+      this.loadingLogin = false;
+    });
+
     const result = await modalRef.content.onHide()
 
-    if(!!result) this._route.navigateByUrl('/home');
+    if(!!result){
+      this._route.navigateByUrl('/home');
+      this._toastr.success('Empresa criada', 'Sucesso')
+    }
   }
 
   openSelectEstablishmentModal() {

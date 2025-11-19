@@ -5,7 +5,7 @@ import { ToastrModule } from 'ngx-toastr';
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { ConnectionInterceptor } from '@shared/services/connection-interceptor.service';
+import { ConnectionInterceptor } from '@shared/interceptors/connection-interceptor.service';
 import { initializeApp } from './app.initializer';
 import { AuthService } from '@shared/services/auth.service';
 import { ModalModule } from 'ngx-bootstrap/modal';
