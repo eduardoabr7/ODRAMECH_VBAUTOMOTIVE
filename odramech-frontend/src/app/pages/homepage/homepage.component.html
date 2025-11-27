@@ -1,9 +1,148 @@
-<div class="container p-3 m-0">
-    <div class="row">
-        <div class="col-sm-12 saudations">
-            <h4>Olá, Eduardo Abreu</h4>
-            <small>Acesse seus serviços em andamento</small>
-            <h6>Estabelecimento: VB-Automotive Alvorada</h6>
+<div class="row pt-3 pb-3">
+    <div class="col-sm-12 saudations">
+        <h4>Olá, Eduardo Abreu</h4>
+        <small>Bem vindo ao Odramech, o que você deseja fazer?</small>
+        <h6>Estabelecimento: VB-Automotive Alvorada</h6>
+    </div>
+</div>
+
+<div class="row widgets">
+    <div class="col-12">
+        <div class="row primary-widgets pb-2">
+            <div class="
+            col-md-3
+            ">
+                <div class="pwidget d-flex justify-content-center align-items-center" style="background-color: rgb(0, 110, 255);">
+                    <i class="fa-solid fa-plus" 
+                    style="
+                    color: rgb(255, 255, 255); 
+                    padding: 10px; 
+                    padding-right: 10px;
+                    font-size: 35px;
+                    "></i>
+                    Nova Ordem de Serviço
+                </div>
+            </div>
+            <div class="
+            col-md-3
+            ">
+                <div class="pwidget d-flex justify-content-center align-items-center" style="background-color: #497ee0;">
+                    <i class="fa-solid fa-car" 
+                    style="
+                    color: #ffffff;
+                    font-size: 25px;
+                    padding-right: 10px;
+                    font-size: 35px;
+                    "></i>
+                    Cadastrar Novo Veículo
+                </div>
+            </div>
+            <div class="
+            col-md-3
+            ">
+                <div class="pwidget d-flex justify-content-center align-items-center" style="background-color: #218dd4;">
+                    <i class="fa-solid fa-users" 
+                    style="
+                    color: #ffffff;
+                    font-size: 35px;
+                    padding-right: 10px
+                    "></i>
+                    Cadastrar Clientes
+                </div>
+            </div>
+            <div class="
+            col-md-3
+            ">
+                <div class="pwidget d-flex justify-content-center align-items-center" 
+                style="
+                background-color: #8a8a8a;
+                ">
+                    <i class="fa-solid fa-list-check" 
+                    style="
+                    color: #ffffff; 
+                    padding-right: 10px;
+                    font-size: 35px;
+                    "></i>
+                    Listar OS abertas
+                </div>
+            </div>
         </div>
+        <div class="row secundary-widgets">
+            <div class="
+            col-md-3
+            ">
+                <div class="swidget d-flex justify-content-center align-items-center">
+                    <i class="fa-solid fa-list"
+                    style="
+                    color: white;
+                    padding-right: 10px;
+                    font-size: 35px;
+                    "></i>
+                    <div class="d-flex flex-column">    
+                        <span style="font-size: 20px;">12</span>
+                        <span>OS em andamento</span>
+                    </div>
+                </div>
+            </div>
+            <div class="
+            col-md-3
+            ">
+                <div class="swidget d-flex justify-content-center align-items-center">
+                    <i class="fa-solid fa-circle-check" 
+                    style="
+                    color: #ffffff;
+                    padding-right: 10px;
+                    font-size: 35px;
+                    "></i>
+                    <div class="d-flex flex-column">    
+                        <span style="font-size: 20px;">8</span>
+                        <span>Serviços concluídos hoje</span>
+                    </div>
+                </div>
+            </div>
+            <div class="
+            col-md-3
+            ">
+                <div class="swidget d-flex justify-content-center align-items-center">
+                    <i class="fa-solid fa-hand-holding-dollar"
+                    style="
+                    color: #ffffff;
+                    padding-right: 10px;
+                    font-size: 35px;
+                    "></i>
+                    <div class="d-flex flex-column">    
+                        <span style="font-size: 20px;">R$5500</span>
+                        <span>Faturamento do dia</span>
+                    </div>
+                </div>
+            </div>
+            <div class="
+            col-md-3
+            ">
+                <div class="swidget d-flex justify-content-center align-items-center">
+                    <i class="fa-solid fa-clock"
+                    style="
+                    color: #ffffff;
+                    padding-right: 10px;
+                    font-size: 35px;
+                    "></i>
+                    <div class="d-flex flex-column">    
+                        <span style="font-size: 20px;">2:30</span>
+                        <span>Tempo médio de serviço</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row pt-5 pb-5">
+    <div class="col-md-6">
+        <app-recent-services>
+        </app-recent-services>
+    </div>
+    <div class="col-md-6 pt-3 pt-md-0">
+        <app-user-reminders>
+        </app-user-reminders>
     </div>
 </div>

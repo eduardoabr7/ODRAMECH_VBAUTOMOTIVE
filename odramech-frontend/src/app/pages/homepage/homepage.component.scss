@@ -1,0 +1,28 @@
+.pwidget, .swidget {
+    height: 100px;
+    font-weight: 600;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+.pwidget {
+    background-color: antiquewhite;
+    padding: 10px;
+    color: white;
+    border-radius: 5px;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.swidget {
+    background: linear-gradient(135deg, #7ca1c6, #4982bb);
+    padding: 10px;
+    border-radius: 5px;
+    color: white;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.swidget:hover, .pwidget:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+}
