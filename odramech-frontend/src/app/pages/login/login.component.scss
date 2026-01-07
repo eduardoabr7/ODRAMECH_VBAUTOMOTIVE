@@ -1,13 +1,32 @@
-label, input {
+label,
+input {
     font-size: 12px;
 }
 
+.text-muted {
+  color: #ffffff !important;
+}
+
+button {
+  background: linear-gradient(135deg, rgba(4, 189, 228, 1), rgba(2, 83, 185, 1));
+  box-shadow: 0 8px 24px rgba(65, 119, 235, 0.4);
+}
+
+li:hover{
+    color: white;
+}
+
 .gradient-form {
-    background-color: #3d5685;
+    background: radial-gradient(circle farthest-corner at 22.4% 21.7%,
+            rgba(4, 189, 228, 1) 0%,
+            rgba(2, 83, 185, 1) 100.2%);
+}
+
+.card-body {
+    color: white;
 }
 
 .gradient-custom-2 {
-    background-color: #223557;
     color: white;
 }
 
@@ -16,8 +35,21 @@ label, input {
 }
 
 @media (min-width: 769px) {
-.gradient-custom-2 {
-    border-top-right-radius: .3rem;
-    border-bottom-right-radius: .3rem;
+    .gradient-custom-2 {
+        border-top-right-radius: .3rem;
+        border-bottom-right-radius: .3rem;
+    }
 }
+
+@media (max-width: 769px) {
+    .logo {
+      width: 100px !important;
+    }
+    .odramech-text {
+        font-size: 30px !important;
+    }
+
+    .desc {
+        font-size: 20px;
+    }
 }

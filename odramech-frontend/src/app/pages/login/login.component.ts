@@ -20,7 +20,7 @@ import { ModalSelectEstablishment } from '@shared/components/modals/modal-select
   styleUrl: './login.component.scss'
 })
 
-export class LoginComponent implements OnInit {
+export class LoginComponent {
   constructor(
     private readonly _authService: AuthService,
     private readonly _toastr: ToastrService,
@@ -29,36 +29,38 @@ export class LoginComponent implements OnInit {
     private readonly _corporationService : UserCorporationService
   ){}
   
-  nomeEstabelecimento: any;
   loadingLogin = false;
   email: string;
-  username: string;
   password: string;
-  dataUserOrEmail: string;
-  dataToSend: LoginData;
 
-  ngOnInit(): void {
-    this.nomeEstabelecimento = env.nomeEstabelecimento;
-  }
-
-  
-  tryLogin() {
-    this.loadingLogin = true;
-
-    if (!this.dataUserOrEmail || !this.password) {
-      this.loadingLogin = false;
-      this._toastr.warning('Preencha todas as informações', 'Acesso negado');
-      return;
+  formValido(email: string, password: string): boolean {
+    if (!email || !password) {
+      this._toastr.warning('Preencha todas as informações', 'Atenção');
+      return false;
     }
 
-    const isEmail = this.dataUserOrEmail.includes('@');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isEmailValido = emailRegex.test(email);
 
-    this.dataToSend = {
-      [isEmail ? 'email' : 'username']: this.dataUserOrEmail,
+    if (!isEmailValido) {
+      this._toastr.warning('Insira um e-mail válido', 'Atenção');
+      return false;
+    }
+
+    return true;
+  }
+
+  tryLogin() {
+    if (!this.formValido(this.email, this.password)) return
+
+    this.loadingLogin = true;
+
+    const dataToSend: LoginData = {
+      email: this.email,
       password: this.password
     };
 
-    this._authService.login(this.dataToSend).pipe(
+    this._authService.login(dataToSend).pipe(
 
       switchMap((user: UserLogged) =>
         this._corporationService.getUserCorporation(user.id).pipe(

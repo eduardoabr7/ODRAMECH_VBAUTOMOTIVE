@@ -1,22 +1,68 @@
 <section class="gradient-form" style="overflow-y: auto;">
-  <div class="container py-5 mt-5">
-    <div class="row d-flex justify-content-center align-items-center">
-      <div class="col-xl-10">
-        <div class="card rounded-3 text-black">
+  <div class="
+      header-pagination
+      d-flex
+      align-items-center
+      justify-content-end" 
+    style="
+      height: 100px;
+      color: rgb(221, 221, 221);">
+        <ul class="
+          d-flex 
+          gap-5 
+          list-unstyled 
+          mb-0
+          me-5">
+          <li>Planos</li>
+          <li>Contatos</li>
+        </ul>
+  </div>
+  <div class="container-fluid py-5 mt-5">
+    <div class="row">
+        <div class="text-black">
           <div class="row g-0">
-            <div class="col-lg-6">
+            <div class="
+              info
+              col-xl-6 
+              col-xxl-7
+              d-flex 
+              align-items-center 
+              gradient-custom-2
+              order-2
+              order-xl-1"
+            >
+              <div class="text-white">
+                <div class="text-center py-5 d-flex align-items-center">
+                  <img 
+                    class="logo"
+                    src="../../../assets/circle-sem-fundo-odramech.png" 
+                    style="width: 200px;" 
+                    alt="logo">
+                  <h1 class="odramech-text" style="font-size: 80px;">ODRAMECH</h1>
+                </div>
+
+                <h2 class="desc mb-0 ms-5 me-5">
+                  Gestão moderna para oficinas mecânicas.
+                  Tudo o que você precisa em um único sistema.
+                </h2>
+              </div>
+            </div>
+            <div class="
+              login-panel
+              col-xl-6
+              col-xxl-5
+              order-1
+              order-xl-2">
               <div class="card-body mx-md-4" style="padding: 50px 15px;">
 
-                <div class="text-center">
-                  <img 
-                    src="../../../assets/logo_odramech-sem-fundo.png" 
-                    style="width: 300px;" 
-                    alt="logo">
-                  <h6 class="mt-5 pb-1">Você está fazendo login em</h6>
-                  <h6 class="mb-5"> {{ nomeEstabelecimento }}</h6>
+                <div class="text-center py-5 mb-5">
+                  <h1 style="color: white;"
+                    >Sign In
+                  </h1>
                 </div>
 
                 <form 
+                  class="px-sm-5"
                   (ngSubmit)="tryLogin()" 
                   #formLogin="ngForm"
                 >
@@ -28,15 +74,15 @@
                       class="form-label" 
                       for="form2Example11"
                     >
-                      Usuário
+                      E-mail
                     </label>
                     <input 
                       type="email" 
                       id="form2Example11" 
                       class="form-control" 
-                      placeholder="E-mail ou usuário"
-                      name="dataUserOrEmail" 
-                      [(ngModel)]="dataUserOrEmail" 
+                      placeholder="E-mail"
+                      name="email" 
+                      [(ngModel)]="email" 
                     />
                   </div>
 
@@ -60,13 +106,30 @@
                     />
                   </div>
 
+                  <div 
+                    class="button-wrapper" 
+                    [style.cursor]="formLogin.invalid ? 'not-allowed' : 'pointer'"
+                  >
+                    <button 
+                      data-mdb-button-init 
+                      data-mdb-ripple-init
+                      class="btn btn-primary btn-block fa-lg gradient-custom-2" 
+                      type="submit"
+                      style="background-color: #8b8b8b; width: 100%;"
+                    >
+                      Acessar Sistema
+                      <span *ngIf="loadingLogin">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i>
+                      </span>
+                    </button>
+                  </div>
+
                   <div class="
                     text-center 
-                    pt-1 
+                    pt-4 
                     mb-5 
                     pb-1 
                     d-flex 
-                    justify-content-between 
                     align-items-center"
                   >
                     <a 
@@ -75,45 +138,14 @@
                     >
                       Esqueceu a senha?
                     </a>
-                    <div 
-                      class="button-wrapper" 
-                      [style.cursor]="formLogin.invalid ? 'not-allowed' : 'pointer'"
-                    >
-                      <button 
-                        data-mdb-button-init 
-                        data-mdb-ripple-init
-                        class="btn btn-primary btn-block fa-lg gradient-custom-2" 
-                        type="submit"
-                      >
-                        Login
-                        <span *ngIf="loadingLogin">
-                          <i class="fa-solid fa-circle-notch fa-spin"></i>
-                        </span>
-                      </button>
-                    </div>
                   </div>
 
                 </form>
 
               </div>
             </div>
-            <div class="
-              col-lg-6 
-              d-flex 
-              align-items-center 
-              gradient-custom-2"
-            >
-              <div class="text-white px-3 py-4 p-md-5 mx-md-4">
-                <h4 class="mb-4">ODRAMECH CHEGOU!</h4>
-                <p class="small mb-0">
-                  A nova era das oficinas mecânicas começou. Mais controle, mais velocidade, mais
-                  resultados — tudo em um único sistema que vai mudar o seu jogo!
-                </p>
-              </div>
-            </div>
           </div>
         </div>
-      </div>
     </div>
   </div>
 </section>
