@@ -11,7 +11,7 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { ModalCreateEnterprise } from '@shared/components/modals/modal-create-enterprise/modal-create-enterprise.component';
 import { UserLogged } from '@shared/models/UserLogged';
 import { UserCorporationService } from '@shared/services/user-corporation.service';
-import { of, switchMap, tap } from 'rxjs';
+import { finalize, map, Observable, of, switchMap, tap } from 'rxjs';
 import { ModalSelectEstablishment } from '@shared/components/modals/modal-select-establishment/modal-select-establishment.component';
 @Component({
   selector: 'app-login',
@@ -60,75 +60,42 @@ export class LoginComponent {
       password: this.password
     };
 
-    this._authService.login(dataToSend).pipe(
 
-      switchMap((user: UserLogged) =>
-        this._corporationService.getUserCorporation(user.id).pipe(
-
-          switchMap(corporationsRaw => {
-
-            let userCorporations = corporationsRaw;
-
-
-            // mocks para teste
-            //nenhuma empresa, deve abrir modal de criar empresa
-            // userCorporations = [];
-
-            //vários estabelecimentos, deve abrir modal de seleção
-            // userCorporations = [
-            //   {
-            //     establishments: [
-            //       {
-            //         id: 1,
-            //         name: 'VB-Automotive',
-            //         email: 'eduardopradoabreu@gmail.com'
-            //       },
-            //       {
-            //         id: 2,
-            //         name: 'VB-Automotive Unidade POA',
-            //         email: 'eduardopradoabreu@gmail.com'
-            //       }
-            //     ]
-            //   }
-            // ];
-
-            // apenas 1 estabelecimento ⇒ deve ir pro home
-            // userCorporations = [
-            //   {
-            //     establishments: [
-            //       {
-            //         id: 1,
-            //         name: 'VB-Automotive',
-            //         email: 'eduardopradoabreu@gmail.com'
-            //       }
-            //     ]
-            //   }
-            // ];
-
-            if (user.id === 1 && userCorporations.length === 0) {
-              return this.openCreateEnterpriseModal(user.id);
-            }
-
-            if (userCorporations[0].establishments.length > 1) {
-              return this.openSelectEstablishmentModal();
-            }
-
-            this._route.navigateByUrl('/home');
-            return of(null);
-          })
-        )
+    this._authService.login(dataToSend)
+    .pipe(
+      finalize(()=>{
+        this.loadingLogin = false
+      }),
+      switchMap(
+        user => this.haveMultiTenant(user)
       ),
-
-      tap(() => this.loadingLogin = false)
-
-    ).subscribe({
-      next: () => {},
-      error: () => {
-        this.loadingLogin = false;
-        this._toastr.error('Credenciais inválidas', 'Acesso negado');
+      tap(haveMt => {
+        if (!haveMt) {
+          this._route.navigateByUrl('/home');
+        }
+        else {
+          this._bsModalService.show(ModalSelectEstablishment, {
+            initialState: {
+              title: 'Selecionar Estabelecimento'
+            }
+          })
+        }
+      })
+    )
+    .subscribe({
+      error: ()=> {
+        this._toastr.error('Credenciais inválidas', 'Verifique as informações')
       }
-    });
+    }
+    );
   }
+
+  haveMultiTenant(user: UserLogged): Observable<boolean> {
+    return this._corporationService.getUserCorporation(user.id).pipe(
+      map(value => value.length > 1) // true se tiver mais de uma empresa
+    );
+  }
+
 
   async openCreateEnterpriseModal(idUser?: number) {
     const modalRef = this._bsModalService.show(ModalCreateEnterprise, {

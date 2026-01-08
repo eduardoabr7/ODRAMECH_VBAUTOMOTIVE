@@ -8,9 +8,4 @@ export class UserController {
         private readonly _userService: UserService
     ){}
 
-    @Get('corporations/:idUser')
-    getTeste(@Param('idUser', ParseIntPipe) idUser: number){
-        return this._userService.getUserCorporationById(idUser);
-    }
-
 }

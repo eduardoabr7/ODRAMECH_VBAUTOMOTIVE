@@ -12,7 +12,7 @@ export class UserCorporationService {
     ) {}
 
     getUserCorporation(id): Observable<any> {
-        return this._nestApi.get(`user/corporations/${id}`)
+        return this._nestApi.get(`usercorp/${id}`)
     }
 
     createUserCorporation(data: UserCorporation): Observable<any> {

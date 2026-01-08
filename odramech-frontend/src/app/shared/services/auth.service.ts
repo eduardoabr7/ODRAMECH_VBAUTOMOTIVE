@@ -26,14 +26,8 @@ export class AuthService {
     ) {
     }
 
-    login(data: LoginData): Observable<any> {
+    login(data: LoginData): Observable<UserLogged> {
       return this._nestApi.post('auth/login', data).pipe(
-        switchMap(() => this.getUserLogged().pipe(
-          catchError((err: HttpErrorResponse) => {
-            this.setUserLogged(null);
-            return throwError(() => err); 
-          })
-        )),
         tap((user: UserLogged) => {
           this.setUserLogged(user);
         })

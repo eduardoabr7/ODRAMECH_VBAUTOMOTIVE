@@ -29,6 +29,8 @@ export class AuthService {
             email: true,
             username: true,
             password: true,
+            phone: true,
+            name: true
           }
         });
  
@@ -46,7 +48,8 @@ export class AuthService {
           maxAge: 900000 // 15 minutos
         })
 
-        return { message: 'Authenticated' }
+        const { password, ...userWithoutPassword } = userFound;
+        return userWithoutPassword;
 
       } catch (err) {
         throw new BadRequestException('Invalid credentials')

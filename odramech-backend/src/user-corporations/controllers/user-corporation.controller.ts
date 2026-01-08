@@ -5,12 +5,17 @@ import { UserCorporationService } from "../services/user-corporation.service";
 export class UserCorporationController {
     
     constructor(
-        private readonly _userService: UserCorporationService
+        private readonly _userCorporationService: UserCorporationService
     ){}
 
     @Post()
     createUserCorporation(@Body() data) {
-        return this._userService.createUserCorporation(data)
+        return this._userCorporationService.createUserCorporation(data)
+    }
+
+    @Get(':id')
+    getCorporationsByUserId(@Param('id') id: number) {
+        return this._userCorporationService.getUserCorporationsByUserId(id);
     }
 
 }
