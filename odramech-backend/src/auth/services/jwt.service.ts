@@ -15,9 +15,15 @@ export class JWTService {
         }
     }
 
-    async generateToken(payload = {}): Promise<string> {
-        return this._jwtService.signAsync(payload)
+    async generateToken(
+      payload: Record<string, any>,
+      options?: {
+        expiresIn?: string | number;
+      }
+    ): Promise<string> {
+      return this._jwtService.signAsync(payload, options);
     }
+
 
     async decoderToken<T>(token: string): Promise<T> {
         return this._jwtService.decode(token)

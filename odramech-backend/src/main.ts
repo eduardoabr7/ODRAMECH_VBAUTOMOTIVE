@@ -55,7 +55,7 @@ async function bootstrap() {
         
         const detailedErrors = extractErrors(errors);
         
-        console.log('\n🔴 ERROS DE VALIDAÇÃO DETALHADOS:');
+        console.log('\n ERROS DE VALIDAÇÃO:');
         console.log(JSON.stringify(detailedErrors, null, 2));
         
         return new BadRequestException({

@@ -1,0 +1,35 @@
+<div class="modal-content">
+  <div class="modal-header text-white">
+    <h5 class="modal-title">{{ title || 'Cadastro' }}</h5>
+    <button
+      type="button"
+      class="btn-close btn-close-white"
+      aria-label="Close"
+      (click)="attemptClose()"
+    ></button>
+  </div>
+
+  <div class="modal-body bg-light container">
+    <div class="row">
+      <div class="col-12 input-group mb-3">
+        <input
+          type="search"
+          class="form-control"
+          placeholder="Pesquisar…"
+          aria-label="Search"
+          aria-describedby="basic-addon1">
+      </div>
+    </div>
+
+    <div *ngFor="let enterprise of corps" 
+    class="row selection-card mt-1"
+    (click)="selectEnterprise(enterprise)">
+      <div class="col-4">
+        <img src="../../../../../assets/enterprise-no-photo.png">
+      </div>
+      <div class="col-8 d-flex align-items-center">
+        <span>{{ enterprise.name }}</span>
+      </div>
+    </div>
+  </div>
+</div>

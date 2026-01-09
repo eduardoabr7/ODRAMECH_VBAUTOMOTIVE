@@ -2,6 +2,8 @@ import { Injectable } from "@angular/core";
 import { NestAPI } from "./nest-api.service";
 import { Observable } from "rxjs";
 import { UserCorporation } from "@shared/models/UserCorporation";
+import { EnterpriseWithEstablishments } from "@shared/models/EnterpriseWithEstablishment";
+import { Enterprise } from "@shared/models/Enterprise";
 
 @Injectable({
   providedIn: 'root'
@@ -11,8 +13,8 @@ export class UserCorporationService {
         private readonly _nestApi: NestAPI
     ) {}
 
-    getUserCorporation(id): Observable<any> {
-        return this._nestApi.get(`usercorp/${id}`)
+    getUserCorporation(): Observable<Enterprise[]> {
+        return this._nestApi.get('usercorp')
     }
 
     createUserCorporation(data: UserCorporation): Observable<any> {

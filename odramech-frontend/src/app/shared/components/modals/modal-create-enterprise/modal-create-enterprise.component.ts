@@ -10,7 +10,7 @@ import { Enterprise } from '@shared/models/Enterprise';
 import { Establishment } from '@shared/models/Establishment';
 import { NestAPI } from '@shared/services/nest-api.service';
 import { EnterpriseService } from '@shared/services/enterprise.service';
-import { EnterpriseWithEstablishment } from '@shared/models/EnterpriseWithEstablishment';
+import { EnterpriseWithEstablishments } from '@shared/models/EnterpriseWithEstablishment';
 import { HttpErrorResponse } from '@angular/common/http';
 import { UserCorporation, Role } from '@shared/models/UserCorporation';
 import { UserCorporationService } from '@shared/services/user-corporation.service';
@@ -129,7 +129,7 @@ export class ModalCreateEnterprise extends BaseModalComponent {
 
         if(!formEstablishment) return
 
-        const dataToSend: EnterpriseWithEstablishment = {
+        const dataToSend: EnterpriseWithEstablishments = {
           enterprise: formEnterprise,
           establishment: formEstablishment
         }

@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { LoginData } from '@shared/models/LoginData';
+import { PreLogin } from '@shared/models/PreLogin';
 import { UserLogged } from '@shared/models/UserLogged';
 import { NestAPI } from '@shared/services/nest-api.service';
 import { ToastrService } from 'ngx-toastr';
@@ -48,6 +49,10 @@ export class AuthService {
           return throwError(() => err); // propaga o erro para que o componente possa reagir, se necessário
         })
       );
+    }
+
+    validateUserCredentials(data: PreLogin): Observable<UserLogged> {
+      return this._nestApi.post('auth/validateLogin', data)      
     }
 
     getUserLogged(): Observable<UserLogged> {

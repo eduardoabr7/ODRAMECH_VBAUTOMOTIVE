@@ -1,4 +1,5 @@
 import { Address } from "./Address";
+import { Establishment } from "./Establishment";
 
 export interface Enterprise {
     logoUrl?: string,
@@ -7,4 +8,5 @@ export interface Enterprise {
     phone: string,
     cnpj: string,
     address: Address
+    establishments?: Establishment[]
 }

@@ -117,6 +117,15 @@ h5.title {
   background-color: #204369;
 }
 
+
+
+// ng-select
+ng-select {
+  padding: 5px;
+  border: 1px solid black;
+  cursor: pointer;
+}
+
 // estilização dos toasts de mensagem
 
 .ngx-toastr {
@@ -252,7 +261,7 @@ h5.title {
   font-size: 20px !important;
   font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
   font-weight: 600 !important;
-  color: #4e4e4e !important;
+  color: #044981 !important;
 }
 
 /* Ícone de fechar */

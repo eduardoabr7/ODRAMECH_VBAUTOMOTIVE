@@ -13,6 +13,11 @@ import { UserLogged } from '@shared/models/UserLogged';
 import { UserCorporationService } from '@shared/services/user-corporation.service';
 import { finalize, map, Observable, of, switchMap, tap } from 'rxjs';
 import { ModalSelectEstablishment } from '@shared/components/modals/modal-select-establishment/modal-select-establishment.component';
+import { PreLogin } from '@shared/models/PreLogin';
+import { UserCorpRelation } from 'app/enums/user-corp-relations.enum';
+import { EnterpriseWithEstablishments } from '@shared/models/EnterpriseWithEstablishment';
+import { Enterprise } from '@shared/models/Enterprise';
+import { ModalSelectEnterpriseComponent } from '@shared/components/modals/modal-select-enterprise/modal-select-enterprise.component';
 @Component({
   selector: 'app-login',
   imports: [CommonModule, FormsModule],
@@ -55,31 +60,25 @@ export class LoginComponent {
 
     this.loadingLogin = true;
 
-    const dataToSend: LoginData = {
+    const dataToSend: PreLogin = {
       email: this.email,
       password: this.password
     };
 
 
-    this._authService.login(dataToSend)
+    this._authService.validateUserCredentials(dataToSend)
     .pipe(
       finalize(()=>{
         this.loadingLogin = false
       }),
       switchMap(
-        user => this.haveMultiTenant(user)
+        ()=> this.getUserCorp()
       ),
-      tap(haveMt => {
-        if (!haveMt) {
-          this._route.navigateByUrl('/home');
+      tap(value => {
+        if(this.haveMultiTenant(value)){
+          this.openSelectEntepriseModal(value)
         }
-        else {
-          this._bsModalService.show(ModalSelectEstablishment, {
-            initialState: {
-              title: 'Selecionar Estabelecimento'
-            }
-          })
-        }
+
       })
     )
     .subscribe({
@@ -90,33 +89,27 @@ export class LoginComponent {
     );
   }
 
-  haveMultiTenant(user: UserLogged): Observable<boolean> {
-    return this._corporationService.getUserCorporation(user.id).pipe(
-      map(value => value.length > 1) // true se tiver mais de uma empresa
-    );
+  getUserCorp(): Observable<Enterprise[]> {
+    return this._corporationService.getUserCorporation()
   }
 
+  haveMultiTenant(corp: Enterprise[]): boolean {
+    return corp.length > 1
+  }
 
-  async openCreateEnterpriseModal(idUser?: number) {
-    const modalRef = this._bsModalService.show(ModalCreateEnterprise, {
-      initialState: { 
-        title: 'Criar empresa', 
-        withCreateEstablisment: true,
-        userId: idUser
+  openSelectEntepriseModal(enterprises: Enterprise[]) {
+    this.loadingLogin = true;
+    const modalRef = this._bsModalService.show(ModalSelectEnterpriseComponent, {
+      initialState: {
+        title: 'Empresas que você possui cadastro',
+        corps: enterprises
       },
-      class: 'modal-lg'
-    });
+      class: 'modal-md'
+    })
 
-    modalRef.onHidden?.subscribe(() => { // quando fecha no esc ou clicando no backdrop
+    modalRef.onHidden?.subscribe(() => {
       this.loadingLogin = false;
-    });
-
-    const result = await modalRef.content.onHide()
-
-    if(!!result){
-      this._route.navigateByUrl('/home');
-      this._toastr.success('Empresa criada', 'Sucesso')
-    }
+    })
   }
 
   openSelectEstablishmentModal() {

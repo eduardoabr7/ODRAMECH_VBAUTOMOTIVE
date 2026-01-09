@@ -9,11 +9,8 @@ export class LoggedUser {
     name: string
 
     @IsString()
-    username: string
-
-    @IsString()
     @IsEmail()
-    email?: string
+    email: string
 
     @IsString()
     phone: string

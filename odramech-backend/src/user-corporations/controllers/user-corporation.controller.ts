@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Req } from "@nestjs/common";
 import { UserCorporationService } from "../services/user-corporation.service";
 
 @Controller('usercorp')
@@ -13,9 +13,11 @@ export class UserCorporationController {
         return this._userCorporationService.createUserCorporation(data)
     }
 
-    @Get(':id')
-    getCorporationsByUserId(@Param('id') id: number) {
-        return this._userCorporationService.getUserCorporationsByUserId(id);
+    @Get()
+    getCorporationsByUserId(@Req() req) {
+      const userId = req.user.id;
+
+      return this._userCorporationService.getUserCorporationsByUserId(userId);
     }
 
 }
