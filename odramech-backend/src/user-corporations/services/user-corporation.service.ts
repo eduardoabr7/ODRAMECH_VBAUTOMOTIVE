@@ -18,8 +18,27 @@ export class UserCorporationService {
       const userCorporations = await this._prismaService.userCorporation.findMany({
         where: { idUser: userId },
         include: {
-          establishment: true,
-          enterprise: true
+          establishment: {
+            select: {
+              id: true,
+              logoUrl: true,
+              name: true,
+              address: {
+                select: {
+                  street: true,
+                  number: true,
+                  city: true
+                }
+              }
+            }
+          },
+          enterprise: {
+            select: {
+              id: true,
+              logoUrl: true,
+              name: true,
+            }
+          }
         },
       });
 
