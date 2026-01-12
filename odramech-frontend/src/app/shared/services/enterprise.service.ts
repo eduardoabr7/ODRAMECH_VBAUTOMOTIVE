@@ -16,4 +16,8 @@ export class EnterpriseService {
     createEnterpriseWithEstablishment(data: EnterpriseWithEstablishments): Observable<any> {
         return this._nestApi.post('enterprise/establishment', data)
     }
+
+    getEstablishmentsForEnterprise(idEtp: number): Observable<Establishment[]> {
+        return this._nestApi.get(`enterprise/establishments/${idEtp}`)
+    }
 }

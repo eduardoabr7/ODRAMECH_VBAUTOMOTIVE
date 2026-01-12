@@ -17,6 +17,8 @@ import { Enterprise } from '@shared/models/Enterprise';
 export class ModalSelectEnterpriseComponent extends BaseModalComponent {
 
   @Input() corps: Enterprise[]
+  filteredCorps: Enterprise[] = []
+  searchTerm: string = ''
 
   constructor(
     bsModalRef: BsModalRef,
@@ -27,10 +29,23 @@ export class ModalSelectEnterpriseComponent extends BaseModalComponent {
 
   ngOnInit(){
     console.log(this.corps.map(c => c.name))
+    this.filteredCorps = this.corps
   }
 
-  selectEnterprise(event) {
-    console.log(event)
+  filterEnterprises() {
+    if (!this.searchTerm.trim()) {
+      this.filteredCorps = this.corps
+      return
+    }
+
+    const term = this.searchTerm.toLowerCase()
+    this.filteredCorps = this.corps.filter(enterprise => 
+      enterprise.name.toLowerCase().includes(term)
+    )
+  }
+
+  selectEnterprise(event: Enterprise) {
+    this.confirm(event)
   }
 
 }

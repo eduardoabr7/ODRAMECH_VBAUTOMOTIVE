@@ -18,6 +18,8 @@ import { UserCorpRelation } from 'app/enums/user-corp-relations.enum';
 import { EnterpriseWithEstablishments } from '@shared/models/EnterpriseWithEstablishment';
 import { Enterprise } from '@shared/models/Enterprise';
 import { ModalSelectEnterpriseComponent } from '@shared/components/modals/modal-select-enterprise/modal-select-enterprise.component';
+import { Establishment } from '@shared/models/Establishment';
+import { EnterpriseService } from '@shared/services/enterprise.service';
 @Component({
   selector: 'app-login',
   imports: [CommonModule, FormsModule],
@@ -31,7 +33,8 @@ export class LoginComponent {
     private readonly _toastr: ToastrService,
     private readonly _route: Router,
     private readonly _bsModalService: BsModalService,
-    private readonly _corporationService : UserCorporationService
+    private readonly _corporationService : UserCorporationService,
+    private readonly _enterpriseService: EnterpriseService
   ){}
   
   loadingLogin = false;
@@ -74,11 +77,21 @@ export class LoginComponent {
       switchMap(
         ()=> this.getUserCorp()
       ),
-      tap(value => {
-        if(this.haveMultiTenant(value)){
-          this.openSelectEntepriseModal(value)
+      switchMap(corps => {
+        if (this.haveMultiTenant(corps)) {
+          return this.openSelectEntepriseModal(corps);
         }
+      
+        return of(corps[0]);
+      }),
+      switchMap(selectedEnterprise => {
+        const idEtp = selectedEnterprise.id
 
+        return this.getEstablishmentsForEnterprise(idEtp)
+      }),
+      tap(value => {
+        if( value.length > 1 ) console.log('precisa escolher estabelecimento')
+        else console.log('pode passar direto, estabelecimento: ', value[0].id) 
       })
     )
     .subscribe({
@@ -93,23 +106,38 @@ export class LoginComponent {
     return this._corporationService.getUserCorporation()
   }
 
+  getEstablishmentsForEnterprise(idEtp): Observable<Establishment[]> {
+    return this._enterpriseService.getEstablishmentsForEnterprise(idEtp)
+  }
+
   haveMultiTenant(corp: Enterprise[]): boolean {
     return corp.length > 1
   }
 
-  openSelectEntepriseModal(enterprises: Enterprise[]) {
+  openSelectEntepriseModal( enterprises: Enterprise[]): Observable<Enterprise> {
+
     this.loadingLogin = true;
-    const modalRef = this._bsModalService.show(ModalSelectEnterpriseComponent, {
-      initialState: {
-        title: 'Empresas que você possui cadastro',
-        corps: enterprises
-      },
-      class: 'modal-md'
-    })
+
+    const modalRef = this._bsModalService.show(
+      ModalSelectEnterpriseComponent,
+      {
+        initialState: {
+          title: 'Empresas que você possui cadastro',
+          corps: enterprises
+        },
+        class: 'modal-md'
+      }
+    );
 
     modalRef.onHidden?.subscribe(() => {
       this.loadingLogin = false;
     })
+
+    return modalRef.content.onClose.pipe(
+      finalize(() => {
+        this.loadingLogin = false;
+      })
+    );
   }
 
   openSelectEstablishmentModal() {

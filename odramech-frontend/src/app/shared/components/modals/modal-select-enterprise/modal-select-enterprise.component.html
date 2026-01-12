@@ -17,18 +17,26 @@
           class="form-control"
           placeholder="Pesquisar…"
           aria-label="Search"
-          aria-describedby="basic-addon1">
+          aria-describedby="basic-addon1"
+          [(ngModel)]="searchTerm"
+          (input)="filterEnterprises()">
       </div>
     </div>
 
-    <div *ngFor="let enterprise of corps" 
+    <div *ngFor="let enterprise of filteredCorps" 
     class="row selection-card mt-1"
     (click)="selectEnterprise(enterprise)">
       <div class="col-4">
         <img src="../../../../../assets/enterprise-no-photo.png">
       </div>
-      <div class="col-8 d-flex align-items-center">
-        <span>{{ enterprise.name }}</span>
+      <div class="col-8 p-sm-0">
+        <div class="
+        info-enterp
+        mt-3">
+          <span>{{ enterprise.name }}</span>
+          <h6 class="m-0">(51)99708-2562</h6>
+          <h6 class="m-0">Av. Barão do Cerro Largo, 1201</h6>
+        </div>
       </div>
     </div>
   </div>
