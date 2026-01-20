@@ -6,6 +6,7 @@ import { JWTService } from "./jwt.service"
 import { Response } from 'express';
 import { LoggedUser } from "../dto/logged-user.dto";
 import { PreLoginDTO } from "../dto/pre-login.dto";
+import { UserCorporationService } from "src/user-corporations/services/user-corporation.service";
 
 @Injectable()
 export class AuthService {
@@ -14,15 +15,38 @@ export class AuthService {
       private readonly _prisma : PrismaService,
       private readonly _bcryptService : BcryptService,
       private readonly _jwtService: JWTService,
+      private readonly _userCorpService: UserCorporationService
     ) {};
 
-    async login(data: LoginDTO, res: Response) {
-      
+    async login(data: LoginDTO) {
+      const dataToValidateLogin = {
+        email: data.email,
+        password: data.password
+      }
 
-      return data
+      const user = await this.validateCredentials(dataToValidateLogin)
+
+      const relation = await this._userCorpService.validateRelationUserToEstablishment(user.id, data.tenantId)
+
+      if (!relation) throw new UnauthorizedException('Vínculo usuário - estabelecimento não encontrado')
+
+      const token = await this._jwtService.generateToken(
+        {
+          sub: user.id,
+          role: relation.role,
+          establishmentId: relation.idEstablishment,
+          enterpriseId: relation.idEnterprise,
+          context: 'AUTH',
+        },
+        {
+          expiresIn: '15m',
+        }
+      ); 
+
+      return { user, token }
     }
 
-    async validUserCredentialsLogin(data: PreLoginDTO, res: Response): Promise<LoggedUser> {
+    async validateCredentials(data: PreLoginDTO): Promise<LoggedUser> {
       const userFound = await this._prisma.user.findFirst({
         where: {
            email: data.email 
@@ -38,9 +62,17 @@ export class AuthService {
 
       if(!userFound || !(await this._bcryptService.hashPasswordCompare(data.password, userFound.password))) throw new UnauthorizedException('Invalid credentials')
 
+      const { password, ...userWithoutPassword } = userFound;
+      return userWithoutPassword as LoggedUser;
+
+    }
+
+    async preLogin(data: PreLoginDTO) {
+      const user = await this.validateCredentials(data)
+
       const temporaryToken = await this._jwtService.generateToken(
         {
-          sub: userFound.id,
+          sub: user.id,
           context: 'PRE_AUTH',
         },
         {
@@ -48,36 +80,8 @@ export class AuthService {
         }
       ); 
 
-      res.cookie('access', temporaryToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 120_000
-      }) 
-      const { password, ...userWithoutPassword } = userFound;
-      return userWithoutPassword as LoggedUser;
+      return {user, temporaryToken};
     }
-
-
-
-    //     const payload = { sub: userFound.id }
-
-    //     const token = await this._jwtService.generateToken(payload);
-
-    //     res.cookie('access', token, {
-    //       httpOnly: true,
-    //       secure: process.env.NODE_ENV === 'production',
-    //       sameSite: 'strict',
-    //       maxAge: 900000 // 15 minutos
-    //     })
-
-    //     const { password, ...userWithoutPassword } = userFound;
-    //     return userWithoutPassword;
-
-    //   } catch (err) {
-    //     throw new BadRequestException('Invalid credentials')
-    //   } 
-    // }
 
     async logout(res: Response) {
       res.clearCookie('access');

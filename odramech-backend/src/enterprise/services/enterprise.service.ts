@@ -3,6 +3,7 @@ import { PrismaService } from "src/prisma/prisma-service";
 import { EstablishmentDTO } from "../../establishment/dto/establishment.dto";
 import { Enterprise, Establishment } from "@prisma/client";
 import { EnterpriseWithEstablishmentDTO } from "../dto/enterprise-with-establishment.dto";
+import { EstablishmentListDTO } from "src/establishment/dto/establishment-list.dto";
 
 @Injectable()
 export class EnterpriseService {
@@ -15,7 +16,7 @@ export class EnterpriseService {
         return await this._prisma.enterprise.findMany();
     }
 
-    async getAllEstablishmentsFromEnterprise(idEnterprise: number): Promise<EstablishmentDTO[]>{
+    async getAllEstablishmentsFromEnterprise(idEnterprise: number): Promise<EstablishmentListDTO[]>{
         const enterprise = await this._prisma.enterprise.findUnique({
             where: {
                 id: idEnterprise,
@@ -28,9 +29,6 @@ export class EnterpriseService {
                                 id: true,
                                 logoUrl: true,
                                 name: true,
-                                email: true,
-                                phone: true,
-                                cnpj: true,
                                 address: true
                             }
                         }

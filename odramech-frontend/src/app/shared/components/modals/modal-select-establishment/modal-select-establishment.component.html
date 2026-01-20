@@ -1,34 +1,43 @@
 <div class="modal-content">
   <div class="modal-header text-white">
-    <h5 class="modal-title">{{ title }}</h5>
+    <h5 class="modal-title">{{ title || 'Cadastro' }}</h5>
     <button
       type="button"
       class="btn-close btn-close-white"
       aria-label="Close"
-      (click)="cancel()"
+      (click)="attemptClose()"
     ></button>
   </div>
 
-  <div class="modal-body bg-light">
+  <div class="modal-body bg-light container">
     <div class="row">
-      <ng-select
-        [items]="listaEstabelecimentos"
-        bindLabel="nome"
-        bindValue="id"
-        placeholder="Selecione um estabelecimento..."
-        [(ngModel)]="estabelecimentoSelecionado"
-      ></ng-select>
+      <div class="col-12 input-group mb-3">
+        <input
+          type="search"
+          class="form-control"
+          placeholder="Pesquisar…"
+          aria-label="Search"
+          aria-describedby="basic-addon1"
+          [(ngModel)]="searchTerm"
+          (input)="filterEstablishments()">
+      </div>
     </div>
-  </div>
 
-  <div class="modal-footer">
-    <button
-      type="button"
-      class="btn btn-secondary closeModal"
-      (click)="cancel()"
-    >
-      Fechar
-    </button>
-    <button type="button" class="btn btn-primary">Salvar</button>
+    <div *ngFor="let establishment of filteredCorps" 
+    class="row selection-card mt-1"
+    (click)="selectEstablishment(establishment)">
+      <div class="col-4">
+        <img src="../../../../../assets/enterprise-no-photo.png">
+      </div>
+      <div class="col-8 p-sm-0">
+        <div class="
+        info-enterp
+        mt-3">
+          <span>{{ establishment.name }}</span>
+          <h6 class="m-0">(51)99708-2562</h6>
+          <h6 class="m-0">Av. Barão do Cerro Largo, 1201</h6>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

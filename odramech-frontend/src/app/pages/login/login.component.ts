@@ -69,7 +69,7 @@ export class LoginComponent {
     };
 
 
-    this._authService.validateUserCredentials(dataToSend)
+    this._authService.preLogin(dataToSend)
     .pipe(
       finalize(()=>{
         this.loadingLogin = false
@@ -89,9 +89,16 @@ export class LoginComponent {
 
         return this.getEstablishmentsForEnterprise(idEtp)
       }),
-      tap(value => {
-        if( value.length > 1 ) console.log('precisa escolher estabelecimento')
-        else console.log('pode passar direto, estabelecimento: ', value[0].id) 
+      switchMap(establishments => {
+        if( establishments.length > 1 ) return this.openSelectEstablishmentModal(establishments)
+        else return of (establishments[0])
+      }),
+      switchMap(establishmentSelected => {
+        const idEstablishmentSelected = establishmentSelected.id
+
+        const dataToLogin = {tenantId: idEstablishmentSelected, ...dataToSend}
+
+        return this._authService.login(dataToLogin)
       })
     )
     .subscribe({
@@ -140,17 +147,30 @@ export class LoginComponent {
     );
   }
 
-  openSelectEstablishmentModal() {
-    const modalRef = this._bsModalService.show(ModalSelectEstablishment, {
-      initialState: { title: 'Estabelecimento' },
-      class: 'modal-lg'
-    });
+  openSelectEstablishmentModal( est: Establishment[]): Observable<Establishment> {
+
+    this.loadingLogin = true;
+
+    const modalRef = this._bsModalService.show(
+      ModalSelectEstablishment,
+      {
+        initialState: {
+          title: 'Selecione o estabelecimento',
+          establishments: est
+        },
+        class: 'modal-md'
+      }
+    );
 
     modalRef.onHidden?.subscribe(() => {
       this.loadingLogin = false;
-    });
+    })
 
-    return modalRef.content.onClose.asObservable();
+    return modalRef.content.onClose.pipe(
+      finalize(() => {
+        this.loadingLogin = false;
+      })
+    );
   }
 
 

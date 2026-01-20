@@ -31,6 +31,7 @@ export class AuthService {
       return this._nestApi.post('auth/login', data).pipe(
         tap((user: UserLogged) => {
           this.setUserLogged(user);
+          this._router.navigateByUrl('/home');
         })
       );
     }
@@ -51,8 +52,8 @@ export class AuthService {
       );
     }
 
-    validateUserCredentials(data: PreLogin): Observable<UserLogged> {
-      return this._nestApi.post('auth/validateLogin', data)      
+    preLogin(data: PreLogin): Observable<UserLogged> {
+      return this._nestApi.post('auth/preLogin', data)      
     }
 
     getUserLogged(): Observable<UserLogged> {

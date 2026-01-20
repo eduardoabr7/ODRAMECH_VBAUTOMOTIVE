@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { BaseModalComponent } from '../base-modal.component';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgSelectModule } from '@ng-select/ng-select';
+import { Establishment } from '@shared/models/Establishment';
 
 @Component({
   selector: 'app-modal-select-establishment',
@@ -12,19 +13,32 @@ import { NgSelectModule } from '@ng-select/ng-select';
   styleUrl: './modal-select-establishment.component.scss'
 })
 export class ModalSelectEstablishment extends BaseModalComponent {
+
+  @Input() establishments: Establishment[]
+  filteredCorps: Establishment[] = []
+  searchTerm: string = ''
+
   constructor(bsModalRef: BsModalRef) {
       super(bsModalRef);
   }
-  
-  teste(){
-    console.log('a')
+
+  ngOnInit(){
+    this.filteredCorps = this.establishments
   }
 
-  listaEstabelecimentos = [
-    { id: 1, nome: 'Estabelecimento A' },
-    { id: 2, nome: 'Estabelecimento B' },
-    { id: 3, nome: 'Estabelecimento C' }
-  ];
+  filterEstablishments() {
+    if (!this.searchTerm.trim()) {
+      this.filteredCorps = this.establishments
+      return
+    }
 
-  estabelecimentoSelecionado: any;
+    const term = this.searchTerm.toLowerCase()
+    this.filteredCorps = this.establishments.filter(enterprise => 
+      enterprise.name.toLowerCase().includes(term)
+    )
+  }
+
+  selectEstablishment(event: Establishment) {
+    this.confirm(event)
+  }
 }

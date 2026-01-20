@@ -14,6 +14,16 @@ export class UserCorporationService {
         return this._prismaService.userCorporation.create({ data: dataReceived })
     }
 
+    // to check if the user and the establishment are related.
+    async validateRelationUserToEstablishment(uId: number, estId: number) {
+      return await this._prismaService.userCorporation.findFirst({
+        where: { 
+          idUser: uId,
+          idEstablishment: estId 
+        }
+      })
+    }
+
     async getUserCorporationsByUserId(userId: number) {
       const userCorporations = await this._prismaService.userCorporation.findMany({
         where: { idUser: userId },

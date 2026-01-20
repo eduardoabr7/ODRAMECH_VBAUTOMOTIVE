@@ -28,7 +28,6 @@ export class ModalSelectEnterpriseComponent extends BaseModalComponent {
   }
 
   ngOnInit(){
-    console.log(this.corps.map(c => c.name))
     this.filteredCorps = this.corps
   }
 

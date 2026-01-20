@@ -1,0 +1,28 @@
+.selection-card {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.selection-card:hover {
+    background-color: rgb(24, 75, 119);
+    color: white;
+
+    h6{
+      color: white;
+    }
+}
+
+.selection-card img {
+  width: 100px;
+}
+
+.info-enterp {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-enterp h6 {
+  font-size: 12px;
+  font-weight: normal;
+  color: rgb(0 82 169);
+}

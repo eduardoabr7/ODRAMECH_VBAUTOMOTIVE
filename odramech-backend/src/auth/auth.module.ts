@@ -7,6 +7,7 @@ import { JwtModule } from "@nestjs/jwt";
 import { JWTService } from "./services/jwt.service";
 import { CustomLogger } from "src/shared/services/custom-logger.service";
 import { EmailMaskService } from "src/shared/services/mask-email.service";
+import { UserCorporationService } from "src/user-corporations/services/user-corporation.service";
 
 @Module({
     imports: [
@@ -22,7 +23,8 @@ import { EmailMaskService } from "src/shared/services/mask-email.service";
         PrismaService, 
         BcryptService,
         CustomLogger,
-        EmailMaskService
+        EmailMaskService,
+        UserCorporationService
     ],
     exports: [
         JWTService,

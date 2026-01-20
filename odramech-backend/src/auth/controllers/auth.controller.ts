@@ -23,23 +23,36 @@ export class AuthController {
 
     @Post('login')
     @Public()
-    login(@Body() data: LoginDTO, @Res({ passthrough: true }) res: Response) {
+    async login(@Body() data: LoginDTO, @Res({ passthrough: true }) res: Response) {
         this.logger.log(`Tentativa de login: ` + this._emailMaskService.mask(data.email), '#89cdce')
 
-        return this._authService.login(data, res);
+        const { user, token } = await this._authService.login(data)
+
+        res.cookie('access', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 2 * 60 * 1000
+        });
+
+        return user;
     }
 
-    @Post('validateLogin')
+    @Post('preLogin')
     @Public()
-    async validateLogin(@Body() data: PreLoginDTO, @Res({ passthrough: true }) res: Response) {
-        const validate = await this._authService.validUserCredentialsLogin(data, res);
+    async preLogin(@Body() data: PreLoginDTO, @Res({ passthrough: true }) res: Response) {
+        const { user, temporaryToken } = await this._authService.preLogin(data);
+
+        res.cookie('access', temporaryToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 2 * 60 * 1000
+        });
 
         this.logger.log(`Validando credenciais para: ` + this._emailMaskService.mask(data.email), '#89cdce')
         
-        if (validate) this.logger.log(`Credenciais validadas para: ` + this._emailMaskService.mask(data.email), '#7ddf92')
-        else this.logger.warn(`Credenciais inválidas para: ${this._emailMaskService.mask(data.email)}`);
-
-        return validate;
+        return user;
     }
 
     @Post('logout')
