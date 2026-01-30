@@ -7,7 +7,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { CustomLogger } from './shared/services/custom-logger.service';
 import { APP_GUARD } from '@nestjs/core'
-import { NoPublicRoutesGuard } from './shared/guards/no-public-routes.guard'
+import { JwtAuthGuard } from './shared/guards/jwt-auth.guard'
 import { SharedModule } from './shared/shared.module';
 import { EnterpriseModule } from './enterprise/enterprise.module';
 import { EstablishmentModule } from './establishment/establishment.module';
@@ -35,7 +35,7 @@ import { UserCorporationModule } from './user-corporations/user-corporations.mod
     CustomLogger,
     {
       provide: APP_GUARD,
-      useClass: NoPublicRoutesGuard
+      useClass: JwtAuthGuard
     }
   ],
 })

@@ -46,6 +46,7 @@ export class LeftMenuComponent implements OnInit {
   ngOnInit(): void {
     this.userSubscription = this._authService.user$.subscribe(user => {
       this.userLogged = user;
+      console.log('userrr: ', this.userLogged)
       // Chame a lógica da foto do usuário aqui, se necessário
       this.getUserPhotoURL();
     });
@@ -57,10 +58,6 @@ export class LeftMenuComponent implements OnInit {
 
   logout() {
     this._authService.logout().subscribe({
-      // Opcional: `complete` ou um `next`, caso precise alguma reação
-      // complete: () => {
-      //   console.log('Logout completado!');
-      // }
     });
   }
 

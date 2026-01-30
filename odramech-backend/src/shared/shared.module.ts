@@ -1,13 +1,13 @@
 import { Module } from "@nestjs/common";
-import { NoPublicRoutesGuard } from "./guards/no-public-routes.guard";
+import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { AuthModule } from '../auth/auth.module';
 import { PrismaService } from "src/prisma/prisma-service";
 
 @Module({
     imports: [AuthModule],
-    providers: [NoPublicRoutesGuard, PrismaService],
+    providers: [JwtAuthGuard, PrismaService],
     controllers:[],
-    exports: [NoPublicRoutesGuard]
+    exports: [JwtAuthGuard]
 })
 
 export class SharedModule{}

@@ -3,4 +3,5 @@ export interface UserLogged {
     name: string
     email: string
     phone: string
+    context: string
 }

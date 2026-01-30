@@ -8,27 +8,18 @@ import { AuthService } from '@shared/services/auth.service';
   providedIn: 'root'
 })
 export class AuthGuard implements CanActivate {
-  // Injeta o serviço de autenticação e o router
   private readonly _authService = inject(AuthService);
   private readonly _router = inject(Router);
 
   canActivate(): Observable<boolean | UrlTree> {
-    // Retorna o Observable do estado do usuário do AuthService
     return this._authService.user$.pipe(
-      // Pega o primeiro valor emitido e completa.
-      // Isso evita que o guard fique "escutando" para sempre.
       take(1),
-      // Mapeia o valor booleano para uma decisão de navegação
       map((user) => {
-        // Se o objeto 'user' for null, o usuário não está logado
         const isLoggedIn = !!user;
 
         if (!isLoggedIn) {
-          // Se o usuário não estiver logado, redireciona para a página de login
-          // A forma reativa é retornar uma UrlTree.
           return this._router.createUrlTree(['/login']);
         }
-        // Se estiver logado, permite o acesso.
         return true;
       })
     );

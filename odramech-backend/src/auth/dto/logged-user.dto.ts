@@ -1,5 +1,6 @@
 
-import { IsEmail, IsNumber, IsString } from "class-validator"
+import { IsEmail, IsEnum, IsNumber, IsString } from "class-validator"
+import { AuthContext } from "../enums/auth-context.enum"
 
 export class LoggedUser {
     @IsNumber()
@@ -14,4 +15,7 @@ export class LoggedUser {
 
     @IsString()
     phone: string
+
+    @IsEnum(AuthContext)
+    context: AuthContext;
 }

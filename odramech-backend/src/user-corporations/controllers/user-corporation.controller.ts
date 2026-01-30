@@ -15,7 +15,7 @@ export class UserCorporationController {
 
     @Get()
     getCorporationsByUserId(@Req() req) {
-      const userId = req.user.id;
+      const userId = req.authContext.id;
 
       return this._userCorporationService.getUserCorporationsByUserId(userId);
     }

@@ -7,6 +7,8 @@ import { Response } from 'express';
 import { LoggedUser } from "../dto/logged-user.dto";
 import { PreLoginDTO } from "../dto/pre-login.dto";
 import { UserCorporationService } from "src/user-corporations/services/user-corporation.service";
+import { AuthContext } from "../enums/auth-context.enum";
+import { AuthPayload } from "../interfaces/auth-payload.interface";
 
 @Injectable()
 export class AuthService {
@@ -64,7 +66,6 @@ export class AuthService {
 
       const { password, ...userWithoutPassword } = userFound;
       return userWithoutPassword as LoggedUser;
-
     }
 
     async preLogin(data: PreLoginDTO) {
@@ -86,5 +87,27 @@ export class AuthService {
     async logout(res: Response) {
       res.clearCookie('access');
       return { message: 'Session terminated' }
+    }
+
+    async getMe(payloadJwt: AuthPayload): Promise<LoggedUser> {
+      const userLogged = await this._prisma.user.findUnique({
+        where: {
+          id: payloadJwt.sub
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true
+        }
+      });
+
+      if (!userLogged) {
+        throw new UnauthorizedException("Usuário não encontrado.");
+      }
+
+      const userLoggedWithContext = {...userLogged, context: payloadJwt.context} as LoggedUser
+
+      return userLoggedWithContext;
     }
 }

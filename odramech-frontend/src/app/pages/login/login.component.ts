@@ -11,7 +11,7 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { ModalCreateEnterprise } from '@shared/components/modals/modal-create-enterprise/modal-create-enterprise.component';
 import { UserLogged } from '@shared/models/UserLogged';
 import { UserCorporationService } from '@shared/services/user-corporation.service';
-import { finalize, map, Observable, of, switchMap, tap } from 'rxjs';
+import { EMPTY, finalize, map, Observable, of, switchMap, tap } from 'rxjs';
 import { ModalSelectEstablishment } from '@shared/components/modals/modal-select-establishment/modal-select-establishment.component';
 import { PreLogin } from '@shared/models/PreLogin';
 import { UserCorpRelation } from 'app/enums/user-corp-relations.enum';
@@ -85,6 +85,8 @@ export class LoginComponent {
         return of(corps[0]);
       }),
       switchMap(selectedEnterprise => {
+        if (!selectedEnterprise) return EMPTY // IF NO ENTERPRISE IS SELECTED
+
         const idEtp = selectedEnterprise.id
 
         return this.getEstablishmentsForEnterprise(idEtp)
@@ -94,6 +96,8 @@ export class LoginComponent {
         else return of (establishments[0])
       }),
       switchMap(establishmentSelected => {
+        if(!establishmentSelected) return EMPTY // IF NO ESTABLISHMENT IS SELECTED
+
         const idEstablishmentSelected = establishmentSelected.id
 
         const dataToLogin = {tenantId: idEstablishmentSelected, ...dataToSend}

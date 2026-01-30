@@ -2,25 +2,14 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { PUBLIC_KEY } from '../decorators/public-routes.decorator'
 import { Reflector } from '@nestjs/core'
 import { JWTService } from 'src/auth/services/jwt.service';
-import { PrismaService } from 'src/prisma/prisma-service';
-
-export interface TokenDecodified {
-  sub: number
-}
-
-export interface LoggedUser {
-  name: string
-  username: string
-  email: string | null
-  phone: string | null
-}
+import {  } from 'src/auth/enums/auth-context.enum';
+import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
 
 @Injectable()
-export class NoPublicRoutesGuard implements CanActivate {
+export class JwtAuthGuard implements CanActivate {
     constructor(
         private readonly _reflector: Reflector,
         private readonly _jwtService: JWTService,
-        private readonly _prisma: PrismaService
     ) {}
 
 
@@ -43,27 +32,9 @@ export class NoPublicRoutesGuard implements CanActivate {
 
     await this._jwtService.validateToken(token);
 
-    // QUANDO CHEGA AQUI: O token é válido, a lógica de busca do usuário prossegue
-    const tokenDecodified: TokenDecodified = await this._jwtService.decoderToken(token);
-    
-    const userLogged = await this._prisma.user.findUnique({
-      where: {
-        id: tokenDecodified.sub
-      },
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        email: true,
-        phone: true
-      }
-    });
+    const tokenDecodified: AuthPayload = await this._jwtService.decoderToken(token);
+    request.authContext = tokenDecodified
 
-    if (!userLogged) {
-      throw new UnauthorizedException("Usuário não encontrado.");
-    }
-
-    request.user = userLogged;
     return true;
   }
 }

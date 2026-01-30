@@ -5,10 +5,10 @@ import { EmailMaskService } from 'src/shared/services/mask-email.service';
 import type { Response } from "express";
 import { Public } from '../../shared/decorators/public-routes.decorator';
 import { LoggedUser } from '../dto/logged-user.dto';
-import { NoPublicRoutesGuard } from 'src/shared/guards/no-public-routes.guard';
 import { RequestWithUser } from '../dto/request-with-user.dto';
 import { PreLoginDTO } from '../dto/pre-login.dto';
 import { LoginDTO } from '../dto/login.dto';
+import { AuthPayload } from '../interfaces/auth-payload.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -60,11 +60,11 @@ export class AuthController {
         return this._authService.logout(res);
     }
 
-    @Get('user')
-    getUserLogged(@Req() request: RequestWithUser): LoggedUser {
-        const userLogged = request.user
+    @Post('me')
+    getUserLogged(@Req() request: any) {
+        const payloadJwt = request.authContext
         this.logger.log('Dados de usuário autenticado enviado na requisição', '#3980b0')
-        return userLogged
+        return this._authService.getMe(payloadJwt)
     }
 
     @Get('status/section')

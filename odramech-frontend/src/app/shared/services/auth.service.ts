@@ -6,7 +6,7 @@ import { PreLogin } from '@shared/models/PreLogin';
 import { UserLogged } from '@shared/models/UserLogged';
 import { NestAPI } from '@shared/services/nest-api.service';
 import { ToastrService } from 'ngx-toastr';
-import { BehaviorSubject, catchError, firstValueFrom, Observable, switchMap, tap, throwError } from 'rxjs';
+import { BehaviorSubject, catchError, firstValueFrom, Observable, of, switchMap, tap, throwError } from 'rxjs';
 
 export type StatusLogin = 'off' | 'on' | 'expired'
 
@@ -57,7 +57,17 @@ export class AuthService {
     }
 
     getUserLogged(): Observable<UserLogged> {
-      return this._nestApi.get<UserLogged>('auth/user');
+      if (this._user.value) {
+        return of(this._user.value);
+      }
+    
+      return this._nestApi.post<UserLogged>('auth/me').pipe(
+        tap(user => this._user.next(user)),
+        catchError((err: HttpErrorResponse) => {
+          this._user.next(null); // limpa o usuário em caso de erro
+          return throwError(() => err);
+        })
+      );
     }
 
     setStatusLogin(status: StatusLogin) {
