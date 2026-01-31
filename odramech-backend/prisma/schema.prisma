@@ -17,8 +17,13 @@ model User {
   updatedAt       DateTime          @updatedAt
   addressId       Int?              @unique
 
-  address         Address?          @relation(fields: [addressId], references: [id])
-  userCorporation UserCorporation[]
+  address                     Address?          @relation(fields: [addressId], references: [id])
+  userCorporation             UserCorporation[]
+  workOrdersCreated           WorkOrder[]       @relation("WorkOrderCreatedBy")
+  workOrdersEnded             WorkOrder[]       @relation("WorkOrderEndedBy")
+  workOrdersAsClient          WorkOrder[]       @relation("WorkOrderClient")
+  workOrdersAsResponsible     WorkOrder[]       @relation("WorkOrderResponsible")
+  appointmentCreateds         Appointment[]     @relation("UserAppointmentCreated")
 
   @@map("cad_user")
 }
@@ -98,8 +103,71 @@ model UserCorporation {
   @@map("cad_user_corporation")
 }
 
+model WorkOrder {
+  id                    Int           @id @default(autoincrement())
+  status                OrderStatus
+  dateTimeCreation      DateTime      @default(now()) @map("date_time_creation")
+  dateTimeEnd           DateTime?     @db.Timestamptz(6) @map("date_time_end")
+  userCreationId        Int           @map("id_user_creation")
+  userEndId             Int?          @map("id_user_end")
+  userResponsibleId     Int?          @map("id_user_responsible")
+  clientId              Int           @map("id_client")
+  numberOs              Int           @map("number_os")
+
+  userCreation          User          @relation("WorkOrderCreatedBy", fields: [userCreationId], references: [id])
+
+  userEnd               User?         @relation("WorkOrderEndedBy", fields: [userEndId],references: [id])
+
+  userResponsible       User?         @relation("WorkOrderResponsible", fields: [userResponsibleId],references: [id])
+
+  client                User          @relation("WorkOrderClient", fields: [clientId], references: [id])
+
+  @@map("work_orders")
+}
+
+model Appointment {
+  id                    Int                   @id @default(autoincrement())
+  dateTime              DateTime              @db.Timestamptz(6) @map("date_time")
+  contentHtml           String                @map("content_html")
+  userAppointmentId     Int                   @map("id_user_appointment")
+  appointpentType       TypeAppointment       @map("appointment_type")
+
+  userAppointment       User                  @relation("UserAppointmentCreated", fields: [userAppointmentId], references: [id])
+
+  archives              ArchiveAppointment[]
+
+  @@map("appointments")
+}
+
+model ArchiveAppointment {
+  id                    Int               @id @default(autoincrement())
+  archiveId             Int               @map("id_archive")
+  appointmentId         Int               @map("id_appointment")
+  archiveType           Int               @map("archive_type")
+  url                   String
+  mimeType              String            @map("mime_type")
+  createdAt             DateTime          @default(now())
+
+  appointment           Appointment  @relation(fields: [appointmentId], references: [id])
+
+  @@map("archive_appointment")
+}
+
 enum Role {
   ADMIN
   USER
   WORKER
+}
+
+enum OrderStatus {
+  PENDENTE
+  EM_ATENDIMENTO
+  AGUARDANDO_PECAS
+  FINALIZADA
+  CANCELADA
+}
+
+enum TypeAppointment {
+  PUBLICO
+  INTERNO
 }

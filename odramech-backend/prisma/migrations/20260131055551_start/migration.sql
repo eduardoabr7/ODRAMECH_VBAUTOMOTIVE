@@ -1,12 +1,17 @@
 -- CreateEnum
 CREATE TYPE "odramech"."Role" AS ENUM ('ADMIN', 'USER', 'WORKER');
 
+-- CreateEnum
+CREATE TYPE "odramech"."OrderStatus" AS ENUM ('PENDENTE', 'EM_ATENDIMENTO', 'AGUARDANDO_PECAS', 'FINALIZADA', 'CANCELADA');
+
+-- CreateEnum
+CREATE TYPE "odramech"."TypeAppointment" AS ENUM ('PUBLICO', 'INTERNO');
+
 -- CreateTable
 CREATE TABLE "odramech"."cad_user" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT,
-    "username" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "phone" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -74,11 +79,47 @@ CREATE TABLE "odramech"."cad_user_corporation" (
     CONSTRAINT "cad_user_corporation_pkey" PRIMARY KEY ("idUser","idEnterprise","idEstablishment")
 );
 
--- CreateIndex
-CREATE UNIQUE INDEX "cad_user_email_key" ON "odramech"."cad_user"("email");
+-- CreateTable
+CREATE TABLE "odramech"."work_orders" (
+    "id" SERIAL NOT NULL,
+    "status" "odramech"."OrderStatus" NOT NULL,
+    "date_time_creation" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "date_time_end" TIMESTAMPTZ(6),
+    "id_user_creation" INTEGER NOT NULL,
+    "id_user_end" INTEGER,
+    "id_user_responsible" INTEGER,
+    "id_client" INTEGER NOT NULL,
+    "number_os" INTEGER NOT NULL,
+
+    CONSTRAINT "work_orders_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "odramech"."appointments" (
+    "id" SERIAL NOT NULL,
+    "date_time" TIMESTAMPTZ(6) NOT NULL,
+    "content_html" TEXT NOT NULL,
+    "id_user_appointment" INTEGER NOT NULL,
+    "appointment_type" "odramech"."TypeAppointment" NOT NULL,
+
+    CONSTRAINT "appointments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "odramech"."archive_appointment" (
+    "id" SERIAL NOT NULL,
+    "id_archive" INTEGER NOT NULL,
+    "id_appointment" INTEGER NOT NULL,
+    "archive_type" INTEGER NOT NULL,
+    "url" TEXT NOT NULL,
+    "mime_type" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "archive_appointment_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "cad_user_username_key" ON "odramech"."cad_user"("username");
+CREATE UNIQUE INDEX "cad_user_email_key" ON "odramech"."cad_user"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "cad_user_addressId_key" ON "odramech"."cad_user"("addressId");
@@ -118,3 +159,21 @@ ALTER TABLE "odramech"."cad_user_corporation" ADD CONSTRAINT "cad_user_corporati
 
 -- AddForeignKey
 ALTER TABLE "odramech"."cad_user_corporation" ADD CONSTRAINT "cad_user_corporation_idEstablishment_fkey" FOREIGN KEY ("idEstablishment") REFERENCES "odramech"."cad_establishment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "odramech"."work_orders" ADD CONSTRAINT "work_orders_id_user_creation_fkey" FOREIGN KEY ("id_user_creation") REFERENCES "odramech"."cad_user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "odramech"."work_orders" ADD CONSTRAINT "work_orders_id_user_end_fkey" FOREIGN KEY ("id_user_end") REFERENCES "odramech"."cad_user"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "odramech"."work_orders" ADD CONSTRAINT "work_orders_id_user_responsible_fkey" FOREIGN KEY ("id_user_responsible") REFERENCES "odramech"."cad_user"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "odramech"."work_orders" ADD CONSTRAINT "work_orders_id_client_fkey" FOREIGN KEY ("id_client") REFERENCES "odramech"."cad_user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "odramech"."appointments" ADD CONSTRAINT "appointments_id_user_appointment_fkey" FOREIGN KEY ("id_user_appointment") REFERENCES "odramech"."cad_user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "odramech"."archive_appointment" ADD CONSTRAINT "archive_appointment_id_appointment_fkey" FOREIGN KEY ("id_appointment") REFERENCES "odramech"."appointments"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
