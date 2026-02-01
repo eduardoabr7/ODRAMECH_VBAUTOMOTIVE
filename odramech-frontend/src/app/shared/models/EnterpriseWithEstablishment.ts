@@ -1,8 +1,7 @@
-import { Address } from "./Address";
-import { Enterprise } from "./Enterprise";
+import { EnterpriseCreate } from "./EnterpriseCreate";
 import { Establishment } from "./Establishment";
 
 export interface EnterpriseWithEstablishments {
-    enterprise: Enterprise
+    enterprise: EnterpriseCreate
     establishment: Establishment[]
 }

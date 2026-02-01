@@ -1,56 +1,121 @@
-import { PrismaClient } from "@prisma/client"
-import { CreateUserDto } from "../src/user/dto/create-user.dto";
+import { PrismaClient, Role } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
-
 const saltRounds = 11;
 
-async function hashPassword(password): Promise<string> {
-    return await bcrypt.hash(password, saltRounds);
+async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, saltRounds);
 }
 
-async function getHashedPassword() {
-  return await hashPassword("odramin");
-}
-
-const data = {
-    id: 1,
-    name: "Administrador",
-    email: "odramechenterprise@gmail.com",
-}
-
-async function userExists(email: string) {
-    const user = await prisma.user.findUnique({
-        where: { email }
-    })
-    return user
-}
-
-async function createAdmin() {
-    try {
-        const user = await prisma.user.create({ data: {
-            ...data,
-            password: await getHashedPassword()
-        } });
-        console.log(`Usuário inicial criado com sucesso`)
-    } catch (err) {
-        if (err instanceof Error) {
-            console.error(`Erro ao criar o usuário administrador:`, err.message)
-        } else {
-            console.error("Erro inesperado: ", err)
-        }
-    }
-}
+const ADMIN_EMAIL = "odramechenterprise@gmail.com";
+const ADMIN_PASSWORD = "odramin";
 
 async function main() {
-    if (await userExists(data.email)) {
-        console.log(`Usuário administrador já existe. Nenhuma ação necessária.`)
-    } else {
-        await createAdmin()
-    }
+  /* =========================
+     USER (ADMIN)
+  ==========================*/
+  const adminUser = await prisma.user.upsert({
+    where: { email: ADMIN_EMAIL },
+    update: {},
+    create: {
+      name: "Administrador",
+      email: ADMIN_EMAIL,
+      password: await hashPassword(ADMIN_PASSWORD),
+      phone: "11999999999",
+    },
+  });
 
-    await prisma.$disconnect()
+  /* =========================
+     ADDRESS (GENÉRICO)
+  ==========================*/
+  const address = await prisma.address.create({
+    data: {
+      street: "Rua Exemplo",
+      number: "123",
+      district: "Centro",
+      city: "São Paulo",
+      zipCode: "00000-000",
+      country: "BR",
+    },
+  });
+
+  /* =========================
+     ENTERPRISE
+  ==========================*/
+  const enterprise = await prisma.enterprise.upsert({
+    where: { cnpj: "00.000.000/0001-00" },
+    update: {},
+    create: {
+      name: "Empresa Genérica",
+      email: "empresa@odramech.com",
+      phone: "1133333333",
+      cnpj: "00.000.000/0001-00",
+      addressId: address.id,
+    },
+  });
+
+  /* =========================
+     ESTABLISHMENT
+  ==========================*/
+  const establishment = await prisma.establishment.upsert({
+    where: { cnpj: "11.111.111/0001-11" },
+    update: {},
+    create: {
+      name: "Estabelecimento Genérico",
+      email: "estabelecimento@odramech.com",
+      phone: "1144444444",
+      cnpj: "11.111.111/0001-11",
+      addressId: address.id,
+    },
+  });
+
+  /* =========================
+     ENTERPRISE ↔ ESTABLISHMENT
+  ==========================*/
+  await prisma.enterpriseEstablishment.upsert({
+    where: {
+      idEnterprise_idEstablishment: {
+        idEnterprise: enterprise.id,
+        idEstablishment: establishment.id,
+      },
+    },
+    update: {},
+    create: {
+      idEnterprise: enterprise.id,
+      idEstablishment: establishment.id,
+    },
+  });
+
+  /* =========================
+     USER ↔ CORPORATION (ADMIN)
+  ==========================*/
+  await prisma.userCorporation.upsert({
+    where: {
+      idUser_idEnterprise_idEstablishment: {
+        idUser: adminUser.id,
+        idEnterprise: enterprise.id,
+        idEstablishment: establishment.id,
+      },
+    },
+    update: {
+      role: Role.ADMIN,
+    },
+    create: {
+      idUser: adminUser.id,
+      idEnterprise: enterprise.id,
+      idEstablishment: establishment.id,
+      role: Role.ADMIN,
+    },
+  });
+
+  console.log("✅ Seed inicial executado com sucesso");
 }
 
 main()
+  .catch((e) => {
+    console.error("❌ Erro no seed:", e);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthContext } from '@shared/models/AuthContext';
 import { LoginData } from '@shared/models/LoginData';
 import { PreLogin } from '@shared/models/PreLogin';
 import { UserLogged } from '@shared/models/UserLogged';
@@ -17,7 +18,7 @@ export class AuthService {
     private readonly _isLoggedIn = new BehaviorSubject<boolean>(true);
     isLoggedIn$ = this._isLoggedIn.asObservable();
 
-    private readonly _user = new BehaviorSubject<UserLogged | null>(null);
+    private readonly _user = new BehaviorSubject<AuthContext | null>(null);
     user$ = this._user.asObservable();
 
     constructor(
@@ -27,9 +28,12 @@ export class AuthService {
     ) {
     }
 
-    login(data: LoginData): Observable<UserLogged> {
+    login(data: LoginData): Observable<AuthContext> {
       return this._nestApi.post('auth/login', data).pipe(
-        tap((user: UserLogged) => {
+        switchMap(() => {
+          return this.getAuthContext()
+        }),
+        tap((user: AuthContext) => {
           this.setUserLogged(user);
           this._router.navigateByUrl('/home');
         })
@@ -56,13 +60,13 @@ export class AuthService {
       return this._nestApi.post('auth/preLogin', data)      
     }
 
-    getUserLogged(): Observable<UserLogged> {
+    getAuthContext(): Observable<AuthContext> {
       if (this._user.value) {
         return of(this._user.value);
       }
     
-      return this._nestApi.post<UserLogged>('auth/me').pipe(
-        tap(user => this._user.next(user)),
+      return this._nestApi.post<AuthContext>('auth/session').pipe(
+        tap(userContext => this._user.next(userContext)),
         catchError((err: HttpErrorResponse) => {
           this._user.next(null); // limpa o usuário em caso de erro
           return throwError(() => err);
@@ -79,7 +83,7 @@ export class AuthService {
       }
     }
 
-    setUserLogged(user: UserLogged | null) {
+    setUserLogged(user: AuthContext | null) {
       this._user.next(user);
     }
 }

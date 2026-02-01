@@ -60,11 +60,11 @@ export class AuthController {
         return this._authService.logout(res);
     }
 
-    @Post('me')
+    @Post('session')
     getUserLogged(@Req() request: any) {
         const payloadJwt = request.authContext
         this.logger.log('Dados de usuário autenticado enviado na requisição', '#3980b0')
-        return this._authService.getMe(payloadJwt)
+        return this._authService.getMeAuthContext(payloadJwt)
     }
 
     @Get('status/section')

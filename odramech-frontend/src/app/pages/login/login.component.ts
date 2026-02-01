@@ -78,6 +78,10 @@ export class LoginComponent {
         ()=> this.getUserCorp()
       ),
       switchMap(corps => {
+        if (!corps.length) {
+          this._toastr.info('Verifique com seu mecânico', 'Seu usuário não está vinculado a uma empresa')
+          return EMPTY
+        }
         if (this.haveMultiTenant(corps)) {
           return this.openSelectEntepriseModal(corps);
         }

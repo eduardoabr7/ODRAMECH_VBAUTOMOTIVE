@@ -4,7 +4,7 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
-import { Establishment } from '@shared/models/Establishment';
+import { EstablishmentCreate } from '@shared/models/EstablishmentCreate';
 
 @Component({
   selector: 'app-modal-create-establishment',
@@ -26,7 +26,7 @@ export class ModalCreateEstablishmentComponent extends BaseModalComponent {
 
   withCadEnterprise: boolean = false;
 
-  formData: Establishment = {
+  formData: EstablishmentCreate = {
     name: '',
     email: '',
     phone: '',

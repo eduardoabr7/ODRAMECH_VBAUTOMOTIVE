@@ -5,7 +5,7 @@ import { AuthService } from '@shared/services/auth.service';
 
 export function initializeApp(authService: AuthService) {
   return () => {
-    return authService.getUserLogged().toPromise()
+    return authService.getAuthContext().toPromise()
       .then(user => {
         authService.setStatusLogin('on');
         authService.setUserLogged(user);

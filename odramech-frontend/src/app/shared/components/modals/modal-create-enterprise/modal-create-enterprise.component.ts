@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
 import { ModalCreateEstablishmentComponent } from '../modal-create-establishment/modal-create-establishment.component';
 import { Address } from '@shared/models/Address';
-import { Enterprise } from '@shared/models/Enterprise';
+import { EnterpriseCreate } from '@shared/models/EnterpriseCreate';
 import { Establishment } from '@shared/models/Establishment';
 import { NestAPI } from '@shared/services/nest-api.service';
 import { EnterpriseService } from '@shared/services/enterprise.service';
@@ -45,7 +45,7 @@ export class ModalCreateEnterprise extends BaseModalComponent {
   imageUrl: string | ArrayBuffer | null = null;
   withCreateEstablisment: boolean = false;
 
-  enterprise: Enterprise = {
+  enterprise: EnterpriseCreate = {
     name: '',
     email: '',
     phone: '',

@@ -89,8 +89,8 @@ export class AuthService {
       return { message: 'Session terminated' }
     }
 
-    async getMe(payloadJwt: AuthPayload): Promise<LoggedUser> {
-      const userLogged = await this._prisma.user.findUnique({
+    async getMeAuthContext(payloadJwt: AuthPayload): Promise<any> {
+      const value = await this._prisma.user.findUnique({
         where: {
           id: payloadJwt.sub
         },
@@ -102,12 +102,20 @@ export class AuthService {
         }
       });
 
-      if (!userLogged) {
+      if (!value) {
         throw new UnauthorizedException("Usuário não encontrado.");
       }
 
-      const userLoggedWithContext = {...userLogged, context: payloadJwt.context} as LoggedUser
+      const userCorp = payloadJwt.context === 'PRE_AUTH' ? null : await this._userCorpService.getUserCorporationsByUserId(value.id);
 
-      return userLoggedWithContext;
+
+      const user = {...value, context: payloadJwt.context}
+
+      const authContext = {
+        user, 
+        userCorp
+      }
+
+      return authContext;
     }
 }

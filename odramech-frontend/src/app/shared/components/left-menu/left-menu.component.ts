@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
 import { UserLogged } from '@shared/models/UserLogged';
 import { Subscription } from 'rxjs';
+import { AuthContext } from '@shared/models/AuthContext';
 interface BotoesMenuLateral{
   nome: string,
   icon: string,
@@ -29,7 +30,7 @@ export class LeftMenuComponent implements OnInit {
   @Output() estadoMenuChange = new EventEmitter<boolean>();
   @Input() isCollapsed = true;
 
-  userLogged: UserLogged | null = null;
+  authContext: AuthContext;
   urlPhotoUser: string | null = null;
 
   private userSubscription: Subscription | null = null;
@@ -44,9 +45,10 @@ export class LeftMenuComponent implements OnInit {
   ]
 
   ngOnInit(): void {
-    this.userSubscription = this._authService.user$.subscribe(user => {
-      this.userLogged = user;
-      console.log('userrr: ', this.userLogged)
+    this.userSubscription = this._authService.user$.subscribe(authCtx => {
+      this.authContext = authCtx;
+
+      console.log('userctxxxxxx left menu', this.authContext)
       // Chame a lógica da foto do usuário aqui, se necessário
       this.getUserPhotoURL();
     });
