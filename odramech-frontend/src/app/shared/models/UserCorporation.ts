@@ -1,3 +1,5 @@
+import { Establishment } from "./Establishment"
+
 export enum Role {
   ADMIN = 'ADMIN',
   USER = 'USER',

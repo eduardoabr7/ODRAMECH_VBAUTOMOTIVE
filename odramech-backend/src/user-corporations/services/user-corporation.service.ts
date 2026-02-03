@@ -74,4 +74,44 @@ export class UserCorporationService {
     }
 
 
+    async getUserCorporationByEstablishmentId(estabId: number) {
+      const userCorporation =
+        await this._prismaService.userCorporation.findFirst({
+          where: { idEstablishment: estabId },
+          include: {
+            establishment: {
+              select: {
+                id: true,
+                logoUrl: true,
+                name: true,
+                address: {
+                  select: {
+                    street: true,
+                    number: true,
+                    city: true,
+                  },
+                },
+              },
+            },
+            enterprise: {
+              select: {
+                id: true,
+                logoUrl: true,
+                name: true,
+              },
+            },
+          },
+        });
+      
+      if (!userCorporation) return null;
+      
+      return {
+        ...userCorporation.enterprise,
+        establishment: {
+          ...userCorporation.establishment,
+          role: userCorporation.role,
+        },
+      };
+    } 
+
 }

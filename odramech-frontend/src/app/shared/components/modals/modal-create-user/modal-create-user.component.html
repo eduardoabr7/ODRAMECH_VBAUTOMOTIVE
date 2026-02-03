@@ -1,0 +1,190 @@
+<div class="modal-content">
+  <div class="modal-header text-white">
+    <h5 class="modal-title">{{ title || 'Cadastro' }}</h5>
+    <button
+      type="button"
+      class="btn-close btn-close-white"
+      aria-label="Close"
+      (click)="attemptClose()"
+    ></button>
+  </div>
+
+    <div class="modal-body bg-light">
+      <form>
+        <p class="text-muted mb-3">
+          <span class="text-danger">*</span> Campo obrigatório
+        </p>
+
+        <div class="row mb-3">
+          <div class="col-12 col-md-12">
+            <label class="form-label">
+              Nome
+            </label>
+            <input type="text" class="form-control" required />
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-12">
+            <label class="form-label d-block">
+              Sexo <span class="text-danger">*</span>
+            </label>
+
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" style="cursor: pointer;" type="radio" name="sexo" />
+              <label class="form-check-label">Feminino</label>
+            </div>
+
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" style="cursor: pointer;" type="radio" name="sexo" />
+              <label class="form-check-label">Masculino</label>
+            </div>
+
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" style="cursor: pointer;" type="radio" name="sexo" />
+              <label class="form-check-label">Outro</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-12 col-md-6">
+            <label class="form-label">
+              Telefone Principal <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-telephone"></i>
+              </span>
+              <input type="text" class="form-control" placeholder="XX XXXXX-XXXX" required/>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label">Telefone Secundário</label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-telephone"></i>
+              </span>
+              <input type="text" class="form-control" placeholder="XX XXXXX-XXXX" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-check form-switch">
+          <input 
+            class="form-check-input" 
+            type="checkbox" 
+            role="switch" 
+            id="switchCheckEmailPassword" 
+            style="cursor: pointer;"
+            name="displayEmailPassword" 
+            [(ngModel)]="displayEmailPassword">
+          <label class="form-check-label" for="switchCheckEmailPassword" style="cursor: pointer;">Criar login para o usuário</label>
+        </div>
+
+        <div class="user-credentials" *ngIf="displayEmailPassword">
+            <div class="row mb-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label">
+                  Email <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="bi bi-envelope"></i>
+                  </span>
+                  <input type="email" class="form-control" />
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">
+                  Senha <span class="text-danger">*</span>
+                </label>
+                <input type="password" class="form-control" />
+                <div class="form-text">
+                    Mínimo de 6 caracteres
+                </div>
+              </div>
+            </div>
+        </div>
+
+
+        <div class="form-check form-switch">
+          <input 
+            class="form-check-input" 
+            type="checkbox" 
+            role="switch" 
+            id="switchCheckAddress" 
+            name="displayAddress"  
+            [(ngModel)]="displayAddress"
+            style="cursor: pointer;"
+            >
+          <label class="form-check-label" for="switchCheckAddress" style="cursor: pointer;">Incluir endereço</label>
+        </div>
+
+        <div class="address" *ngIf="displayAddress">
+            <div class="row mb-3 align-items-end">
+              <div class="col-12 col-md-3">
+                <label class="form-label">
+                  CEP <span class="text-danger">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    class="form-control"
+                    name="cep" 
+                    [(ngModel)]="cep"/>
+              </div>
+
+              <div class="col-12 col-md-3">
+                <button type="button" class="btn btn-primary w-100" (click)="buscaCep()">
+                  Pesquisar
+                </button>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-12 col-md-5">
+                <label class="form-label">Rua</label>
+                <input type="text" class="form-control" readonly />
+              </div>
+
+              <div class="col-12 col-md-2">
+                <label class="form-label">
+                  Nº <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" />
+              </div>
+
+              <div class="col-12 col-md-5">
+                <label class="form-label">Bairro</label>
+                <input type="text" class="form-control" readonly />
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label">Cidade</label>
+                <input type="text" class="form-control" readonly />
+              </div>
+
+              <div class="col-12 col-md-3">
+                <label class="form-label">Estado</label>
+                <input type="text" class="form-control" readonly />
+              </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+          <div class="col-12 text-end">
+            <button type="reset" class="btn btn-outline-danger me-2">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-success">
+              Cadastrar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+</div>

@@ -4,6 +4,7 @@ import { AuthService } from '@shared/services/auth.service';
 import { RecentServicesComponent } from '@shared/components/recent-services/recent-services.component';
 import { UserRemindersComponent } from '@shared/components/user-reminders/user-reminders.component';
 import { UserLogged } from '@shared/models/UserLogged';
+import { Router } from '@angular/router';
 @Component({
   selector: 'app-homepage',
   imports: [LeftMenuComponent, RecentServicesComponent, UserRemindersComponent],
@@ -12,15 +13,30 @@ import { UserLogged } from '@shared/models/UserLogged';
 })
 export class HomepageComponent {
 
-  authContext
+  authContext = null;
+  userLogged: UserLogged
+  corpLogged = null;
 
-  constructor(private readonly _authservice: AuthService){}
+  constructor(
+    private readonly _authservice: AuthService,
+    private readonly _router: Router
+  ){}
 
   ngOnInit() {
-    this._authservice.user$.subscribe(authCtx => {
-      this.authContext = authCtx
-    })
-    console.log(this.authContext)
+    this._authservice.user$.subscribe({
+      next: (authCtx) => {
+        this.authContext = authCtx;
+        this.userLogged = authCtx.user;
+        this.corpLogged = authCtx.usercorp;
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    });
+  }
+
+  navigate(eve) {
+    this._router.navigateByUrl(`/${eve}`)
   }
 
 }

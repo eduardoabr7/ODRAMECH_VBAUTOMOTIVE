@@ -10,8 +10,9 @@ datasource db {
 model User {
   id              Int               @id @default(autoincrement())
   name            String
-  email           String?           @unique
-  password        String
+  gender          Gender
+  email           String?            @unique
+  password        String?
   phone           String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -165,6 +166,12 @@ enum OrderStatus {
   AGUARDANDO_PECAS
   FINALIZADA
   CANCELADA
+}
+
+enum Gender {
+  M
+  F
+  O
 }
 
 enum TypeAppointment {
