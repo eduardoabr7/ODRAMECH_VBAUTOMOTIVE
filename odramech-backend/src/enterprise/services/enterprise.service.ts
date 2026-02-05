@@ -57,7 +57,8 @@ export class EnterpriseService {
                     district: enterprise.address.district,
                     city: enterprise.address.city,
                     zipCode: enterprise.address.zipCode,
-                    country: enterprise.address.country
+                    country: enterprise.address.country,
+                    neighborhood: enterprise.address.neighborhood
                 }
             }
         }
@@ -77,7 +78,8 @@ export class EnterpriseService {
                     district: establishment.address.district,
                     city: establishment.address.city,
                     zipCode: establishment.address.zipCode,
-                    country: establishment.address.country
+                    country: establishment.address.country,
+                    neighborhood: establishment.address.neighborhood
                 }
             }
         }

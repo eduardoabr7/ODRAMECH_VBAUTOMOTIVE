@@ -9,7 +9,7 @@ export class AddressDTO {
 
     @IsString()
     @IsOptional()
-    complement: string | null
+    complement?: string | null
 
     @IsString()
     district: string
@@ -22,4 +22,7 @@ export class AddressDTO {
     
     @IsString()
     country: string
+
+    @IsString()
+    neighborhood: string
 }

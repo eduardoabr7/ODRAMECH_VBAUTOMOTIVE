@@ -56,13 +56,15 @@ export class AuthService {
         select: {
           id: true,
           email: true,
-          phone: true,
+          principalPhone: true,
+          secondaryPhone: true,
           name: true,
           password: true
         }
       });
 
-      if(!userFound || !(await this._bcryptService.hashPasswordCompare(data.password, userFound.password))) throw new UnauthorizedException('Invalid credentials')
+      if(!userFound || !userFound.password || !(await this._bcryptService.hashPasswordCompare(data.password, userFound.password))) 
+        throw new UnauthorizedException('Invalid credentials')
 
       const { password, ...userWithoutPassword } = userFound;
       return userWithoutPassword as LoggedUser;
@@ -98,7 +100,7 @@ export class AuthService {
           id: true,
           name: true,
           email: true,
-          phone: true
+          principalPhone: true
         }
       });
 

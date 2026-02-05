@@ -1,5 +1,3 @@
-// src/app/shared/services/nest-api.service.ts
-
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { env } from '../../../environments/environment';

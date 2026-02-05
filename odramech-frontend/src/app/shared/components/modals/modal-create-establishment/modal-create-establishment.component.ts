@@ -38,7 +38,8 @@ export class ModalCreateEstablishmentComponent extends BaseModalComponent {
       city: '',
       district: '',
       zipCode: '',
-      country: ''
+      country: '',
+      neighborhood: ''
     }
   };
 

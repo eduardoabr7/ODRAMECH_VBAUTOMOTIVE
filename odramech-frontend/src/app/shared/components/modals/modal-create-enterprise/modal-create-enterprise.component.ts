@@ -56,7 +56,8 @@ export class ModalCreateEnterprise extends BaseModalComponent {
       number: '',
       city: '',
       zipCode: '',
-      country: ''
+      country: '',
+      neighborhood: ''
     }
   };
 

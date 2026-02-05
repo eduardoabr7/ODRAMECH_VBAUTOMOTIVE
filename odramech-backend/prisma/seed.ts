@@ -21,8 +21,9 @@ async function main() {
     create: {
       name: "Administrador",
       email: ADMIN_EMAIL,
+      gender: 'M',
       password: await hashPassword(ADMIN_PASSWORD),
-      phone: "11999999999",
+      principalPhone: "119999999",
     },
   });
 
@@ -37,6 +38,7 @@ async function main() {
       city: "São Paulo",
       zipCode: "00000-000",
       country: "BR",
+      neighborhood: 'Aparecida'
     },
   });
 
@@ -49,7 +51,7 @@ async function main() {
     create: {
       name: "Empresa Genérica",
       email: "empresa@odramech.com",
-      phone: "1133333333",
+      phone: "11333333",
       cnpj: "00.000.000/0001-00",
       addressId: address.id,
     },
@@ -64,7 +66,7 @@ async function main() {
     create: {
       name: "Estabelecimento Genérico",
       email: "estabelecimento@odramech.com",
-      phone: "1144444444",
+      phone: "11444444",
       cnpj: "11.111.111/0001-11",
       addressId: address.id,
     },

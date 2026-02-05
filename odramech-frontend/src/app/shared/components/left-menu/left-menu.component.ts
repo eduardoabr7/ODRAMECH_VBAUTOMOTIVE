@@ -48,8 +48,6 @@ export class LeftMenuComponent implements OnInit {
     this.userSubscription = this._authService.user$.subscribe(authCtx => {
       this.authContext = authCtx;
 
-      console.log('userctxxxxxx left menu', this.authContext)
-      // Chame a lógica da foto do usuário aqui, se necessário
       this.getUserPhotoURL();
     });
   }

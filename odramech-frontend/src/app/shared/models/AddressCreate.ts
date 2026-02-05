@@ -5,5 +5,6 @@ export interface AddressCreate {
     city: string,
     district: string,
     zipCode: string,
-    country: string
+    country: string,
+    neighborhood: string,
 }

@@ -9,6 +9,7 @@ import { ConnectionInterceptor } from '@shared/interceptors/connection-intercept
 import { initializeApp } from './app.initializer';
 import { AuthService } from '@shared/services/auth.service';
 import { ModalModule } from 'ngx-bootstrap/modal';
+import { provideNgxMask } from 'ngx-mask';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -18,6 +19,7 @@ export const appConfig: ApplicationConfig = {
       deps: [AuthService], 
       multi: true
     },
+    provideNgxMask(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideClientHydration(withEventReplay()),

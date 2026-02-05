@@ -10,7 +10,11 @@
   </div>
 
     <div class="modal-body bg-light">
-      <form>
+      <form 
+        #userForm="ngForm" 
+        (ngSubmit)="createUser()" 
+        (keydown.enter)="$event.preventDefault()">
+
         <p class="text-muted mb-3">
           <span class="text-danger">*</span> Campo obrigatório
         </p>
@@ -20,7 +24,13 @@
             <label class="form-label">
               Nome
             </label>
-            <input type="text" class="form-control" required />
+            <input 
+              type="text" 
+              class="form-control" 
+              required 
+              name="name"
+              [(ngModel)]="form.name"
+              autocomplete="off"/>
           </div>
         </div>
 
@@ -31,17 +41,35 @@
             </label>
 
             <div class="form-check form-check-inline">
-              <input class="form-check-input" style="cursor: pointer;" type="radio" name="sexo" />
+              <input 
+                class="form-check-input" 
+                style="cursor: pointer;" 
+                type="radio" 
+                name="gender" 
+                [value]="GenderEnum.Fem"
+                [(ngModel)]="form.gender"/>
               <label class="form-check-label">Feminino</label>
             </div>
 
             <div class="form-check form-check-inline">
-              <input class="form-check-input" style="cursor: pointer;" type="radio" name="sexo" />
+              <input 
+                class="form-check-input" 
+                style="cursor: pointer;" 
+                type="radio" 
+                name="gender" 
+                [value]="GenderEnum.Male"
+                [(ngModel)]="form.gender"/>
               <label class="form-check-label">Masculino</label>
             </div>
 
             <div class="form-check form-check-inline">
-              <input class="form-check-input" style="cursor: pointer;" type="radio" name="sexo" />
+              <input 
+                class="form-check-input" 
+                style="cursor: pointer;" 
+                type="radio" 
+                name="gender"
+                [value]="GenderEnum.Other" 
+                [(ngModel)]="form.gender"/>
               <label class="form-check-label">Outro</label>
             </div>
           </div>
@@ -56,17 +84,33 @@
               <span class="input-group-text">
                 <i class="bi bi-telephone"></i>
               </span>
-              <input type="text" class="form-control" placeholder="XX XXXXX-XXXX" required/>
+              <input 
+                type="text" 
+                class="form-control" 
+                placeholder="XX XXXXX-XXXX"
+                name="principalPhone"
+                [(ngModel)]="form.principalPhone"
+                required
+                mask="00 00000-0000"
+                #phone1="ngModel"
+                autocomplete="off"/>
             </div>
           </div>
-
+        
           <div class="col-12 col-md-6">
             <label class="form-label">Telefone Secundário</label>
             <div class="input-group">
               <span class="input-group-text">
                 <i class="bi bi-telephone"></i>
               </span>
-              <input type="text" class="form-control" placeholder="XX XXXXX-XXXX" />
+              <input 
+                type="text" 
+                class="form-control" 
+                placeholder="XX XXXXX-XXXX"
+                name="secondaryPhone"
+                [(ngModel)]="form.secondaryPhone"
+                mask="00 00000-0000"
+                autocomplete="off"/>
             </div>
           </div>
         </div>
@@ -93,14 +137,34 @@
                   <span class="input-group-text">
                     <i class="bi bi-envelope"></i>
                   </span>
-                  <input type="email" class="form-control" />
+                  <input 
+                    type="email" 
+                    class="form-control" 
+                    name="email"
+                    [(ngModel)]="form.email"
+                    email 
+                    #emailModel="ngModel"
+                    autocomplete="off"
+                    required/>
+                </div>
+              
+                <div *ngIf="emailModel.invalid && emailModel.touched" class="text-danger small mt-1">
+                  <span *ngIf="emailModel.errors?.['required']">O e-mail é obrigatório.</span>
+                  <span *ngIf="emailModel.errors?.['email']">Formato de e-mail inválido.</span>
                 </div>
               </div>
               <div class="col-12 col-md-6">
                 <label class="form-label">
-                  Senha <span class="text-danger">*</span>
+                  Senha
                 </label>
-                <input type="password" class="form-control" />
+                <input 
+                  type="password" 
+                  class="form-control" 
+                  name="password"
+                  [(ngModel)]="form.password"
+                  autocomplete="off"
+                  required
+                  minlength="6"/>
                 <div class="form-text">
                     Mínimo de 6 caracteres
                 </div>
@@ -124,20 +188,30 @@
 
         <div class="address" *ngIf="displayAddress">
             <div class="row mb-3 align-items-end">
-              <div class="col-12 col-md-3">
+              <div class="col-12 col-md-5">
                 <label class="form-label">
-                  CEP <span class="text-danger">*</span>
+                  CEP
                 </label>
                 <input 
-                    type="text" 
-                    class="form-control"
-                    name="cep" 
-                    [(ngModel)]="cep"/>
+                  type="text" 
+                  class="form-control"
+                  name="zipcode" 
+                  [(ngModel)]="form.address.zipCode"
+                  autocomplete="off"
+                  (keydown.enter)="!loadingSearchZipCode && setAddressFromZipCode()"
+                  required/>
               </div>
 
-              <div class="col-12 col-md-3">
-                <button type="button" class="btn btn-primary w-100" (click)="buscaCep()">
+              <div class="col-12 mt-3 mt-md-0 col-md-4">
+                <button 
+                  type="button" 
+                  class="btn btn-primary w-100" 
+                  (click)="setAddressFromZipCode()"
+                  [disabled]="loadingSearchZipCode">
                   Pesquisar
+                  <span *ngIf="loadingSearchZipCode">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i>
+                  </span>
                 </button>
               </div>
             </div>
@@ -145,42 +219,88 @@
             <div class="row mb-3">
               <div class="col-12 col-md-5">
                 <label class="form-label">Rua</label>
-                <input type="text" class="form-control" readonly />
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  name="street" 
+                  [(ngModel)]="form.address.street"
+                  autocomplete="off"
+                  required/>
               </div>
 
               <div class="col-12 col-md-2">
                 <label class="form-label">
-                  Nº <span class="text-danger">*</span>
+                  Nº
                 </label>
-                <input type="text" class="form-control" />
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  name="number" 
+                  pattern="^[0-9]+$"
+                  [(ngModel)]="form.address.number"
+                  autocomplete="off"
+                  required/>
               </div>
 
               <div class="col-12 col-md-5">
                 <label class="form-label">Bairro</label>
-                <input type="text" class="form-control" readonly />
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  name="neighborhood" 
+                  [(ngModel)]="form.address.neighborhood"
+                  autocomplete="off"
+                  required/>
               </div>
             </div>
 
             <div class="row mb-3">
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-4">
                 <label class="form-label">Cidade</label>
-                <input type="text" class="form-control" readonly />
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  name="city" 
+                  [(ngModel)]="form.address.city"
+                  autocomplete="off"
+                  required/>
               </div>
 
-              <div class="col-12 col-md-3">
+              <div class="col-12 col-md-4">
                 <label class="form-label">Estado</label>
-                <input type="text" class="form-control" readonly />
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  name="district"
+                  [(ngModel)]="form.address.district"
+                  autocomplete="off"
+                  required/>
+              </div>
+
+              <div class="col-12 col-md-4">
+                <label class="form-label">Complemento</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  name="complement"
+                  [(ngModel)]="form.address.complement"
+                  autocomplete="off"/>
               </div>
             </div>
         </div>
 
         <div class="row mt-4">
           <div class="col-12 text-end">
-            <button type="reset" class="btn btn-outline-danger me-2">
-              Cancelar
+            <button 
+              class="btn btn-outline-danger me-2"
+              (click)="attemptClose()">
+                Cancelar
             </button>
-            <button type="submit" class="btn btn-success">
-              Cadastrar
+            <button 
+              type="submit" 
+              class="btn btn-success"
+              [disabled]="userForm.invalid">
+                Cadastrar
             </button>
           </div>
         </div>

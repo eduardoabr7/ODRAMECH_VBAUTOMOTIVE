@@ -5,18 +5,23 @@ CREATE TYPE "odramech"."Role" AS ENUM ('ADMIN', 'USER', 'WORKER');
 CREATE TYPE "odramech"."OrderStatus" AS ENUM ('PENDENTE', 'EM_ATENDIMENTO', 'AGUARDANDO_PECAS', 'FINALIZADA', 'CANCELADA');
 
 -- CreateEnum
+CREATE TYPE "odramech"."Gender" AS ENUM ('M', 'F', 'O');
+
+-- CreateEnum
 CREATE TYPE "odramech"."TypeAppointment" AS ENUM ('PUBLICO', 'INTERNO');
 
 -- CreateTable
 CREATE TABLE "odramech"."cad_user" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
+    "gender" "odramech"."Gender" NOT NULL,
     "email" TEXT,
-    "password" TEXT NOT NULL,
-    "phone" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "addressId" INTEGER,
+    "password" TEXT,
+    "principal_phone" TEXT NOT NULL,
+    "secondary_phone" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "address_id" INTEGER,
 
     CONSTRAINT "cad_user_pkey" PRIMARY KEY ("id")
 );
@@ -57,6 +62,7 @@ CREATE TABLE "odramech"."cad_address" (
     "city" TEXT NOT NULL,
     "zipCode" TEXT NOT NULL,
     "country" TEXT NOT NULL,
+    "neighborhood" TEXT NOT NULL,
 
     CONSTRAINT "cad_address_pkey" PRIMARY KEY ("id")
 );
@@ -122,7 +128,7 @@ CREATE TABLE "odramech"."archive_appointment" (
 CREATE UNIQUE INDEX "cad_user_email_key" ON "odramech"."cad_user"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "cad_user_addressId_key" ON "odramech"."cad_user"("addressId");
+CREATE UNIQUE INDEX "cad_user_address_id_key" ON "odramech"."cad_user"("address_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "cad_enterprise_cnpj_key" ON "odramech"."cad_enterprise"("cnpj");
@@ -137,7 +143,7 @@ CREATE UNIQUE INDEX "cad_establishment_cnpj_key" ON "odramech"."cad_establishmen
 CREATE UNIQUE INDEX "cad_establishment_addressId_key" ON "odramech"."cad_establishment"("addressId");
 
 -- AddForeignKey
-ALTER TABLE "odramech"."cad_user" ADD CONSTRAINT "cad_user_addressId_fkey" FOREIGN KEY ("addressId") REFERENCES "odramech"."cad_address"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "odramech"."cad_user" ADD CONSTRAINT "cad_user_address_id_fkey" FOREIGN KEY ("address_id") REFERENCES "odramech"."cad_address"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "odramech"."cad_enterprise" ADD CONSTRAINT "cad_enterprise_addressId_fkey" FOREIGN KEY ("addressId") REFERENCES "odramech"."cad_address"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

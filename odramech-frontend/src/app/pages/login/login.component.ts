@@ -14,7 +14,6 @@ import { UserCorporationService } from '@shared/services/user-corporation.servic
 import { EMPTY, finalize, map, Observable, of, switchMap, tap } from 'rxjs';
 import { ModalSelectEstablishment } from '@shared/components/modals/modal-select-establishment/modal-select-establishment.component';
 import { PreLogin } from '@shared/models/PreLogin';
-import { UserCorpRelation } from 'app/enums/user-corp-relations.enum';
 import { EnterpriseWithEstablishments } from '@shared/models/EnterpriseWithEstablishment';
 import { Enterprise } from '@shared/models/Enterprise';
 import { ModalSelectEnterpriseComponent } from '@shared/components/modals/modal-select-enterprise/modal-select-enterprise.component';
