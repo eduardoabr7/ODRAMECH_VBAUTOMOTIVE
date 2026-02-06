@@ -30,9 +30,7 @@ export class AuthService {
 
     login(data: LoginData): Observable<AuthContext> {
       return this._nestApi.post('auth/login', data).pipe(
-        switchMap(() => {
-          return this.getAuthContext()
-        }),
+        switchMap(() => this.getAuthContext()),
         tap((user: AuthContext) => {
           this.setUserLogged(user);
           this._router.navigateByUrl('/home');
@@ -44,12 +42,14 @@ export class AuthService {
       return this._nestApi.post('auth/logout', {}).pipe(
         tap(() => {
           this._isLoggedIn.next(false);
+          this.setUserLogged(null);
           this._router.navigateByUrl('/login');
           this._toast.info('Sessão encerrada');
         }),
         catchError((err: HttpErrorResponse) => {
           this._toast.warning('A sessão foi encerrada, porém com ressalvas: ' + err.message);
           this._isLoggedIn.next(false);
+          this.setUserLogged(null);
           this._router.navigateByUrl('/login');
           return throwError(() => err); // propaga o erro para que o componente possa reagir, se necessário
         })
@@ -66,7 +66,7 @@ export class AuthService {
       }
     
       return this._nestApi.post<AuthContext>('auth/session').pipe(
-        tap(userContext => this._user.next(userContext)),
+        tap(userContext => this.setUserLogged(userContext)),
         catchError((err: HttpErrorResponse) => {
           this._user.next(null); // limpa o usuário em caso de erro
           return throwError(() => err);

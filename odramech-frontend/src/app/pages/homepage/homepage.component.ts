@@ -5,6 +5,7 @@ import { RecentServicesComponent } from '@shared/components/recent-services/rece
 import { UserRemindersComponent } from '@shared/components/user-reminders/user-reminders.component';
 import { UserLogged } from '@shared/models/UserLogged';
 import { Router } from '@angular/router';
+import { AuthContext } from '@shared/models/AuthContext';
 @Component({
   selector: 'app-homepage',
   imports: [LeftMenuComponent, RecentServicesComponent, UserRemindersComponent],
@@ -13,9 +14,9 @@ import { Router } from '@angular/router';
 })
 export class HomepageComponent {
 
-  authContext = null;
-  userLogged: UserLogged
-  corpLogged = null;
+  userLogged: UserLogged | null = null;
+  authContext: AuthContext | null = null;
+  corpLogged: any = null;
 
   constructor(
     private readonly _authservice: AuthService,
@@ -23,15 +24,10 @@ export class HomepageComponent {
   ){}
 
   ngOnInit() {
-    this._authservice.user$.subscribe({
-      next: (authCtx) => {
-        this.authContext = authCtx;
-        this.userLogged = authCtx.user;
-        this.corpLogged = authCtx.usercorp;
-      },
-      error: (err) => {
-        console.error(err);
-      }
+    this._authservice.user$.subscribe(authCtx => {
+      this.authContext = authCtx;
+      this.userLogged = authCtx?.user ?? null;
+      this.corpLogged = authCtx?.usercorp ?? null;
     });
   }
 

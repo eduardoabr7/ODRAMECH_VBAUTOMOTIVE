@@ -108,7 +108,7 @@ export class AuthService {
         throw new UnauthorizedException("Usuário não encontrado.");
       }
 
-      const usercorp = payloadJwt.context === 'PRE_AUTH' ? null : await this._userCorpService.getUserCorporationByEstablishmentId(payloadJwt.establishmentId);
+      const usercorp = payloadJwt.context === 'PRE_AUTH' ? null : await this._userCorpService.getUserCorporationByEstablishmentId(payloadJwt.establishmentId, payloadJwt.sub);
 
       const user = {...value, context: payloadJwt.context}
 

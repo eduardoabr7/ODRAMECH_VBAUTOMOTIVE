@@ -74,10 +74,13 @@ export class UserCorporationService {
     }
 
 
-    async getUserCorporationByEstablishmentId(estabId: number) {
+    async getUserCorporationByEstablishmentId(estabId: number, userId: number) {
       const userCorporation =
         await this._prismaService.userCorporation.findFirst({
-          where: { idEstablishment: estabId },
+          where: { 
+            idEstablishment: estabId, 
+            idUser: userId 
+          },
           include: {
             establishment: {
               select: {
