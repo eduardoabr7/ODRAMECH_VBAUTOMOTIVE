@@ -20,4 +20,8 @@ export class UserCorporationService {
     createUserCorporation(data: UserCorporation): Observable<any> {
         return this._nestApi.post(`usercorp`, data)
     }
+
+    getEstablishments(): Observable<any> {
+        return this._nestApi.post('usercorp/establishments')
+    }
 }

@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { ModalCreateUserComponent } from '@shared/components/modals/modal-create-user/modal-create-user.component';
+import { UserCorporationService } from '@shared/services/user-corporation.service';
 import { BsModalService } from 'ngx-bootstrap/modal';
 
 interface User {
@@ -18,24 +19,25 @@ interface User {
   templateUrl: './clients.component.html',
   styleUrl: './clients.component.scss'
 })
-export class ClientsComponent {
+export class ClientsComponent implements OnInit{
 
   constructor(
-    private readonly _bsModalService: BsModalService
+    private readonly _bsModalService: BsModalService,
+    private readonly _userCoporationService: UserCorporationService
   ){}
 
+  establishments
+
+
+  ngOnInit(): void {
+    this._userCoporationService.getEstablishments().subscribe({
+      next: (value) => {
+        this.establishments = value.map(element => element.establishment);
+      }
+    })
+  }
+
   hasSelectedClient = false;
-
-
-  establishments: [
-    {
-      name: 'VB-Automotive - Porto Alegre'
-    },
-    {
-      name: 'VB-Automotive - Alvorada'
-    }
-  ]
-
 
   users : User[] = [
     { id: 1, name: 'João Silva', email: 'joaosilva@gmail.com', selected: false },

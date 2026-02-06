@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma-service";
 import { createUserCorporationDTO } from "../dto/create-user-corporation.dto";
+import { Role } from "@prisma/client";
 
 @Injectable()
 export class UserCorporationService {
@@ -117,4 +118,26 @@ export class UserCorporationService {
       };
     } 
 
+
+    //testar melhor essa função ============================================
+    async getEstablishments(enterpriseLoggedId: number, idUserAdmin, role: Role) {
+      const establishmentsAdmin = await this._prismaService.userCorporation.findMany({
+        where: {
+          idEnterprise: enterpriseLoggedId,
+          idUser: idUserAdmin,
+          role: role
+        },
+        select: {
+          establishment: {
+            select: {
+              name: true,
+              id: true
+            }
+          }
+        }
+      })
+    
+      return establishmentsAdmin
+    }
+    // ====================================================================
 }

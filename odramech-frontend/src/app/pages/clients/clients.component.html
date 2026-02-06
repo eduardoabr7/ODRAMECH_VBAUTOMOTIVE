@@ -10,9 +10,16 @@
       col-md-7
       col-lg-5
       ">
-        <select class="form-select form-select-sm" aria-label="Default select example">
-          <option selected>VB-Automotive - Alvorada</option>
-          <option value="1">VB-Automotive - POA</option>
+        <select 
+          class="form-select form-select-sm" 
+          aria-label="Default select example"
+          >
+            <option 
+              *ngFor="let establishment of establishments" 
+              selected
+              >
+                {{establishment.name}}
+            </option>
         </select>
       </div>
       <div class="

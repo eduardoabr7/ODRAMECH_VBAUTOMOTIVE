@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Req } from "@nestjs/common";
 import { UserCorporationService } from "../services/user-corporation.service";
+import { AuthPayload } from "src/auth/interfaces/auth-payload.interface";
 
 @Controller('usercorp')
 export class UserCorporationController {
@@ -15,9 +16,17 @@ export class UserCorporationController {
 
     @Get()
     getCorporationsByUserId(@Req() req) {
-      const userId = req.authContext.sub;
+      const request = req.authContext as AuthPayload
+      const userId = request.sub;
 
       return this._userCorporationService.getUserCorporationsByUserId(userId);
+    }
+
+    @Post('establishments')
+    getEstablishments(@Req() req) {
+      const request = req.authContext as AuthPayload
+
+      return this._userCorporationService.getEstablishments(request.enterpriseId, request.sub, request.role)
     }
 
 }
