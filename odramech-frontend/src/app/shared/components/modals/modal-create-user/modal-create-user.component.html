@@ -89,11 +89,17 @@
                 class="form-control" 
                 placeholder="XX XXXXX-XXXX"
                 name="principalPhone"
+                #phone1="ngModel"
                 [(ngModel)]="form.principalPhone"
                 required
+                minlength="12"
                 mask="00 00000-0000"
-                #phone1="ngModel"
+                [dropSpecialCharacters]="false"
                 autocomplete="off"/>
+            </div>
+            <div *ngIf="phone1.invalid && phone1.touched" class="text-danger small mt-1">
+              <span *ngIf="phone1.errors?.['required']">O telefone é obrigatório.</span>
+              <span *ngIf="phone1.errors?.['minlength']">O telefone está incompleto.</span>
             </div>
           </div>
         
@@ -109,8 +115,15 @@
                 placeholder="XX XXXXX-XXXX"
                 name="secondaryPhone"
                 [(ngModel)]="form.secondaryPhone"
+                minlength="12"
                 mask="00 00000-0000"
+                [dropSpecialCharacters]="false"
+                #phone2="ngModel"
                 autocomplete="off"/>
+            </div>
+            <div *ngIf="phone2.invalid && phone2.touched" class="text-danger small mt-1">
+              <span *ngIf="phone2.errors?.['required']">O telefone é obrigatório.</span>
+              <span *ngIf="phone2.errors?.['minlength']">O telefone está incompleto.</span>
             </div>
           </div>
         </div>
@@ -145,12 +158,13 @@
                     email 
                     #emailModel="ngModel"
                     autocomplete="off"
+                    pattern="^[^\s@]+@[^\s@]+\.[^\s@]{2,}$"
                     required/>
                 </div>
               
                 <div *ngIf="emailModel.invalid && emailModel.touched" class="text-danger small mt-1">
                   <span *ngIf="emailModel.errors?.['required']">O e-mail é obrigatório.</span>
-                  <span *ngIf="emailModel.errors?.['email']">Formato de e-mail inválido.</span>
+                  <span *ngIf="emailModel.errors?.['pattern']">Formato de e-mail inválido.</span>
                 </div>
               </div>
               <div class="col-12 col-md-6">
