@@ -46,14 +46,12 @@ export class AuthService {
           this._router.navigateByUrl('/login');
           this._toast.info('Sessão encerrada');
         }),
-        catchError((err: HttpErrorResponse) => {
-          this._toast.warning('A sessão foi encerrada, porém com ressalvas: ' + err.message);
-          this._isLoggedIn.next(false);
-          this.setUserLogged(null);
-          this._router.navigateByUrl('/login');
-          return throwError(() => err); // propaga o erro para que o componente possa reagir, se necessário
-        })
       );
+    }
+
+    forceLogout() {
+      this._router.navigateByUrl('/login');
+      this._toast.info('Sessão expirada, faça o login novamente');
     }
 
     preLogin(data: PreLogin): Observable<UserLogged> {
@@ -85,5 +83,10 @@ export class AuthService {
 
     setUserLogged(user: AuthContext | null) {
       this._user.next(user);
+    }
+
+    hasToken(): boolean {
+      console.log(document.cookie)
+      return document.cookie.includes('token=');
     }
 }

@@ -10,6 +10,7 @@ import { initializeApp } from './app.initializer';
 import { AuthService } from '@shared/services/auth.service';
 import { ModalModule } from 'ngx-bootstrap/modal';
 import { provideNgxMask } from 'ngx-mask';
+import { AuthSessionExpiredInterceptor } from '@shared/interceptors/auth-session-expired-interceptor.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -26,6 +27,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors([
         ConnectionInterceptor,
+        AuthSessionExpiredInterceptor
       ])
     ),
     importProvidersFrom(
