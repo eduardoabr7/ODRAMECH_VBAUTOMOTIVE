@@ -31,6 +31,7 @@ export class LeftMenuComponent implements OnInit {
   @Input() isCollapsed = true;
 
   authContext: AuthContext;
+  corpLogged = null;
   urlPhotoUser: string | null = null;
 
   private userSubscription: Subscription | null = null;
@@ -47,6 +48,7 @@ export class LeftMenuComponent implements OnInit {
   ngOnInit(): void {
     this.userSubscription = this._authService.user$.subscribe(authCtx => {
       this.authContext = authCtx;
+      this.corpLogged = authCtx ? authCtx.usercorp : null
 
       this.getUserPhotoURL();
     });

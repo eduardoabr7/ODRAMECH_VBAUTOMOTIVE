@@ -6,9 +6,10 @@ import { UserRemindersComponent } from '@shared/components/user-reminders/user-r
 import { UserLogged } from '@shared/models/UserLogged';
 import { Router } from '@angular/router';
 import { AuthContext } from '@shared/models/AuthContext';
+import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-homepage',
-  imports: [LeftMenuComponent, RecentServicesComponent, UserRemindersComponent],
+  imports: [LeftMenuComponent, RecentServicesComponent, UserRemindersComponent, CommonModule],
   templateUrl: './homepage.component.html',
   styleUrl: './homepage.component.scss'
 })

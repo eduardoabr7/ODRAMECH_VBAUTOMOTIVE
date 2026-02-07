@@ -41,7 +41,7 @@
             <div class="
             col-md-3
             ">
-                <div class="pwidget d-flex justify-content-center align-items-center" style="background-color: #218dd4;" (click)="navigate('clients')">
+                <div *ngIf="corpLogged.establishment.role === 'ADMIN'; else verificarServicos" class="pwidget d-flex justify-content-center align-items-center" style="background-color: #218dd4;" (click)="navigate('clients')">
                     <i class="fa-solid fa-users" 
                     style="
                     color: #ffffff;
@@ -50,6 +50,17 @@
                     "></i>
                     Cadastrar Clientes
                 </div>
+                <ng-template #verificarServicos>
+                    <div class="pwidget d-flex justify-content-center align-items-center" style="background-color: #218dd4;">
+                        <i class="fa-solid fa-users" 
+                        style="
+                        color: #ffffff;
+                        font-size: 35px;
+                        padding-right: 10px
+                        "></i>
+                        Verificar Serviços
+                    </div> 
+                </ng-template>
             </div>
             <div class="
             col-md-3

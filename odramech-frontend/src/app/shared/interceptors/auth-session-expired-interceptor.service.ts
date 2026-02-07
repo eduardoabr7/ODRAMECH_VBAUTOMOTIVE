@@ -19,10 +19,7 @@ export function AuthSessionExpiredInterceptor(
         req.url.includes('/session') ||
         req.url.includes('/login');
 
-        if(isAuthRequest) console.log('ignora o bagui do 401')
-
       if (error.status === 401 && !isAuthRequest) {
-        console.log('desloga o baguio')
         authService.forceLogout()
       }
 
