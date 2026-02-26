@@ -17,7 +17,7 @@ export function AuthSessionExpiredInterceptor(
 
       const isAuthRequest =
         req.url.includes('/session') ||
-        req.url.includes('/login');
+        req.url.includes('/preLogin');
 
       if (error.status === 401 && !isAuthRequest) {
         authService.forceLogout()

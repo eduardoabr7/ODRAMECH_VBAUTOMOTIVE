@@ -24,7 +24,7 @@ export class AuthController {
     @Post('login')
     @Public()
     async login(@Body() data: LoginDTO, @Res({ passthrough: true }) res: Response) {
-        this.logger.log(`Tentativa de login: ` + this._emailMaskService.mask(data.email), '#89cdce')
+        this.logger.log(`LOGIN SUCEDIDO - Acesso liberado para: ` + this._emailMaskService.mask(data.email), '#1abf44')
 
         const { user, token } = await this._authService.login(data)
 
@@ -41,6 +41,8 @@ export class AuthController {
     @Post('preLogin')
     @Public()
     async preLogin(@Body() data: PreLoginDTO, @Res({ passthrough: true }) res: Response) {
+        this.logger.log(`Tentativa de login: ` + this._emailMaskService.mask(data.email), '#e1e5aa')
+
         const { user, temporaryToken } = await this._authService.preLogin(data);
 
         res.cookie('access', temporaryToken, {
@@ -49,8 +51,6 @@ export class AuthController {
           sameSite: 'strict',
           maxAge: 2 * 60 * 1000
         });
-
-        this.logger.log(`Validando credenciais para: ` + this._emailMaskService.mask(data.email), '#89cdce')
         
         return user;
     }

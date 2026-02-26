@@ -39,25 +39,36 @@
     >
       <div class="config-card">
 
+        <!-- Header: ícone + nome + toggle (se enableMode) -->
         <div class="card-header-row">
           <div class="card-identity">
             <div class="card-icon" [style.background]="card.iconBg">
-              <i [class]="card.iconClass" [style.color]="card.iconColor"></i>
+              <i [ngClass]="card.iconClass" [style.color]="card.iconColor"></i>
             </div>
             <span class="card-name">{{ card.name }}</span>
           </div>
 
-          <a *ngIf="card.connectMode" class="btn-connect">Conectar</a>
-
-          <label *ngIf="!card.connectMode" class="toggle-switch" (click)="$event.stopPropagation()">
+          <label
+            *ngIf="card.enableMode"
+            class="toggle-switch"
+            (click)="$event.stopPropagation()"
+          >
             <input type="checkbox" [(ngModel)]="card.enabled">
             <span class="toggle-slider"></span>
           </label>
         </div>
 
+        <!-- Descrição -->
         <p class="card-desc">{{ card.description }}</p>
 
-        <span class="card-tag">{{ card.category | titlecase }}</span>
+        <!-- Footer: tag + botão conectar (se connectMode) -->
+        <div class="card-footer-row">
+          <span class="card-tag">{{ card.category | titlecase }}</span>
+          <a *ngIf="card.connectMode" class="btn-connect">
+            <i class="fas fa-link"></i>
+            Conectar
+          </a>
+        </div>
 
       </div>
     </div>

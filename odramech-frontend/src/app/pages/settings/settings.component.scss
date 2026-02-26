@@ -168,6 +168,14 @@
   margin: 0;
 }
 
+// Footer row: tag + botão conectar
+.card-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .card-tag {
   display: inline-block;
   background: var(--tag-bg);
@@ -176,14 +184,17 @@
   font-weight: 500;
   padding: 3px 10px;
   border-radius: 20px;
-  width: fit-content;
+  white-space: nowrap;
 }
 
 // Connect button
 .btn-connect {
-  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
   font-weight: 600;
-  padding: 5px 12px;
+  padding: 4px 12px;
   border-radius: 8px;
   background: var(--accent);
   color: white !important;
@@ -192,6 +203,8 @@
   white-space: nowrap;
   text-decoration: none;
   transition: background 0.2s, transform 0.1s;
+
+  i { font-size: 0.7rem; }
 
   &:hover {
     background: #3a57d4;

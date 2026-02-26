@@ -9,8 +9,9 @@ interface SettingCard {
   iconClass: string;
   iconColor: string;
   iconBg: string;
-  enabled: boolean;
-  connectMode?: boolean;
+  enabled?: boolean;
+  enableMode: boolean;   // true = mostra toggle on/off
+  connectMode: boolean;  // true = mostra botão "Conectar"
 }
 
 @Component({
@@ -25,12 +26,12 @@ export class SettingsComponent {
   activeFilter = 'all';
 
   filters = [
-    { key: 'all',          label: 'Todos'        },
-    { key: 'oficina',      label: 'Oficina'       },
-    { key: 'usuarios',     label: 'Usuários'      },
-    { key: 'financeiro',   label: 'Financeiro'    },
-    { key: 'notificacoes', label: 'Notificações'  },
-    { key: 'integracao',   label: 'Integrações'   },
+    { key: 'all',          label: 'Todos'       },
+    { key: 'oficina',      label: 'Oficina'      },
+    { key: 'usuarios',     label: 'Usuários'     },
+    { key: 'financeiro',   label: 'Financeiro'   },
+    { key: 'notificacoes', label: 'Notificações' },
+    { key: 'integracao',   label: 'Integrações'  },
   ];
 
   cards: SettingCard[] = [
@@ -41,7 +42,8 @@ export class SettingsComponent {
       iconClass: 'fas fa-store',
       iconColor: '#4f6ef7',
       iconBg: '#eef1fe',
-      enabled: true,
+      enableMode: false,
+      connectMode: false,
     },
     {
       name: 'Usuários e Permissões',
@@ -50,7 +52,8 @@ export class SettingsComponent {
       iconClass: 'fas fa-users',
       iconColor: '#e04f3a',
       iconBg: '#fef3f2',
-      enabled: true,
+      enableMode: false,
+      connectMode: false,
     },
     {
       name: 'Financeiro',
@@ -59,7 +62,8 @@ export class SettingsComponent {
       iconClass: 'fas fa-dollar-sign',
       iconColor: '#22c55e',
       iconBg: '#f0fdf4',
-      enabled: true,
+      enableMode: false,
+      connectMode: false,
     },
     {
       name: 'Notificações',
@@ -69,6 +73,8 @@ export class SettingsComponent {
       iconColor: '#f97316',
       iconBg: '#fff7ed',
       enabled: false,
+      enableMode: true,
+      connectMode: false,
     },
     {
       name: 'WhatsApp',
@@ -77,7 +83,7 @@ export class SettingsComponent {
       iconClass: 'fab fa-whatsapp',
       iconColor: '#22c55e',
       iconBg: '#f0fdf4',
-      enabled: false,
+      enableMode: true,
       connectMode: true,
     },
     {
@@ -88,6 +94,8 @@ export class SettingsComponent {
       iconColor: '#a855f7',
       iconBg: '#faf5ff',
       enabled: true,
+      enableMode: true,
+      connectMode: false,
     },
     {
       name: 'Agendamentos',
@@ -96,7 +104,8 @@ export class SettingsComponent {
       iconClass: 'fas fa-calendar-alt',
       iconColor: '#3b82f6',
       iconBg: '#eff6ff',
-      enabled: true,
+      enableMode: false,
+      connectMode: false,
     },
     {
       name: 'Notas Fiscais',
@@ -106,6 +115,8 @@ export class SettingsComponent {
       iconColor: '#ec4899',
       iconBg: '#fdf2f8',
       enabled: false,
+      enableMode: true,
+      connectMode: false,
     },
     {
       name: 'Segurança',
@@ -114,7 +125,8 @@ export class SettingsComponent {
       iconClass: 'fas fa-shield-alt',
       iconColor: '#f97316',
       iconBg: '#fff7ed',
-      enabled: true,
+      enableMode: false,
+      connectMode: false,
     },
   ];
 
