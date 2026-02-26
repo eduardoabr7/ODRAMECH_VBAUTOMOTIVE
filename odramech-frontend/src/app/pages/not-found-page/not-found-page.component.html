@@ -1,1 +1,32 @@
-página não encontrada, você será redirecionado para a tela de início em 5 segundos
+<div class="not-found-wrapper">
+
+  <div class="not-found-card">
+
+    <div class="error-code">
+      <span class="four">4</span>
+      <div class="gear-wrap">
+        <i class="fas fa-gear fa-spin gear-icon"></i>
+      </div>
+      <span class="four">4</span>
+    </div>
+
+    <h1 class="error-title">Página não encontrada</h1>
+    <p class="error-desc">
+      A rota que você tentou acessar não existe ou foi removida.
+    </p>
+
+    <div class="redirect-info">
+      <i class="fas fa-circle-notch fa-spin"></i>
+      Você será redirecionado para o início em
+      <span class="countdown">{{ countdown }}</span>
+      segundo{{ countdown === 1 ? '' : 's' }}
+    </div>
+
+    <button class="btn-home" (click)="goHome()">
+      <i class="fas fa-house"></i>
+      Ir agora
+    </button>
+
+  </div>
+
+</div>

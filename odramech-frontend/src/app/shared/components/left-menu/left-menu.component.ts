@@ -1,8 +1,8 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '@shared/services/auth.service';
-import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter, Subscription } from 'rxjs';
 import { AuthContext } from '@shared/models/AuthContext';
 
 interface BotoesMenuLateral {
@@ -17,7 +17,7 @@ interface BotoesMenuLateral {
   templateUrl: './left-menu.component.html',
   styleUrl: './left-menu.component.scss',
 })
-export class LeftMenuComponent implements OnInit {
+export class LeftMenuComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly _authService: AuthService,
@@ -30,34 +30,50 @@ export class LeftMenuComponent implements OnInit {
   authContext: AuthContext;
   corpLogged = null;
   urlPhotoUser: string | null = null;
+  currentUrl = '';
 
-  private userSubscription: Subscription | null = null;
+  private subs = new Subscription();
 
   buttons: BotoesMenuLateral[] = [
-    { nome: 'Home',          icon: 'fa-solid fa-house',    route: '/home'     },
-    { nome: 'Serviços',      icon: 'fa-solid fa-wrench',   route: '/services' },
-    { nome: 'Meus veículos', icon: 'fa-solid fa-car-side', route: '/vehicles' },
-    { nome: 'Faturamento',   icon: 'fa-solid fa-file',     route: '/billing'  },
+    { nome: 'Home',          icon: 'fa-solid fa-house',    route: '/home'          },
+    { nome: 'Serviços',      icon: 'fa-solid fa-wrench',   route: '/services'      },
+    { nome: 'Meus veículos', icon: 'fa-solid fa-car-side', route: '/vehicles'      },
+    { nome: 'Faturamento',   icon: 'fa-solid fa-file',     route: '/billing'       },
     { nome: 'Notificações',  icon: 'fa-solid fa-envelope', route: '/notifications' },
-    { nome: 'Clientes',      icon: 'fa-solid fa-users',    route: '/clients'  },
+    { nome: 'Clientes',      icon: 'fa-solid fa-users',    route: '/clients'       },
   ];
 
   ngOnInit(): void {
-    this.userSubscription = this._authService.user$.subscribe(authCtx => {
-      this.authContext = authCtx;
-      this.corpLogged = authCtx ? authCtx.usercorp : null;
-      this.getUserPhotoURL();
-    });
+    this.currentUrl = this._router.url;
+
+    this.subs.add(
+      this._router.events.pipe(
+        filter(event => event instanceof NavigationEnd)
+      ).subscribe((event: NavigationEnd) => {
+        this.currentUrl = event.urlAfterRedirects;
+      })
+    );
+
+    this.subs.add(
+      this._authService.user$.subscribe(authCtx => {
+        this.authContext = authCtx;
+        this.corpLogged = authCtx?.usercorp ?? null;
+        this.getUserPhotoURL();
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
   }
 
   getUserPhotoURL(): void {
     this.urlPhotoUser = '../../../assets/remover_foto.jpeg';
   }
 
-  // Retorna true se a rota atual bate com a rota do item
   isActive(route?: string): boolean {
     if (!route) return false;
-    return this._router.url === route || this._router.url.startsWith(route + '/');
+    return this.currentUrl === route || this.currentUrl.startsWith(route + '/');
   }
 
   logout(): void {

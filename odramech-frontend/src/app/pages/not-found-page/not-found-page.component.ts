@@ -1,18 +1,33 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-not-found-page',
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './not-found-page.component.html',
   styleUrl: './not-found-page.component.scss'
 })
-export class NotFoundPageComponent {
-  constructor(private router: Router) {}
+export class NotFoundPageComponent implements OnInit, OnDestroy {
+
+  countdown = 5;
+  private interval: any;
+
+  constructor(private readonly _router: Router) {}
 
   ngOnInit(): void {
-    setTimeout(() => {
-      this.router.navigate(['']);
-    }, 7000);
+    this.interval = setInterval(() => {
+      this.countdown--;
+      if (this.countdown === 0) this.goHome();
+    }, 1000);
+  }
+
+  ngOnDestroy(): void {
+    clearInterval(this.interval);
+  }
+
+  goHome(): void {
+    clearInterval(this.interval);
+    this._router.navigateByUrl('/home');
   }
 }
