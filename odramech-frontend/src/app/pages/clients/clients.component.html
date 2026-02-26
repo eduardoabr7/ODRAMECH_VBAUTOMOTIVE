@@ -1,86 +1,127 @@
-<div class="row pt-3">
-  <div class="col-12 col-md-4 mb-2 mb-md-0">
-    <h4 class="mb-0">Cadastro de Clientes</h4>
-  </div>
-  <div class="col-12 col-md-8 d-flex flex-column flex-md-row justify-content-end align-items-md-center">
-    <div class="row g-2 w-100">
-      <div class="
-      col-12 
-      col-sm-5 mb-2 mb-sm-0
-      col-md-7
-      col-lg-5
-      ">
-        <select 
-          class="form-select form-select-sm" 
-          aria-label="Default select example"
-          >
-            <option 
-              *ngFor="let establishment of establishments" 
-              selected
-              >
-                {{establishment.name}}
-            </option>
+<div class="clients-wrapper">
+
+  <!-- Header -->
+  <div class="row pt-2 pb-1 align-items-center">
+    <div class="col">
+      <h4 class="page-title mb-0">Cadastro de Clientes</h4>
+      <p class="page-subtitle mb-0">Gerencie os clientes vinculados ao estabelecimento.</p>
+    </div>
+    <div class="col-auto d-flex align-items-center gap-2">
+
+      <!-- Select Estabelecimento -->
+      <div class="select-wrapper">
+        <i class="fas fa-building select-icon"></i>
+        <select
+          class="custom-select"
+          [(ngModel)]="selectedEstablishmentId"
+          (ngModelChange)="loadUsersByEstablishment($event)"
+        >
+          <option *ngFor="let establishment of establishments" [value]="establishment.id">
+            {{ establishment.name }}
+          </option>
         </select>
+        <i class="fas fa-chevron-down select-chevron"></i>
       </div>
-      <div class="
-      col-12 
-      col-sm-7
-      col-md-5
-      col-lg-4 offset-lg-3
-      "
-      >
-        <button class="btn btn-primary btn-sm w-100" (click)="openModalCreateUser()">
-          <i class="fas fa-plus-circle me-1"></i>
-          Adicionar Cliente
-        </button>
+
+      <!-- Botão Adicionar -->
+      <button class="btn-add" (click)="openModalCreateUser()">
+        <i class="fas fa-plus"></i>
+        <span>Novo Cliente</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Barra de ações da tabela -->
+  <div class="row align-items-center mt-4 mb-3">
+    <div class="col">
+      <!-- Badge de selecionados -->
+      <div class="selected-badge" *ngIf="hasSelectedClient">
+        <i class="fas fa-check-circle"></i>
+        {{ selectedCount }} cliente(s) selecionado(s)
+        <button class="badge-action"><i class="fas fa-trash-alt"></i> Excluir</button>
+        <button class="badge-action"><i class="fas fa-envelope"></i> Contatar</button>
+      </div>
+      <p class="table-count" *ngIf="!hasSelectedClient">
+        <span class="count-number">{{ users?.length || 0 }}</span> clientes encontrados
+      </p>
+    </div>
+    <div class="col-auto">
+      <div class="search-wrapper">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Nome, e-mail ou telefone..."
+          [(ngModel)]="searchQuery"
+        >
       </div>
     </div>
   </div>
-</div>
-<div class="row">
-</div>
-<div class="row mt-4">
-  <div class="
-  col-sm-6 offset-sm-6
-  col-md-5 offset-md-7
-  col-lg-3 offset-lg-9
-  mb-2 mb-sm-3">
-    <div class="search-container position-relative">
-      <input type="text" class="form-control form-control-sm search-input" placeholder="Nome, e-mail ou telefone">
-      <i class="fas fa-search search-icon"></i>
-    </div>
-  </div>
-  <div class="col-12">
-    <table class="table table-striped">
+
+  <!-- Tabela -->
+  <div class="table-card">
+    <table class="clients-table">
       <thead>
         <tr>
-          <th></th>
-          <th>ID</th>
+          <th class="th-check"></th>
+          <th class="th-id">ID</th>
           <th>Nome</th>
           <th>Email</th>
           <th>Contato</th>
-          <th>Ações</th>
+          <th class="th-actions">Ações</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let user of users" (click)="toggleUserSelection(user)" style="cursor: pointer;">
-          <td>
-            <input type="checkbox" [checked]="user.selected" (change)="toggleUserSelection(user)" (click)="$event.stopPropagation()" aria-label="Selecionar cliente">
+        <tr
+          *ngFor="let user of filteredUsers"
+          (click)="toggleUserSelection(user)"
+          [class.row-selected]="user.selected"
+          class="table-row"
+        >
+          <td class="td-check">
+            <label class="custom-checkbox" (click)="$event.stopPropagation()">
+              <input
+                type="checkbox"
+                [checked]="user.selected"
+                (change)="toggleUserSelection(user)"
+              >
+              <span class="checkmark"></span>
+            </label>
           </td>
-          <td>{{ user.id }}</td>
-          <td>{{ user.name }}</td>
-          <td>{{ user.email }}</td>
-          <td>{{ user.principalPhone }}</td>
+          <td class="td-id">{{ user.id }}</td>
           <td>
-            <button class="btn btn-sm btn-icon" (click)="$event.stopPropagation()">
-              <i class="fa-solid fa-pen"></i>
-            </button>
-            <button class="btn btn-sm btn-icon" (click)="$event.stopPropagation()">
-              <i class="fa-solid fa-folder"></i>
-            </button>
+            <div class="user-name-cell">
+              <div class="user-avatar">{{ user.name?.charAt(0)?.toUpperCase() }}</div>
+              <span>{{ user.name }}</span>
+            </div>
+          </td>
+          <td class="td-muted">{{ user.email }}</td>
+          <td class="td-muted">{{ user.principalPhone }}</td>
+          <td>
+            <div class="actions-cell">
+              <button class="action-btn" title="Editar" (click)="$event.stopPropagation()">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button class="action-btn" title="Arquivos" (click)="$event.stopPropagation()">
+                <i class="fa-solid fa-folder"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Empty state -->
+        <tr *ngIf="filteredUsers?.length === 0">
+          <td colspan="6">
+            <div class="empty-state">
+              <i class="fas fa-users-slash"></i>
+              <p>Nenhum cliente encontrado</p>
+              <small *ngIf="searchQuery">Tente buscar por outro termo.</small>
+            </div>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
+
 </div>

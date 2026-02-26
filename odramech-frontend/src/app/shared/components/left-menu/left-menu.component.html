@@ -1,70 +1,64 @@
-<div class="sidebar" [ngClass]="{'collapsed': isCollapsed}" style="position: inherit; z-index: 1;">
+<div class="sidebar" [ngClass]="{'collapsed': isCollapsed}">
 
-  <div class="menu">
+  <!-- Toggle -->
+  <div class="sidebar-toggle">
     <button class="toggle-btn" (click)="toggleCollapse()">
-      <i class="fa-solid"
-        [ngClass]="{
-          'fa-bars': isCollapsed,
-          'fa-xmark': !isCollapsed
-        }">
-      </i>
+      <i class="fa-solid" [ngClass]="{ 'fa-bars': isCollapsed, 'fa-xmark': !isCollapsed }"></i>
     </button>
   </div>
 
-  <div class="user-profile pb-4">
-    <div class="container-fluid m-0">
-      <div class="row">
-        <div class="col-4">
-          <img 
-            [src]="urlPhotoUser ? urlPhotoUser : '../../../../../../assets/no-photo-user-default.png'"
-            alt="photo-user" 
-            class="rounded-circle"
-            style="
-              width: 60px;
-              height: 60px;
-              object-fit: cover;
-              cursor: pointer;
-            "
-          >
-        </div>
-        <div class="col-8">
-          <div class="row m-0">
-            {{ authContext.user.name }}
-          </div>
-          <div class="row m-0">
-            <small class="p-0">
-              {{ corpLogged.establishment.role }}
-            </small>
-          </div>
-        </div>
-      </div>
+  <!-- User profile -->
+  <div class="user-profile" *ngIf="!isCollapsed">
+    <div class="avatar-wrap">
+      <img
+        [src]="urlPhotoUser ? urlPhotoUser : '../../../../../../assets/no-photo-user-default.png'"
+        alt="foto do usuário"
+        class="avatar-img"
+      >
+      <span class="avatar-status"></span>
+    </div>
+    <div class="user-info">
+      <span class="user-name">{{ authContext?.user?.name }}</span>
+      <span class="user-role">{{ corpLogged?.establishment?.role }}</span>
     </div>
   </div>
 
-  <div class="navigation">
-    <div class="container-fluid m-0">
-
-      <ul class="row">
-        <li class="col-12" *ngFor="let button of buttons" (click)="navigateUrl(button)">
-          <i [ngClass]="button.icon" style="min-width: 25px;"></i>
-          <span class="link-text">{{ button.nome }}</span>
-        </li>
-      </ul>
-
-      <ul class="row configurations" style="border-top: 1px solid rgb(231, 231, 231);">
-
-        <li class="col-12" (click)="navigateToSettings()">
-          <i class="fa-solid fa-gear"></i>
-          <span class="link-text">Configurações</span>
-        </li>
-
-        <li class="col-12 logout" (click)="logout()" *ngIf="!isCollapsed">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i>
-          <span class="link-text">Logout</span>
-        </li>
-
-      </ul>
-    </div>
+  <!-- Collapsed avatar -->
+  <div class="avatar-collapsed" *ngIf="isCollapsed">
+    <img
+      [src]="urlPhotoUser ? urlPhotoUser : '../../../../../../assets/no-photo-user-default.png'"
+      alt="foto do usuário"
+      class="avatar-img-sm"
+    >
   </div>
+
+  <!-- Navigation -->
+  <nav class="sidebar-nav">
+    <ul class="nav-list">
+      <li
+        *ngFor="let button of buttons"
+        class="nav-item"
+        [class.active]="isActive(button.route)"
+        (click)="navigateUrl(button)"
+        [title]="isCollapsed ? button.nome : ''"
+      >
+        <i class="icon" [class]="button.icon"></i>
+        <span class="nav-label">{{ button.nome }}</span>
+      </li>
+    </ul>
+
+    <div class="nav-divider"></div>
+
+    <ul class="nav-list">
+      <li class="nav-item" (click)="navigateToSettings()" [title]="isCollapsed ? 'Configurações' : ''">
+        <i class="icon fa-solid fa-gear"></i>
+        <span class="nav-label">Configurações</span>
+      </li>
+      <li class="nav-item nav-logout" (click)="logout()" [title]="isCollapsed ? 'Logout' : ''">
+        <i class="icon fa-solid fa-arrow-right-from-bracket"></i>
+        <span class="nav-label">Logout</span>
+      </li>
+    </ul>
+  </nav>
 
 </div>

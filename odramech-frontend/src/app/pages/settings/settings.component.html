@@ -1,5 +1,71 @@
-<div class="row pt-3">
-    <div class="col-sm-12">
-        <h4>Configurações</h4>
+<div class="settings-wrapper">
+
+  <!-- Header -->
+  <div class="row pt-2 pb-3 align-items-center">
+    <div class="col">
+      <h4 class="mb-0">Configurações</h4>
+      <p class="page-subtitle mb-0">Gerencie e conecte as ferramentas do seu sistema.</p>
     </div>
+    <div class="col-auto">
+      <div class="search-wrapper">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar..."
+          [(ngModel)]="searchQuery"
+        >
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="filter-tabs mb-4">
+    <button
+      *ngFor="let filter of filters"
+      class="filter-tab"
+      [class.active]="activeFilter === filter.key"
+      (click)="setFilter(filter.key)"
+    >
+      {{ filter.label }}
+    </button>
+  </div>
+
+  <!-- Cards Grid -->
+  <div class="row g-3">
+    <div
+      *ngFor="let card of filteredCards"
+      class="col-12 col-sm-6 col-lg-4 config-col"
+    >
+      <div class="config-card">
+
+        <div class="card-header-row">
+          <div class="card-identity">
+            <div class="card-icon" [style.background]="card.iconBg">
+              <i [class]="card.iconClass" [style.color]="card.iconColor"></i>
+            </div>
+            <span class="card-name">{{ card.name }}</span>
+          </div>
+
+          <a *ngIf="card.connectMode" class="btn-connect">Conectar</a>
+
+          <label *ngIf="!card.connectMode" class="toggle-switch" (click)="$event.stopPropagation()">
+            <input type="checkbox" [(ngModel)]="card.enabled">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <p class="card-desc">{{ card.description }}</p>
+
+        <span class="card-tag">{{ card.category | titlecase }}</span>
+
+      </div>
+    </div>
+
+    <div *ngIf="filteredCards.length === 0" class="col-12 text-center py-5">
+      <i class="fas fa-search-minus fs-2 text-muted mb-3 d-block"></i>
+      <p class="text-muted">Nenhuma configuração encontrada para <strong>"{{ searchQuery }}"</strong>.</p>
+    </div>
+  </div>
+
 </div>

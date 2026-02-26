@@ -1,10 +1,41 @@
 @import 'themes/themes';
 @import 'ngx-toastr/toastr';
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:wght@400;500&display=swap');
 
-*{
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+// ══════════════════════════════════════════════════════════
+// DESIGN TOKENS
+// ══════════════════════════════════════════════════════════
+:root {
+  --accent:         #4f6ef7;
+  --accent-light:   #eef1fe;
+  --accent-hover:   #3a57d4;
+  --border:         #e8eaf0;
+  --text-primary:   #1a1d2e;
+  --text-muted:     #7b7f96;
+  --bg:             #f5f6fa;
+  --card-bg:        #ffffff;
+  --radius:         16px;
+  --radius-sm:      10px;
+  --radius-xs:      8px;
+  --shadow:         0 2px 12px rgba(79, 110, 247, 0.07);
+  --shadow-hover:   0 6px 24px rgba(79, 110, 247, 0.14);
+  --font-display:   'Sora', sans-serif;
+  --font-body:      'DM Sans', sans-serif;
+
+  // Feedback colors
+  --color-success:  #22c55e;
+  --color-error:    #ef4444;
+  --color-warning:  #f59e0b;
+  --color-info:     #4f6ef7;
+}
+
+// ══════════════════════════════════════════════════════════
+// RESET
+// ══════════════════════════════════════════════════════════
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 html, body {
@@ -12,431 +43,414 @@ html, body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--bg);
 }
 
-.content {
-  padding: 10px;
-  border: 1px solid #dee2e6;
-  background-color: white;
-}
-
-.content .header {
-  padding: 10px;
-  border-bottom: 1px solid #dee2e6;
-}
-
-.content .body {
-  height: 90%;
-  padding: 10px;
-}
-
-li {
-  cursor: pointer;
-}
-
-.title h5 {
-  font-size: 0.95rem;
-  font-weight: 600;
-}
-
-span.not-have {
-  color: #a7a7a7;
-  font-size: 13px;
-}
-
-.inputSelectPhoto {
-  width: 0px;
-  height: 0px;
-  overflow: hidden;
-  border: 0 !important;
-  border-bottom-left-radius: 10px !important;
-  border-bottom-right-radius: 10px !important;
-}
-
-.imagePreview {
-  border-bottom-left-radius: 10px !important;
-  border-bottom-right-radius: 10px !important; 
-}
-
-.imagePreview, .imagePreview > img {
-  border-top-left-radius: 10px !important;
-  border-top-right-radius: 10px !important;
-}
-
-.imagePreview, .imagePreview > label {
-  border-bottom-left-radius: 10px !important;
-  border-bottom-right-radius: 10px !important;  
-}
+li { cursor: pointer; }
 
 [disabled] {
   cursor: not-allowed !important;
   pointer-events: all !important;
 }
 
-.text-danger{
-  font-size: 12px;
+// ══════════════════════════════════════════════════════════
+// TYPOGRAPHY
+// ══════════════════════════════════════════════════════════
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  font-weight: 700;
 }
 
-h5.title {
-  color: #414141;
-  font-size: 15px !important;
-  font-weight: 500 !important;
+h5 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
-.input-group label {
-  color: #7a7a7a;
+h6 {
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
+small {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+span.not-have {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.text-danger { font-size: 0.75rem; }
+
+// ══════════════════════════════════════════════════════════
+// BUTTONS
+// ══════════════════════════════════════════════════════════
 .toggle-btn {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #8d8d8d;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color 0.2s;
+
+  &:hover { color: var(--accent); }
 }
 
-.position-inherit{
-    position: inherit;
+.btn-primary {
+  background-color: var(--accent) !important;
+  border: none !important;
+  border-radius: var(--radius-xs) !important;
+  font-family: var(--font-body);
+  font-weight: 500;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s !important;
+
+  &:hover {
+    background-color: var(--accent-hover) !important;
+    box-shadow: 0 4px 16px rgba(79, 110, 247, 0.3) !important;
+    transform: translateY(-1px);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// CONTENT PANELS
+// ══════════════════════════════════════════════════════════
+.content {
+  padding: 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--card-bg);
+
+  .header {
+    padding: 10px;
+    border-bottom: 1.5px solid var(--border);
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+
+  .body {
+    height: 90%;
+    padding: 10px;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// FORM INPUTS (global)
+// ══════════════════════════════════════════════════════════
+.input-group label {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+label:has(+ input[required])::after,
+label:has(+ textarea[required])::after,
+label:has(+ select[required])::after {
+  content: ' *';
+  color: var(--color-error);
+  font-weight: 700;
+}
+
+.inputSelectPhoto {
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  border: 0 !important;
+  border-bottom-left-radius: var(--radius-sm) !important;
+  border-bottom-right-radius: var(--radius-sm) !important;
+}
+
+.imagePreview {
+  border-radius: var(--radius-sm) !important;
+
+  > img, > label {
+    border-radius: var(--radius-sm) !important;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// NG-SELECT
+// ══════════════════════════════════════════════════════════
+ng-select {
+  padding: 4px;
+  border: 1.5px solid var(--border) !important;
+  border-radius: var(--radius-xs) !important;
+  cursor: pointer;
+  font-family: var(--font-body);
+
+  .ng-select-container {
+    border: none !important;
+  }
+
+  &.ng-select-focused .ng-select-container {
+    box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.15) !important;
+    border-color: var(--accent) !important;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// POSITION HELPER
+// ══════════════════════════════════════════════════════════
+.position-inherit { position: inherit; }
+
+// ══════════════════════════════════════════════════════════
+// GLOBAL TABLE
+// ══════════════════════════════════════════════════════════
+.table {
+  width: 100%;
+  background: var(--card-bg);
+  border-spacing: 0;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  margin-bottom: 0;
+
+  thead th {
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 14px 20px;
+    text-align: left;
+    background: #fafbff;
+    border-bottom: 1.5px solid var(--border);
+  }
+
+  tbody tr {
+    transition: background 0.15s;
+    background: transparent;
+    cursor: pointer;
+
+    &:hover td { background: #f8f9ff; }
+  }
+
+  td {
+    padding: 14px 20px;
+    vertical-align: middle;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border);
+    background-clip: padding-box;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+}
+
+// ══════════════════════════════════════════════════════════
+// MODAIS
+// ══════════════════════════════════════════════════════════
+.modal-content {
+  border-radius: var(--radius) !important;
+  border: 1.5px solid var(--border) !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12) !important;
+  background-color: var(--card-bg) !important;
+  font-family: var(--font-body);
 }
 
 .modal-header {
-  background-color: #164f91;
+  background: transparent !important;
+  border-bottom: 1.5px solid var(--border) !important;
+  padding: 20px 24px 16px !important;
+
+  .btn-close, .close {
+    opacity: 0.5 !important;
+    transition: opacity 0.2s, transform 0.2s;
+
+    &:hover {
+      opacity: 1 !important;
+      transform: scale(1.1);
+    }
+  }
 }
 
-.closeModal {
-  background-color: #8a8a8a;
-  border: none;
+.modal-title {
+  font-family: var(--font-display) !important;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
 }
 
-.btn-primary{
-  background-color: #2873c5;
-  border: none;
+.modal-body {
+  padding: 20px 24px !important;
+  background-color: var(--card-bg) !important;
+  scrollbar-color: var(--border) transparent;
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 20px;
+  }
 }
 
-.btn-primary:hover{
-  background-color: #204369;
+.modal-footer {
+  border-top: 1.5px solid var(--border) !important;
+  padding: 16px 24px !important;
+  gap: 8px;
+
+  // Botão cancelar
+  .btn-secondary, .btn-cancel {
+    background-color: var(--bg) !important;
+    color: var(--text-primary) !important;
+    border: 1.5px solid var(--border) !important;
+    border-radius: var(--radius-xs) !important;
+    padding: 8px 20px !important;
+    font-size: 0.875rem !important;
+    font-family: var(--font-body);
+    font-weight: 500;
+    transition: background 0.2s !important;
+
+    &:hover {
+      background-color: var(--border) !important;
+    }
+  }
+
+  // Botão principal
+  .btn-primary {
+    background-color: var(--accent) !important;
+    color: #fff !important;
+    border-radius: var(--radius-xs) !important;
+    padding: 8px 22px !important;
+    font-size: 0.875rem !important;
+    border: none !important;
+    font-family: var(--font-body);
+    font-weight: 600;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.15s !important;
+
+    &:hover {
+      background-color: var(--accent-hover) !important;
+      box-shadow: 0 4px 16px rgba(79, 110, 247, 0.3) !important;
+      transform: translateY(-1px);
+    }
+  }
 }
 
+// Inputs dentro de modal
+.modal-content .form-control {
+  border-radius: var(--radius-xs) !important;
+  padding: 10px 12px !important;
+  font-size: 0.875rem !important;
+  border: 1.5px solid var(--border) !important;
+  background-color: var(--card-bg) !important;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s !important;
 
+  &:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.12) !important;
+    outline: none !important;
+  }
 
-// ng-select
-ng-select {
-  padding: 5px;
-  border: 1px solid black;
-  cursor: pointer;
+  &::placeholder { color: var(--text-muted); }
 }
 
-// estilização dos toasts de mensagem
+.modal-content label {
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  color: var(--text-muted) !important;
+  margin-bottom: 5px !important;
+}
 
+.modal-section-title {
+  font-family: var(--font-display) !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  margin: 12px 0 10px !important;
+}
+
+// ══════════════════════════════════════════════════════════
+// TOASTS (ngx-toastr)
+// ══════════════════════════════════════════════════════════
 .ngx-toastr {
-  border-radius: 1px !important;
-  background-color: #ffffff;
-  min-width: 350px;
+  border-radius: var(--radius-sm) !important;
+  background-color: var(--card-bg) !important;
+  border: 1.5px solid var(--border) !important;
+  box-shadow: var(--shadow-hover) !important;
+  min-width: 320px;
   max-width: 400px !important;
   width: auto !important;
   overflow-wrap: break-word !important;
+  padding: 14px 18px 14px 48px !important;
   position: relative;
-  
-  // Adiciona um padding à esquerda para dar espaço ao ícone
-  padding: 15px 20px 15px 50px !important; 
 
-  // Estilo da barra lateral usando o pseudo-elemento ::before
+  // Barra lateral colorida
   &::before {
     content: '';
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     left: 4px;
-    bottom: 0;
     width: 4px;
-    height: 85%;
+    height: 80%;
     border-radius: 8px;
-    background-color: #ffffff;
+    background-color: var(--border);
   }
-  
+
+  // Ícone
   &::after {
-    content: '\f05a'; // Exemplo: ícone de informação do Font Awesome
+    content: '\f05a';
     font-family: 'Font Awesome 5 Free';
     font-weight: 900;
     position: absolute;
     top: 50%;
-    left: 20px; // Posição do ícone à esquerda
+    left: 18px;
     transform: translateY(-50%);
-    color: #000000; // Cor global do ícone, mude para a que desejar
-    font-size: 20px;
+    font-size: 1.1rem;
+    color: var(--text-muted);
   }
 }
 
-  .toast-message {
-    flex-grow: 1; // Permite que o texto ocupe o espaço disponível
-    font-size: 15px !important; // Tamanho da fonte
-    line-height: 1.4 !important; // Espaçamento entre linhas
-    color: #333333 !important; // Cor do texto
-    margin-top: 5px; // Pequeno espaçamento para o título
-  }
-  // Título do toast
-  .toast-title {
-    font-weight: 500 !important; // Mais negrito
-    font-size: 16px !important; // Um pouco maior que a mensagem
-    color: #414141 !important; // Cor do texto
-    margin-bottom: 5px;
-  }
-
-// separados por categoria
-
-  .toast-info {
-    &::before {
-      background-color: #007bff;
-    }
-    .toast-title {
-      color: #007bff !important;
-    }
-    &::after {
-      color: #007bff;
-    }
-  }
-
-  h6 {
-    font-size: 10px;
-    color: #a1a1a1;
-  }
-
-  .toast-error {
-    &::before {
-      background-color: #ff0000;
-    }
-    .toast-title {
-      color: #ff0000 !important;
-    }
-    &::after {
-      color: #ff0000;
-    }
-  }
-
-  .toast-warning {
-    &::before {
-      background-color: #ffbb00;
-    }
-    .toast-title {
-      color: #ffbb00 !important;
-    }
-    &::after {
-      color: #ffbb00;
-    }
-  }
-
-  .toast-success {
-    &::before {
-      background-color: #4faf42;
-    }
-    .toast-title {
-      color: #4faf42 !important;
-    }
-    &::after {
-      color: #4faf42;
-    }
-  }
-
-  /* ============================================
-   MODAL GLOBAL — APLICA A TODAS AS MODAIS
-   ============================================ */
-
-/* Conteúdo principal */
-.modal-content {
-  border-radius: 16px !important;
-  border: none !important;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.22) !important;
-  background-color: #ffffff !important;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
-}
-
-/* Cabeçalho */
-.modal-header {
-  background: transparent !important;
-  border-bottom: none !important;
-  padding-bottom: 10px !important;
-  margin-bottom: 5px !important;
-}
-
-.modal-title {
-  font-size: 20px !important;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+.toast-title {
+  font-family: var(--font-display) !important;
   font-weight: 600 !important;
-  color: #044981 !important;
+  font-size: 0.9rem !important;
+  color: var(--text-primary) !important;
+  margin-bottom: 3px;
 }
 
-/* Ícone de fechar */
-.modal-header .btn-close,
-.modal-header .close {
-  filter: brightness(0) saturate(0%) !important;
-  opacity: 0.65 !important;
-  transition: 0.2s ease;
+.toast-message {
+  font-size: 0.82rem !important;
+  line-height: 1.5 !important;
+  color: var(--text-muted) !important;
 }
 
-.modal-header .btn-close:hover,
-.modal-header .close:hover {
-  opacity: 1 !important;
-  transform: scale(1.1);
+// Por categoria
+.toast-info {
+  &::before { background-color: var(--color-info); }
+  .toast-title { color: var(--color-info) !important; }
+  &::after { color: var(--color-info); }
 }
 
-/* Corpo */
-.modal-body {
-  padding-top: 5px !important;
-  background-color: #ffffff !important;
-  border-radius: 50px;
+.toast-error {
+  &::before { background-color: var(--color-error); }
+  .toast-title { color: var(--color-error) !important; }
+  &::after {
+    content: '\f057';
+    color: var(--color-error);
+  }
 }
 
-/* Inputs */
-.modal-content .form-control {
-  border-radius: 8px !important;
-  padding: 10px 12px !important;
-  font-size: 15px !important;
-  border: 1px solid #c9c9c9 !important;
-  background-color: #ffffff !important;
-  transition: 0.18s ease !important;
+.toast-warning {
+  &::before { background-color: var(--color-warning); }
+  .toast-title { color: var(--color-warning) !important; }
+  &::after {
+    content: '\f071';
+    color: var(--color-warning);
+  }
 }
 
-.modal-content .form-control:focus {
-  border-color: #2873c5 !important;
-  background-color: #ffffff !important;
-  box-shadow: 0 0 0 3px rgba(40,115,197,0.22) !important;
+.toast-success {
+  &::before { background-color: var(--color-success); }
+  .toast-title { color: var(--color-success) !important; }
+  &::after {
+    content: '\f058';
+    color: var(--color-success);
+  }
 }
-
-/* Labels */
-.modal-content label {
-  font-size: 13px !important;
-  font-weight: 500 !important;
-  margin-bottom: 4px !important;
-}
-
-/* Aplicar a todas as labels (geral) */
-label:has(+ input[required]), 
-label:has(+ textarea[required]), 
-label:has(+ select[required]) {
-    position: relative;
-}
-
-/* Insere o asterisco vermelho após o texto da label */
-label:has(+ input[required])::after,
-label:has(+ textarea[required])::after,
-label:has(+ select[required])::after {
-    content: ' *';
-    color: rgb(201, 83, 83); 
-    font-weight: bold;
-}
-
-/* Rodapé */
-.modal-footer {
-  border-top: none !important;
-  padding-top: 20px !important;
-  padding-bottom: 0 !important;
-}
-
-/* Botão cancelar */
-.modal-footer .btn-secondary,
-.btn-cancel {
-  background-color: #344c77 !important;
-  color: #fff !important;
-  border-radius: 8px !important;
-  border: none !important;
-  padding: 7px 20px !important;
-  font-size: 15px !important;
-  transition: 0.2s ease !important;
-}
-
-.modal-footer .btn-secondary:hover,
-.btn-cancel:hover {
-  background-color: #203150 !important;
-}
-
-/* Botão principal */
-.modal-footer .btn-primary {
-  background-color: #2873c5 !important;
-  color: #fff !important;
-  border-radius: 8px !important;
-  padding: 7px 22px !important;
-  font-size: 15px !important;
-  border: none !important;
-  transition: 0.2s ease !important;
-}
-
-.modal-footer .btn-primary:hover {
-  background-color: #1e5ba1 !important;
-}
-
-/* Títulos de seção dentro da modal */
-.modal-section-title {
-  font-size: 17px !important;
-  font-weight: 600 !important;
-  color: #3b3b3b !important;
-  margin-top: 10px !important;
-  margin-bottom: 10px !important;
-}
-
-/* Scroll suave para modais longas */
-.modal-body {
-  scrollbar-color: #ccc #f2f2f2;
-  scrollbar-width: thin;
-}
-
-.modal-body::-webkit-scrollbar {
-  width: 6px;
-}
-
-.modal-body::-webkit-scrollbar-thumb {
-  background: #bbb;
-  border-radius: 20px;
-}
-
-h5 {
-  color: #475569;
-}
-
-/* ===== GLOBAL TABLES (versão CLEAN conforme imagem gerada) ===== */
-.table {
-  width: 100%;
-  background: #ffffff;
-  border-spacing: 0;
-  font-family: "Inter", "Segoe UI", Roboto, system-ui, -apple-system, "Helvetica Neue", Arial;
-  color: #374151;
-  margin-bottom: 0;
-}
-
-/* Cabeçalho (fundo muito suave, letra escura, espaçamento maior) */
-.table thead th {
-  color: #475569;
-  font-weight: 600;
-  padding: 18px 22px;
-  font-size: 0.95rem;
-  text-align: left;
-  letter-spacing: 0.2px;
-  border-bottom: 1px solid rgba(16, 24, 40, 0.04);
-}
-
-/* Corpo: linhas com espaço, fundo muito claro para linhas pares */
-.table tbody tr {
-  transition: transform 230ms cubic-bezier(.2,.9,.2,1), box-shadow 230ms;
-  background: transparent;
-}
-
-// /* Alternância discreta de linhas */
-// .table tbody tr:nth-child(even) td {
-//   background: rgba(243, 247, 255, 0.6); /* tom super sutil */
-// }
-
-/* Células (espaco e separador leve) */
-.table td {
-  padding: 16px 20px;
-  vertical-align: middle;
-  font-size: 0.95rem;
-  color: #334155;
-  border-top: 1px solid rgba(16, 24, 40, 0.03); /* linha muito discreta */
-  background-clip: padding-box;
-}
-
-/* Remover borda visual da primeira linha (opcional) */
-.table tbody tr:first-child td {
-  border-top: none;
-}
-
-// ===================================== //

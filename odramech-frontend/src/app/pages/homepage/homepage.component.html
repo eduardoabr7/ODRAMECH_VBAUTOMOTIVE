@@ -1,160 +1,118 @@
-<div class="row pt-3 pb-3">
-    <div class="col-sm-12 saudations">
-        <h4>Olá, {{ authContext.user.name }}</h4>
-        <small>Bem vindo ao Odramech, o que você deseja fazer?</small>
-        <h6> {{ corpLogged.name }} </h6>
-        <h6>Estabelecimento: {{ corpLogged.establishment.name }}</h6>
-    </div>
-</div>
+<div class="homepage-wrapper">
 
-<div class="row widgets">
-    <div class="col-12">
-        <div class="row primary-widgets pb-2">
-            <div class="
-            col-md-3
-            ">
-                <div class="pwidget d-flex justify-content-center align-items-center" style="background-color: rgb(0, 110, 255);">
-                    <i class="fa-solid fa-plus" 
-                    style="
-                    color: rgb(255, 255, 255); 
-                    padding: 10px; 
-                    padding-right: 10px;
-                    font-size: 35px;
-                    "></i>
-                    Nova Ordem de Serviço
-                </div>
-            </div>
-            <div class="
-            col-md-3
-            ">
-                <div class="pwidget d-flex justify-content-center align-items-center" style="background-color: #497ee0;">
-                    <i class="fa-solid fa-car" 
-                    style="
-                    color: #ffffff;
-                    font-size: 25px;
-                    padding-right: 10px;
-                    font-size: 35px;
-                    "></i>
-                    Cadastrar Novo Veículo
-                </div>
-            </div>
-            <div class="
-            col-md-3
-            ">
-                <div *ngIf="corpLogged.establishment.role === 'ADMIN'; else verificarServicos" class="pwidget d-flex justify-content-center align-items-center" style="background-color: #218dd4;" (click)="navigate('clients')">
-                    <i class="fa-solid fa-users" 
-                    style="
-                    color: #ffffff;
-                    font-size: 35px;
-                    padding-right: 10px
-                    "></i>
-                    Cadastrar Clientes
-                </div>
-                <ng-template #verificarServicos>
-                    <div class="pwidget d-flex justify-content-center align-items-center" style="background-color: #218dd4;">
-                        <i class="fa-solid fa-users" 
-                        style="
-                        color: #ffffff;
-                        font-size: 35px;
-                        padding-right: 10px
-                        "></i>
-                        Verificar Serviços
-                    </div> 
-                </ng-template>
-            </div>
-            <div class="
-            col-md-3
-            ">
-                <div class="pwidget d-flex justify-content-center align-items-center" 
-                style="
-                background-color: #8a8a8a;
-                ">
-                    <i class="fa-solid fa-list-check" 
-                    style="
-                    color: #ffffff; 
-                    padding-right: 10px;
-                    font-size: 35px;
-                    "></i>
-                    Listar OS abertas
-                </div>
-            </div>
-        </div>
-        <div class="row secundary-widgets">
-            <div class="
-            col-md-3
-            ">
-                <div class="swidget d-flex justify-content-center align-items-center">
-                    <i class="fa-solid fa-list"
-                    style="
-                    color: white;
-                    padding-right: 10px;
-                    font-size: 35px;
-                    "></i>
-                    <div class="d-flex flex-column">    
-                        <span style="font-size: 20px;">12</span>
-                        <span>OS em andamento</span>
-                    </div>
-                </div>
-            </div>
-            <div class="
-            col-md-3
-            ">
-                <div class="swidget d-flex justify-content-center align-items-center">
-                    <i class="fa-solid fa-circle-check" 
-                    style="
-                    color: #ffffff;
-                    padding-right: 10px;
-                    font-size: 35px;
-                    "></i>
-                    <div class="d-flex flex-column">    
-                        <span style="font-size: 20px;">8</span>
-                        <span>Serviços concluídos hoje</span>
-                    </div>
-                </div>
-            </div>
-            <div class="
-            col-md-3
-            ">
-                <div class="swidget d-flex justify-content-center align-items-center">
-                    <i class="fa-solid fa-hand-holding-dollar"
-                    style="
-                    color: #ffffff;
-                    padding-right: 10px;
-                    font-size: 35px;
-                    "></i>
-                    <div class="d-flex flex-column">    
-                        <span style="font-size: 20px;">R$5500</span>
-                        <span>Faturamento do dia</span>
-                    </div>
-                </div>
-            </div>
-            <div class="
-            col-md-3
-            ">
-                <div class="swidget d-flex justify-content-center align-items-center">
-                    <i class="fa-solid fa-clock"
-                    style="
-                    color: #ffffff;
-                    padding-right: 10px;
-                    font-size: 35px;
-                    "></i>
-                    <div class="d-flex flex-column">    
-                        <span style="font-size: 20px;">2:30</span>
-                        <span>Tempo médio de serviço</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="row pt-3 pb-2 align-items-center">
+    <div class="col">
+      <h4 class="page-title mb-0">Olá, {{ authContext?.user?.name }}</h4>
+      <p class="page-subtitle mb-0">Bem vindo ao Odramech, o que você deseja fazer?</p>
+      <div class="corp-info mt-1">
+        <span class="corp-name">{{ corpLogged?.name }}</span>
+        <span class="corp-sep">·</span>
+        <span class="corp-estab">{{ corpLogged?.establishment?.name }}</span>
+      </div>
     </div>
-</div>
+  </div>
 
-<div class="row pt-5 pb-5">
-    <div class="col-md-6">
-        <app-recent-services>
-        </app-recent-services>
+  <div class="row g-3 mt-1">
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="action-card action-primary">
+        <div class="action-icon-wrap">
+          <i class="fas fa-plus"></i>
+        </div>
+        <span class="action-label">Nova Ordem de Serviço</span>
+      </div>
     </div>
-    <div class="col-md-6 pt-3 pt-md-0">
-        <app-user-reminders>
-        </app-user-reminders>
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="action-card action-secondary">
+        <div class="action-icon-wrap">
+          <i class="fas fa-car"></i>
+        </div>
+        <span class="action-label">Cadastrar Novo Veículo</span>
+      </div>
     </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div
+        class="action-card action-tertiary"
+        (click)="navigate('clients')"
+        style="cursor: pointer;"
+      >
+        <div class="action-icon-wrap">
+          <i class="fas fa-users"></i>
+        </div>
+        <span class="action-label">
+          {{ corpLogged?.establishment?.role === 'ADMIN' ? 'Cadastrar Clientes' : 'Verificar Serviços' }}
+        </span>
+      </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="action-card action-muted">
+        <div class="action-icon-wrap">
+          <i class="fas fa-list-check"></i>
+        </div>
+        <span class="action-label">Listar OS abertas</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="row g-3 mt-1">
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-icon-wrap" style="background: #eef1fe;">
+          <i class="fas fa-list" style="color: #4f6ef7;"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">12</span>
+          <span class="stat-label">OS em andamento</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-icon-wrap" style="background: #f0fdf4;">
+          <i class="fas fa-circle-check" style="color: #22c55e;"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">8</span>
+          <span class="stat-label">Serviços concluídos hoje</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-icon-wrap" style="background: #fdf2f8;">
+          <i class="fas fa-hand-holding-dollar" style="color: #ec4899;"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">R$5.500</span>
+          <span class="stat-label">Faturamento do dia</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-icon-wrap" style="background: #fff7ed;">
+          <i class="fas fa-clock" style="color: #f97316;"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">2h30</span>
+          <span class="stat-label">Tempo médio de serviço</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom panels -->
+  <div class="row g-3 mt-1 pb-4">
+    <div class="col-12 col-md-6">
+      <div class="panel-card">
+        <app-recent-services></app-recent-services>
+      </div>
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="panel-card">
+        <app-user-reminders></app-user-reminders>
+      </div>
+    </div>
+  </div>
+
 </div>

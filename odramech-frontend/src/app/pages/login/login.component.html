@@ -1,151 +1,104 @@
-<section class="gradient-form" style="overflow-y: auto;">
-  <div class="
-      header-pagination
-      d-flex
-      align-items-center
-      justify-content-end" 
-    style="
-      height: 100px;
-      color: rgb(221, 221, 221);">
-        <ul class="
-          d-flex 
-          gap-5 
-          list-unstyled 
-          mb-0
-          me-5">
-          <li>Traga o Odramech para sua empresa</li>
-          <li>Contatos</li>
-        </ul>
-  </div>
-  <div class="container-fluid py-5 mt-5">
-    <div class="row">
-        <div class="text-black">
-          <div class="row g-0">
-            <div class="
-              info
-              col-xl-6 
-              col-xxl-7
-              d-flex 
-              align-items-center 
-              gradient-custom-2
-              order-2
-              order-xl-1"
-            >
-              <div class="text-white">
-                <div class="text-center py-5 d-flex align-items-center">
-                  <img 
-                    class="logo"
-                    src="../../../assets/circle-sem-fundo-odramech.png" 
-                    style="width: 200px;" 
-                    alt="logo">
-                  <h1 class="odramech-text" style="font-size: 80px;">ODRAMECH</h1>
-                </div>
+<section class="login-page">
 
-                <h2 class="desc mb-0 ms-5 me-5">
-                  Plataforma moderna para oficinas mecânicas.
-                  Tudo o que você precisa em um único sistema.
-                </h2>
-              </div>
-            </div>
-            <div class="
-              login-panel
-              col-xl-6
-              col-xxl-5
-              order-1
-              order-xl-2">
-              <div class="card-body mx-md-4" style="padding: 50px 15px;">
+  <!-- Top nav -->
+  <nav class="login-nav">
+    <div class="nav-logo">
+      <img src="../../../assets/circle-sem-fundo-odramech.png" alt="logo" class="nav-logo-img">
+      <span class="nav-logo-text">ODRAMECH</span>
+    </div>
+    <ul class="nav-links">
+      <li>Traga o Odramech para sua empresa</li>
+      <li>Contatos</li>
+    </ul>
+  </nav>
 
-                <div class="text-center py-5 mb-5">
-                  <h1 style="color: white;"
-                    >Sign In
-                  </h1>
-                </div>
+  <!-- Main content -->
+  <div class="login-content">
 
-                <form 
-                  class="px-sm-5"
-                  (ngSubmit)="tryLogin()" 
-                  #formLogin="ngForm"
-                >
-                  <div 
-                    data-mdb-input-init 
-                    class="form-outline mb-4"
-                  >
-                    <label 
-                      class="form-label" 
-                      for="form2Example11"
-                    >
-                      E-mail
-                    </label>
-                    <input 
-                      type="email" 
-                      id="form2Example11" 
-                      class="form-control" 
-                      placeholder="E-mail"
-                      name="email" 
-                      [(ngModel)]="email" 
-                    />
-                  </div>
+    <!-- Left: branding -->
+    <div class="login-branding">
+      <div class="branding-inner">
+        <div class="brand-logo-row">
+          <img
+            src="../../../assets/circle-sem-fundo-odramech.png"
+            alt="logo"
+            class="brand-logo"
+          >
+          <h1 class="brand-name">ODRAMECH</h1>
+        </div>
+        <p class="brand-desc">
+          Plataforma moderna para oficinas mecânicas.<br>
+          Tudo o que você precisa em um único sistema.
+        </p>
+        <div class="brand-features">
+          <div class="feature-pill"><i class="fas fa-list-check"></i> Ordens de Serviço</div>
+          <div class="feature-pill"><i class="fas fa-users"></i> Gestão de Clientes</div>
+          <div class="feature-pill"><i class="fas fa-chart-line"></i> BI</div>
+        </div>
+      </div>
+    </div>
 
-                  <div 
-                    data-mdb-input-init 
-                    class="form-outline mb-4"
-                  >
-                    <label 
-                      class="form-label" 
-                      for="form2Example22"
-                    >
-                      Senha
-                    </label>
-                    <input 
-                      type="password" 
-                      id="form2Example22" 
-                      class="form-control" 
-                      placeholder="Insira sua senha"
-                      name="password" 
-                      [(ngModel)]="password" 
-                    />
-                  </div>
+    <!-- Right: form -->
+    <div class="login-form-panel">
+      <div class="login-card">
 
-                  <div 
-                    class="button-wrapper" 
-                    [style.cursor]="formLogin.invalid ? 'not-allowed' : 'pointer'"
-                  >
-                    <button 
-                      data-mdb-button-init 
-                      data-mdb-ripple-init
-                      class="btn btn-primary btn-block fa-lg gradient-custom-2" 
-                      type="submit"
-                      style="background-color: #8b8b8b; width: 100%;"
-                    >
-                      Acessar Sistema
-                      <span *ngIf="loadingLogin">
-                        <i class="fa-solid fa-circle-notch fa-spin"></i>
-                      </span>
-                    </button>
-                  </div>
+        <div class="login-card-header">
+          <h2 class="login-title">Bem-vindo de volta</h2>
+          <p class="login-subtitle">Acesse sua conta para continuar</p>
+        </div>
 
-                  <div class="
-                    text-center 
-                    pt-4 
-                    mb-5 
-                    pb-1 
-                    d-flex 
-                    align-items-center"
-                  >
-                    <a 
-                      class="text-muted" 
-                      href="#!"
-                    >
-                      Esqueceu a senha?
-                    </a>
-                  </div>
+        <form (ngSubmit)="tryLogin()" #formLogin="ngForm" class="login-form">
 
-                </form>
-
-              </div>
+          <div class="field-group">
+            <label for="email">E-mail</label>
+            <div class="input-wrapper">
+              <i class="fas fa-envelope input-icon"></i>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                [(ngModel)]="email"
+                placeholder="seu@email.com"
+                autocomplete="email"
+              >
             </div>
           </div>
-        </div>
+
+          <div class="field-group">
+            <div class="label-row">
+              <label for="password">Senha</label>
+              <a href="#!" class="forgot-link">Esqueceu a senha?</a>
+            </div>
+            <div class="input-wrapper">
+              <i class="fas fa-lock input-icon"></i>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                [(ngModel)]="password"
+                placeholder="••••••••"
+                autocomplete="current-password"
+              >
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            class="btn-login"
+            [class.loading]="loadingLogin"
+            [disabled]="loadingLogin"
+          >
+            <span *ngIf="!loadingLogin">Acessar Sistema</span>
+            <span *ngIf="loadingLogin">
+              <i class="fa-solid fa-circle-notch fa-spin me-2"></i>Entrando...
+            </span>
+          </button>
+
+        </form>
+
+      </div>
     </div>
+
   </div>
+
 </section>
