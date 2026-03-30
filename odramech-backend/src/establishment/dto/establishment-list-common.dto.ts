@@ -2,7 +2,7 @@ import { Type } from "class-transformer";
 import { IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { AddressDTO } from "src/address/dto/address.dto";
 
-export class EstablishmentListDTO {
+export class EstablishmentListCommonDTO {
     @IsNumber()
     id: number
 

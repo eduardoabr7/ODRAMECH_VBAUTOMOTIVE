@@ -280,6 +280,7 @@ ng-select {
   background-color: var(--card-bg) !important;
   scrollbar-color: var(--border) transparent;
   scrollbar-width: thin;
+  border-radius: 10px;
 
   &::-webkit-scrollbar { width: 5px; }
   &::-webkit-scrollbar-thumb {

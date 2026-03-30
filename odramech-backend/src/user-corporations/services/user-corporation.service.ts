@@ -118,26 +118,83 @@ export class UserCorporationService {
       };
     } 
 
-
-    //testar melhor essa função ============================================
-    async getEstablishments(enterpriseLoggedId: number, idUserAdmin, role: Role) {
-      const establishmentsAdmin = await this._prismaService.userCorporation.findMany({
+    async getEstablishmentsOnAdmin(enterpriseLoggedId: number, userId: number) {
+      const relations = await this._prismaService.userCorporation.findMany({
         where: {
           idEnterprise: enterpriseLoggedId,
-          idUser: idUserAdmin,
-          role: role
+          idUser: userId,
+          role: Role.ADMIN,
         },
-        select: {
+        include: {
           establishment: {
-            select: {
-              name: true,
-              id: true
+            include: {
+              address: true
             }
           }
         }
       })
     
-      return establishmentsAdmin
+      const establishments = relations.map((relation) => {
+        const { establishment } = relation
+      
+        return {
+          id: establishment.id,
+          name: establishment.name,
+          logoUrl: establishment.logoUrl,
+          address: establishment.address,
+          email: establishment.email,
+          phone: establishment.phone,
+          cnpj: establishment.cnpj,
+          role: Role.ADMIN
+        }
+      })
+    
+      return establishments
+    }   
+
+    //testar melhor essa função ============================================
+    async getEstablishments(enterpriseLoggedId: number, userId: number) {
+      const relations = await this._prismaService.userCorporation.findMany({
+        where: {
+          idEnterprise: enterpriseLoggedId,
+          idUser: userId
+        },
+        include: {
+          establishment: {
+            include: {
+              address: true
+            }
+          }
+        }
+      })
+    
+      const establishments = relations.map((relation) => {
+        const { establishment, role } = relation
+      
+        // any users
+        const baseData = {
+          id: establishment.id,
+          name: establishment.name,
+          logoUrl: establishment.logoUrl,
+          address: establishment.address,
+          email: establishment.email,
+          phone: establishment.phone,
+          role
+        }
+      
+        // only for admins, and workers with permission
+        if (role === Role.ADMIN) {
+          return {
+            ...baseData,
+            cnpj: establishment.cnpj
+          }
+        }
+      
+        // user comum recebe menos dados
+        return baseData
+      })
+    
+      return establishments
     }
     // ====================================================================
 

@@ -1,0 +1,16 @@
+.establishment-card {
+  transition: box-shadow 0.15s ease;
+  border: 1px solid #e9ecef;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  }
+}
+
+.est-logo,
+.est-logo-placeholder {
+  width: 52px;
+  height: 52px;
+  font-size: 1rem;
+  letter-spacing: -0.5px;
+}

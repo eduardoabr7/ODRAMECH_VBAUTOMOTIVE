@@ -37,15 +37,13 @@ export class ClientsComponent implements OnInit {
   selectedEstablishmentId: number;
 
   hasSelectedClient = false;
-  searchQuery = '';                          // ← novo: controla o input de busca
+  searchQuery = '';
 
-  // ── Getters ──────────────────────────────────────────────
-
-  get selectedCount(): number {             // ← novo: qtd de selecionados p/ badge
+  get selectedCount(): number {
     return this.users.filter(u => u.selected).length;
   }
 
-  get filteredUsers(): User[] {             // ← novo: filtra a lista pelo searchQuery
+  get filteredUsers(): User[] {
     const q = this.searchQuery.toLowerCase();
     if (!q) return this.users;
     return this.users.filter(u =>
@@ -55,12 +53,13 @@ export class ClientsComponent implements OnInit {
     );
   }
 
-  // ── Lifecycle ─────────────────────────────────────────────
 
   ngOnInit(): void {
     this._userCoporationService.getEstablishments().subscribe({
       next: (value) => {
-        this.establishments = value.map(element => element.establishment);
+        console.log('estabelecimentos retornados: ', value)
+        this.establishments = value;
+        console.log('eesttt: ', this.establishments)
         this.selectedEstablishmentId = this.establishments[0]?.id;
         this.loadUsersByEstablishment(this.selectedEstablishmentId);
       },
@@ -71,7 +70,6 @@ export class ClientsComponent implements OnInit {
     });
   }
 
-  // ── Methods ───────────────────────────────────────────────
 
   loadUsersByEstablishment(idEstablishment: number) {
     if (!idEstablishment) {

@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { BaseModalComponent } from '../base-modal.component';
+import { BaseModalComponent } from '../../base-modal.component';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';

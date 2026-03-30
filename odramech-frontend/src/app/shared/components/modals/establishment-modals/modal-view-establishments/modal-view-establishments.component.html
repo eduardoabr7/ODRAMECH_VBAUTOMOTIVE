@@ -1,0 +1,155 @@
+<div class="modal-content">
+  <div class="modal-header text-white">
+    <h5 class="modal-title">{{ title || 'Estabelecimentos' }}</h5>
+    <button
+      type="button"
+      class="btn-close btn-close-white"
+      aria-label="Close"
+      (click)="attemptClose()"
+    ></button>
+  </div>
+
+  <div class="modal-body bg-light">
+
+    <!-- Toolbar -->
+    <div class="row align-items-center mb-3 g-2">
+      <div class="col-12 col-sm-8 col-md-6">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white border-end-0">
+            <i class="fas fa-search text-muted small"></i>
+          </span>
+          <input
+            type="text"
+            class="form-control border-start-0 ps-0"
+            placeholder="Buscar estabelecimento..."
+            [(ngModel)]="searchQuery"
+            autocomplete="off"/>
+        </div>
+      </div>
+
+      <div class="col-12 col-sm-4 col-md-6 text-sm-end">
+        <button
+          class="btn btn-primary btn-sm"
+          type="button"
+          (click)="openCreate()">
+          <i class="fas fa-plus me-1"></i>Novo
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="row">
+      <div class="col-12 text-center py-5">
+        <i class="fas fa-circle-notch fa-spin fs-3 text-muted"></i>
+        <p class="text-muted mt-2 mb-0 small">Carregando estabelecimentos...</p>
+      </div>
+    </div>
+
+    <!-- Empty -->
+    <div *ngIf="!loading && filteredEstablishments.length === 0" class="row">
+      <div class="col-12 text-center py-5">
+        <i class="fas fa-store-slash fs-2 text-muted d-block mb-2"></i>
+        <p class="text-muted mb-0">Nenhum estabelecimento encontrado.</p>
+      </div>
+    </div>
+
+    <!-- Cards -->
+    <div *ngIf="!loading" class="row g-3">
+      <div
+        *ngFor="let est of filteredEstablishments"
+        class="col-12">
+
+        <div class="establishment-card bg-white rounded-3 shadow-sm p-3">
+          <div class="row align-items-center g-2">
+
+            <!-- Avatar / Logo -->
+            <div class="col-auto">
+              <img
+                *ngIf="est.logoUrl"
+                [src]="est.logoUrl"
+                [alt]="est.name"
+                class="est-logo rounded-3 object-fit-cover"/>
+              <div
+                *ngIf="!est.logoUrl"
+                class="est-logo rounded-3 d-flex align-items-center justify-content-center fw-bold text-white"
+                [style.background]="getAvatarColor(est.name)">
+                {{ getInitials(est.name) }}
+              </div>
+            </div>
+
+            <!-- Info -->
+            <div class="col">
+
+              <!-- Nome + badges -->
+              <div class="row align-items-center g-1 mb-1">
+                <div class="col-auto">
+                  <span class="fw-semibold">{{ est.name }}</span>
+                </div>
+                <div class="col-auto">
+                  <span class="badge bg-success-subtle text-success">Ativo</span>
+                </div>
+              </div>
+
+              <!-- Dados de contato -->
+              <div class="row g-2 text-muted small">
+                <div *ngIf="est.phone" class="col-auto">
+                  <i class="fas fa-phone me-1"></i>{{ est.phone }}
+                </div>
+                <div *ngIf="est.email" class="col-12 col-sm-auto">
+                  <i class="fas fa-envelope me-1"></i>{{ est.email }}
+                </div>
+                <div *ngIf="est.cnpj" class="col-auto">
+                  <i class="fas fa-id-card me-1"></i>{{ est.cnpj }}
+                </div>
+                <div *ngIf="est.address" class="col-auto">
+                  <i class="fas fa-map-marker-alt me-1"></i>{{ est.address.city }}, {{ est.address.district }}
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Actions -->
+            <div class="col-auto">
+              <div class="d-flex gap-2">
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  type="button"
+                  title="Editar"
+                  (click)="openEdit(est)">
+                  <i class="fas fa-pen"></i>
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  type="button"
+                  title="Excluir"
+                  (click)="confirmDelete(est)">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="row align-items-center mt-4">
+      <div class="col">
+        <span *ngIf="!loading" class="text-muted small">
+          {{ filteredEstablishments.length }} estabelecimento(s)
+        </span>
+      </div>
+      <div class="col-auto">
+        <button
+          class="btn btn-outline-secondary"
+          type="button"
+          (click)="attemptClose()">
+          Fechar
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

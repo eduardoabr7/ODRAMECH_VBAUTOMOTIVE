@@ -37,9 +37,10 @@
       *ngFor="let card of filteredCards"
       class="col-12 col-sm-6 col-lg-4 config-col"
     >
-      <div class="config-card">
+      <div 
+        class="config-card"
+        (click)="afterClickCard(card)">
 
-        <!-- Header: ícone + nome + toggle (se enableMode) -->
         <div class="card-header-row">
           <div class="card-identity">
             <div class="card-icon" [style.background]="card.iconBg">
@@ -58,10 +59,9 @@
           </label>
         </div>
 
-        <!-- Descrição -->
+        <!-- description -->
         <p class="card-desc">{{ card.description }}</p>
 
-        <!-- Footer: tag + botão conectar (se connectMode) -->
         <div class="card-footer-row">
           <span class="card-tag">{{ card.category | titlecase }}</span>
           <a *ngIf="card.connectMode" class="btn-connect">

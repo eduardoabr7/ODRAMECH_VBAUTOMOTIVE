@@ -31,33 +31,34 @@ model User {
 }
 
 model Enterprise {
-  id                Int                         @id @default(autoincrement())
-  logoUrl           String?
-  name              String
-  email             String
-  phone             String
-  cnpj              String                      @unique
-  addressId         Int                         @unique
+  id             Int              @id @default(autoincrement())
+  logoUrl        String?
+  name           String
+  email          String
+  phone          String
+  cnpj           String           @unique
+  addressId      Int              @unique
 
-  address           Address                     @relation(fields: [addressId], references: [id])
-  establishments    EnterpriseEstablishment[]
-  users             UserCorporation[]
+  address        Address          @relation(fields: [addressId], references: [id])
+  establishments Establishment[]
+  users          UserCorporation[]
 
   @@map("cad_enterprise")
 }
 
 model Establishment {
-  id                    Int                         @id @default(autoincrement())
-  logoUrl               String?
-  name                  String
-  email                 String?
-  phone                 String
-  cnpj                  String                      @unique
-  addressId             Int                         @unique
+  id            Int        @id @default(autoincrement())
+  logoUrl       String?
+  name          String
+  email         String?
+  phone         String
+  cnpj          String     @unique
+  addressId     Int        @unique
+  enterpriseId  Int
 
-  address               Address                     @relation(fields: [addressId], references: [id])
-  enterpriseRelations   EnterpriseEstablishment[]
-  users                 UserCorporation[]
+  enterprise    Enterprise @relation(fields: [enterpriseId], references: [id])
+  address       Address    @relation(fields: [addressId], references: [id])
+  users         UserCorporation[]
 
   @@map("cad_establishment")
 }
@@ -78,17 +79,6 @@ model Address {
   establishment Establishment?
 
   @@map("cad_address")
-}
-
-model EnterpriseEstablishment {
-  idEnterprise     Int
-  idEstablishment  Int
-
-  enterprise       Enterprise    @relation(fields: [idEnterprise], references: [id])
-  establishment    Establishment @relation(fields: [idEstablishment], references: [id])
-
-  @@id([idEnterprise, idEstablishment])
-  @@map("cad_enterprise_establishment")
 }
 
 model UserCorporation {
@@ -160,6 +150,7 @@ enum Role {
   ADMIN
   USER
   WORKER
+  SUPERUSER
 }
 
 enum OrderStatus {

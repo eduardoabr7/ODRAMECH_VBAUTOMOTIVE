@@ -21,16 +21,16 @@ async function main() {
     create: {
       name: "Administrador",
       email: ADMIN_EMAIL,
-      gender: 'M',
+      gender: "M",
       password: await hashPassword(ADMIN_PASSWORD),
       principalPhone: "119999999",
     },
   });
 
   /* =========================
-     ADDRESS (GENÉRICO)
+     ADDRESS (ENTERPRISE)
   ==========================*/
-  const address = await prisma.address.create({
+  const enterpriseAddress = await prisma.address.create({
     data: {
       street: "Rua Exemplo",
       number: "123",
@@ -38,7 +38,7 @@ async function main() {
       city: "São Paulo",
       zipCode: "00000-000",
       country: "BR",
-      neighborhood: 'Aparecida'
+      neighborhood: "Aparecida",
     },
   });
 
@@ -53,7 +53,22 @@ async function main() {
       email: "empresa@odramech.com",
       phone: "11333333",
       cnpj: "00.000.000/0001-00",
-      addressId: address.id,
+      addressId: enterpriseAddress.id,
+    },
+  });
+
+  /* =========================
+     ADDRESS (ESTABLISHMENT)
+  ==========================*/
+  const establishmentAddress = await prisma.address.create({
+    data: {
+      street: "Rua Exemplo",
+      number: "456",
+      district: "Centro",
+      city: "São Paulo",
+      zipCode: "00000-000",
+      country: "BR",
+      neighborhood: "Aparecida",
     },
   });
 
@@ -68,24 +83,8 @@ async function main() {
       email: "estabelecimento@odramech.com",
       phone: "11444444",
       cnpj: "11.111.111/0001-11",
-      addressId: address.id,
-    },
-  });
-
-  /* =========================
-     ENTERPRISE ↔ ESTABLISHMENT
-  ==========================*/
-  await prisma.enterpriseEstablishment.upsert({
-    where: {
-      idEnterprise_idEstablishment: {
-        idEnterprise: enterprise.id,
-        idEstablishment: establishment.id,
-      },
-    },
-    update: {},
-    create: {
-      idEnterprise: enterprise.id,
-      idEstablishment: establishment.id,
+      addressId: establishmentAddress.id,
+      enterpriseId: enterprise.id,
     },
   });
 

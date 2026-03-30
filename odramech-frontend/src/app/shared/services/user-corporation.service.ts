@@ -8,6 +8,7 @@ import { Enterprise } from "@shared/models/Enterprise";
 @Injectable({
   providedIn: 'root'
 })
+
 export class UserCorporationService {
     constructor(
         private readonly _nestApi: NestAPI
@@ -23,6 +24,10 @@ export class UserCorporationService {
 
     getEstablishments(): Observable<any> {
         return this._nestApi.get('usercorp/establishments')
+    }
+
+    getEstablishmentsOnAdmin(): Observable<any> {
+        return this._nestApi.get('usercorp/admin-establishments')
     }
 
     getUsersByEstablishments(idEstab): Observable<any> {

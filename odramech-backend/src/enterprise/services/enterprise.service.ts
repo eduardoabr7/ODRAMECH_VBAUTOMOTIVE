@@ -1,9 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma-service";
-import { EstablishmentDTO } from "../../establishment/dto/establishment.dto";
-import { Enterprise, Establishment } from "@prisma/client";
 import { EnterpriseWithEstablishmentDTO } from "../dto/enterprise-with-establishment.dto";
-import { EstablishmentListDTO } from "src/establishment/dto/establishment-list.dto";
+import { EstablishmentListCommonDTO } from "src/establishment/dto/establishment-list-common.dto";
 
 @Injectable()
 export class EnterpriseService {
@@ -16,28 +14,20 @@ export class EnterpriseService {
         return await this._prisma.enterprise.findMany();
     }
 
-    async getAllEstablishmentsFromEnterprise(idEnterprise: number): Promise<EstablishmentListDTO[]>{
-        const enterprise = await this._prisma.enterprise.findUnique({
+    async getAllEstablishmentsFromEnterprise(idEnterprise: number): Promise<EstablishmentListCommonDTO[]>{
+        const establishments = await this._prisma.establishment.findMany({
             where: {
-                id: idEnterprise,
+                enterpriseId: idEnterprise
             },
             select: {
-                establishments: {
-                    select: {
-                        establishment: {
-                            select: {
-                                id: true,
-                                logoUrl: true,
-                                name: true,
-                                address: true
-                            }
-                        }
-                    }
-                }
-            } 
+                id: true,
+                logoUrl: true,
+                name: true,
+                address: true
+            }
         });
 
-        return enterprise?.establishments.map(e => e.establishment) ?? [];
+        return establishments;
     }
 
     async createEnterpriseWithEstablishment(dataReceived: EnterpriseWithEstablishmentDTO) {
@@ -66,25 +56,27 @@ export class EnterpriseService {
 
       const establishmentCreated = await this._prisma.establishment.create({
         data: {
-            name: establishment.name,
-            email: establishment.email,
-            phone: establishment.phone,
-            cnpj: establishment.cnpj,
-            address: {
-                create: {
-                    street: establishment.address.street,
-                    number: establishment.address.number,
-                    complement: establishment.address.complement,
-                    district: establishment.address.district,
-                    city: establishment.address.city,
-                    zipCode: establishment.address.zipCode,
-                    country: establishment.address.country,
-                    neighborhood: establishment.address.neighborhood
-                }
-            }
-        }
-      })
-
+          name: establishment.name,
+          email: establishment.email,
+          phone: establishment.phone,
+          cnpj: establishment.cnpj,
+          enterprise: {
+            connect: { id: enterpriseCreated.id },
+          },
+          address: {
+            create: {
+              street: establishment.address.street,
+              number: establishment.address.number,
+              complement: establishment.address.complement,
+              district: establishment.address.district,
+              city: establishment.address.city,
+              zipCode: establishment.address.zipCode,
+              country: establishment.address.country,
+              neighborhood: establishment.address.neighborhood,
+            },
+          },
+        },
+      });
 
       return { idEtp: enterpriseCreated.id, idEst: establishmentCreated.id }
     }

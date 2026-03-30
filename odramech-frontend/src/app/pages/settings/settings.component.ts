@@ -1,6 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, Type } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { BsModalService } from 'ngx-bootstrap/modal';
+import { ToastrService } from 'ngx-toastr';
+import { ModalSettingsEnterpriseComponent } from '@shared/components/modals/modal-settings-enterprise/modal-settings-enterprise.component';
+
 
 interface SettingCard {
   name: string;
@@ -10,8 +14,9 @@ interface SettingCard {
   iconColor: string;
   iconBg: string;
   enabled?: boolean;
-  enableMode: boolean;   // true = mostra toggle on/off
-  connectMode: boolean;  // true = mostra botão "Conectar"
+  enableMode: boolean;
+  connectMode: boolean;
+  openModal?: Type<any>;
 }
 
 @Component({
@@ -21,6 +26,11 @@ interface SettingCard {
   styleUrl: './settings.component.scss'
 })
 export class SettingsComponent {
+
+  constructor(
+    private readonly _bsModalService: BsModalService,
+    private readonly _toastr: ToastrService
+  ) {}
 
   searchQuery = '';
   activeFilter = 'all';
@@ -44,6 +54,7 @@ export class SettingsComponent {
       iconBg: '#eef1fe',
       enableMode: false,
       connectMode: false,
+      openModal: ModalSettingsEnterpriseComponent
     },
     {
       name: 'Usuários e Permissões',
@@ -136,6 +147,15 @@ export class SettingsComponent {
       const matchesFilter = this.activeFilter === 'all' || card.category === this.activeFilter;
       const matchesSearch = !q || card.name.toLowerCase().includes(q) || card.description.toLowerCase().includes(q);
       return matchesFilter && matchesSearch;
+    });
+  }
+
+  afterClickCard(card: SettingCard): void {
+    if (!card.openModal) return;
+
+    this._bsModalService.show(card.openModal, {
+      initialState: { title: card.name },
+      class: 'modal-lg'
     });
   }
 

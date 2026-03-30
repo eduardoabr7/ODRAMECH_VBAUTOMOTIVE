@@ -1,7 +1,7 @@
 import { Type } from "class-transformer";
 import { ValidateNested } from "class-validator";
 import { EnterpriseDTO } from "./enterprise.dto";
-import { EstablishmentDTO } from "../../establishment/dto/establishment.dto";
+import { EstablishmentListFullDTO } from "../../establishment/dto/establishment-list-full.dto";
 
 export class EnterpriseWithEstablishmentDTO {
   @ValidateNested()
@@ -9,6 +9,6 @@ export class EnterpriseWithEstablishmentDTO {
   enterprise: EnterpriseDTO;
 
   @ValidateNested()
-  @Type(() => EstablishmentDTO)
-  establishment: EstablishmentDTO;
+  @Type(() => EstablishmentListFullDTO)
+  establishment: EstablishmentListFullDTO;
 }

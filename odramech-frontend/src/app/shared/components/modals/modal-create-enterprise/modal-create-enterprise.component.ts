@@ -4,7 +4,7 @@ import { BaseModalComponent } from '../base-modal.component';
 import { FormsModule, NgForm } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
-import { ModalCreateEstablishmentComponent } from '../modal-create-establishment/modal-create-establishment.component';
+import { ModalCreateEstablishmentComponent } from '../establishment-modals/modal-create-establishment/modal-create-establishment.component';
 import { Address } from '@shared/models/Address';
 import { EnterpriseCreate } from '@shared/models/EnterpriseCreate';
 import { Establishment } from '@shared/models/Establishment';

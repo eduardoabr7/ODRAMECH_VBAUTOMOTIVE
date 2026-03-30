@@ -12,7 +12,7 @@ import { ModalCreateEnterprise } from '@shared/components/modals/modal-create-en
 import { UserLogged } from '@shared/models/UserLogged';
 import { UserCorporationService } from '@shared/services/user-corporation.service';
 import { EMPTY, finalize, map, Observable, of, switchMap, tap } from 'rxjs';
-import { ModalSelectEstablishment } from '@shared/components/modals/modal-select-establishment/modal-select-establishment.component';
+import { ModalSelectEstablishment } from '@shared/components/modals/establishment-modals/modal-select-establishment/modal-select-establishment.component';
 import { PreLogin } from '@shared/models/PreLogin';
 import { EnterpriseWithEstablishments } from '@shared/models/EnterpriseWithEstablishment';
 import { Enterprise } from '@shared/models/Enterprise';
@@ -59,6 +59,7 @@ export class LoginComponent {
 
   tryLogin() {
     if (!this.formValido(this.email, this.password)) return
+    console.log('meú deus')
 
     this.loadingLogin = true;
 
@@ -77,6 +78,7 @@ export class LoginComponent {
         ()=> this.getUserCorp()
       ),
       switchMap(corps => {
+        console.log('caralho')
         if (!corps.length) {
           this._toastr.info('Verifique com seu mecânico', 'Seu usuário não está vinculado a uma empresa')
           return EMPTY
@@ -88,15 +90,18 @@ export class LoginComponent {
         return of(corps[0]);
       }),
       switchMap(selectedEnterprise => {
-        if (!selectedEnterprise) return EMPTY // IF NO ENTERPRISE IS SELECTED
-
-        const idEtp = selectedEnterprise.id
-
-        return this.getEstablishmentsForEnterprise(idEtp)
+        if (!selectedEnterprise) return EMPTY; // IF NOT SELECTED ENTERPRISE
+      
+        const establishmentsOnUser = selectedEnterprise.establishments || [];
+      
+        return of(establishmentsOnUser);
       }),
       switchMap(establishments => {
-        if( establishments.length > 1 ) return this.openSelectEstablishmentModal(establishments)
-        else return of (establishments[0])
+        if (establishments.length > 1) {
+          return this.openSelectEstablishmentModal(establishments);
+        } else {
+          return of(establishments[0]);
+        }
       }),
       switchMap(establishmentSelected => {
         if(!establishmentSelected) return EMPTY // IF NO ESTABLISHMENT IS SELECTED
