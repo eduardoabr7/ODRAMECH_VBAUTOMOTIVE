@@ -3,5 +3,5 @@ import { UserLogged } from "./UserLogged";
 
 export interface AuthContext {
     user: UserLogged,
-    usercorp: UserCorporation[] | null
+    usercorp: UserCorporation | null
 }

@@ -36,7 +36,7 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
 
   buttons: BotoesMenuLateral[] = [
     { nome: 'Home',          icon: 'fa-solid fa-house',    route: '/home'          },
-    { nome: 'Serviços',      icon: 'fa-solid fa-wrench',   route: '/services'      },
+    { nome: 'Serviços',      icon: 'fa-solid fa-wrench',   route: '/orders'      },
     { nome: 'Meus veículos', icon: 'fa-solid fa-car-side', route: '/vehicles'      },
     { nome: 'Faturamento',   icon: 'fa-solid fa-file',     route: '/billing'       },
     { nome: 'Notificações',  icon: 'fa-solid fa-envelope', route: '/notifications' },

@@ -1,0 +1,287 @@
+<div class="create-os-wrapper">
+
+  <!-- Header -->
+  <div class="row pt-3 pb-2 align-items-center">
+    <div class="col">
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn-back" (click)="goBack()">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <div>
+          <h4 class="page-title mb-0">Nova Ordem de Serviço</h4>
+          <p class="page-subtitle mb-0">Preencha os dados abaixo para abrir uma OS</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-auto">
+      <span class="os-number-badge">
+        <i class="fas fa-hashtag me-1"></i>OS #{{ nextOsNumber }}
+      </span>
+    </div>
+  </div>
+
+  <form [formGroup]="osForm" (ngSubmit)="onSubmit()">
+    <div class="row g-3 mt-1">
+
+      <!-- LEFT COLUMN -->
+      <div class="col-12 col-lg-8">
+
+        <!-- Client Card -->
+        <div class="form-card anim-1">
+          <div class="form-card-header">
+            <div class="form-card-icon" style="background:#eef1fe;">
+              <i class="fas fa-user" style="color:#4f6ef7;"></i>
+            </div>
+            <span class="form-card-title">Dados do Cliente</span>
+          </div>
+
+          <div class="row g-3 mt-1">
+            <div class="col-12">
+              <label class="field-label">Buscar Cliente <span class="required">*</span></label>
+              <div class="search-field-wrap">
+                <i class="fas fa-magnifying-glass search-icon"></i>
+                <input
+                  type="text"
+                  class="field-input search-input"
+                  placeholder="Nome, telefone ou e-mail..."
+                  formControlName="clientSearch"
+                  (input)="onClientSearch($event)"
+                  autocomplete="off"
+                />
+                <div class="search-dropdown" *ngIf="showClientDropdown && clientResults.length > 0">
+                  <div
+                    class="search-item"
+                    *ngFor="let client of clientResults"
+                    (click)="selectClient(client)"
+                  >
+                    <div class="search-item-avatar">{{ client.name.charAt(0) }}</div>
+                    <div class="search-item-info">
+                      <span class="search-item-name">{{ client.name }}</span>
+                      <span class="search-item-sub">{{ client.principalPhone }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <ng-container *ngIf="selectedClient">
+              <div class="col-12">
+                <div class="selected-client-card">
+                  <div class="selected-avatar">{{ selectedClient.name.charAt(0) }}</div>
+                  <div class="selected-info">
+                    <span class="selected-name">{{ selectedClient.name }}</span>
+                    <div class="selected-meta">
+                      <span><i class="fas fa-phone me-1"></i>{{ selectedClient.principalPhone }}</span>
+                      <span *ngIf="selectedClient.email"><i class="fas fa-envelope me-1"></i>{{ selectedClient.email }}</span>
+                    </div>
+                  </div>
+                  <button type="button" class="btn-clear-client" (click)="clearClient()">
+                    <i class="fas fa-xmark"></i>
+                  </button>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+
+        <!-- Responsible Card -->
+        <div class="form-card anim-2 mt-3">
+          <div class="form-card-header">
+            <div class="form-card-icon" style="background:#f0fdf4;">
+              <i class="fas fa-user-tie" style="color:#22c55e;"></i>
+            </div>
+            <span class="form-card-title">Responsável pela OS</span>
+          </div>
+
+          <div class="row g-3 mt-1">
+            <div class="col-12 col-sm-6">
+              <label class="field-label">Técnico Responsável</label>
+              <div class="select-wrap">
+                <select class="field-input field-select" formControlName="userResponsibleId">
+                  <option [ngValue]="null">Sem responsável</option>
+                  <option *ngFor="let worker of workers" [ngValue]="worker.id">
+                    {{ worker.name }}
+                  </option>
+                </select>
+                <i class="fas fa-chevron-down select-arrow"></i>
+              </div>
+            </div>
+
+            <div class="col-12 col-sm-6">
+              <label class="field-label">Status Inicial <span class="required">*</span></label>
+              <div class="select-wrap">
+                <select class="field-input field-select" formControlName="status">
+                  <option value="PENDENTE">Pendente</option>
+                  <option value="EM_ATENDIMENTO">Em Atendimento</option>
+                </select>
+                <i class="fas fa-chevron-down select-arrow"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appointment Card -->
+        <div class="form-card anim-3 mt-3">
+          <div class="form-card-header">
+            <div class="form-card-icon" style="background:#fff7ed;">
+              <i class="fas fa-note-sticky" style="color:#f97316;"></i>
+            </div>
+            <span class="form-card-title">Apontamento Inicial</span>
+            <span class="optional-badge">Opcional</span>
+          </div>
+
+          <div class="row g-3 mt-1">
+            <div class="col-12 col-sm-6">
+              <label class="field-label">Tipo de Apontamento</label>
+              <div class="select-wrap">
+                <select class="field-input field-select" formControlName="appointmentType">
+                  <option value="PUBLICO">Público</option>
+                  <option value="INTERNO">Interno</option>
+                </select>
+                <i class="fas fa-chevron-down select-arrow"></i>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label class="field-label">Descrição do Problema / Apontamento</label>
+              <div class="editor-toolbar">
+                <button type="button" class="editor-btn" (click)="formatText('bold')" title="Negrito">
+                  <i class="fas fa-bold"></i>
+                </button>
+                <button type="button" class="editor-btn" (click)="formatText('italic')" title="Itálico">
+                  <i class="fas fa-italic"></i>
+                </button>
+                <button type="button" class="editor-btn" (click)="formatText('underline')" title="Sublinhado">
+                  <i class="fas fa-underline"></i>
+                </button>
+                <div class="editor-sep"></div>
+                <button type="button" class="editor-btn" (click)="formatText('insertUnorderedList')" title="Lista">
+                  <i class="fas fa-list-ul"></i>
+                </button>
+              </div>
+              <div
+                #editorRef
+                class="rich-editor"
+                contenteditable="true"
+                (input)="onEditorInput($event)"
+                data-placeholder="Descreva o problema relatado pelo cliente, defeitos observados, serviços solicitados..."
+              ></div>
+            </div>
+
+            <!-- File Upload -->
+            <div class="col-12">
+              <label class="field-label">Anexos</label>
+              <div
+                class="dropzone"
+                [class.dragging]="isDragging"
+                (dragover)="onDragOver($event)"
+                (dragleave)="onDragLeave($event)"
+                (drop)="onDrop($event)"
+                (click)="fileInput.click()"
+              >
+                <input #fileInput type="file" hidden multiple (change)="onFileSelect($event)" />
+                <i class="fas fa-cloud-arrow-up dropzone-icon"></i>
+                <span class="dropzone-text">Arraste arquivos ou <span class="dropzone-link">clique aqui</span></span>
+                <span class="dropzone-sub">Imagens, PDFs — máx. 10MB cada</span>
+              </div>
+              <div class="file-list mt-2" *ngIf="attachedFiles.length > 0">
+                <div class="file-item" *ngFor="let file of attachedFiles; let i = index">
+                  <i class="fas fa-file-alt file-icon"></i>
+                  <span class="file-name">{{ file.name }}</span>
+                  <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                  <button type="button" class="btn-remove-file" (click)="removeFile(i)">
+                    <i class="fas fa-xmark"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="col-12 col-lg-4 right-col">
+
+        <!-- Tips Card — desktop: topo / mobile: após resumo -->
+        <div class="form-card tips-card anim-5 order-2 order-lg-1">
+          <div class="form-card-header">
+            <div class="form-card-icon" style="background:#eef1fe;">
+              <i class="fas fa-lightbulb" style="color:#4f6ef7;"></i>
+            </div>
+            <span class="form-card-title">Dicas</span>
+          </div>
+          <ul class="tips-list mt-2">
+            <li>Busque o cliente pelo nome, telefone ou e-mail cadastrado.</li>
+            <li>O apontamento inicial documenta o relato do cliente na abertura.</li>
+            <li>Apontamentos <strong>Internos</strong> são visíveis apenas para a equipe.</li>
+            <li>Você pode adicionar mais apontamentos e arquivos após a abertura.</li>
+          </ul>
+        </div>
+
+        <!-- Summary Card — desktop: abaixo das dicas / mobile: primeiro -->
+        <div class="form-card summary-card anim-4 order-1 order-lg-2 mt-3 mt-lg-0">
+          <div class="form-card-header">
+            <div class="form-card-icon" style="background:#fdf2f8;">
+              <i class="fas fa-receipt" style="color:#ec4899;"></i>
+            </div>
+            <span class="form-card-title">Resumo da OS</span>
+          </div>
+
+          <div class="summary-list mt-3">
+            <div class="summary-row">
+              <span class="summary-key">Número</span>
+              <span class="summary-val">#{{ nextOsNumber }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-key">Status</span>
+              <span class="status-badge" [ngClass]="statusClass">{{ statusLabel }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-key">Cliente</span>
+              <span class="summary-val">{{ selectedClient?.name || '—' }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-key">Responsável</span>
+              <span class="summary-val">{{ responsibleName || '—' }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-key">Criado por</span>
+              <span class="summary-val">{{ authContext?.user?.name }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-key">Criação</span>
+              <span class="summary-val">{{ now | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="summary-row" *ngIf="attachedFiles.length > 0">
+              <span class="summary-key">Anexos</span>
+              <span class="summary-val">{{ attachedFiles.length }} arquivo(s)</span>
+            </div>
+          </div>
+
+          <div class="d-grid mt-4">
+            <button
+              type="submit"
+              class="btn-submit"
+              [disabled]="osForm.invalid || !selectedClient || isSubmitting"
+            >
+              <span *ngIf="!isSubmitting">
+                <i class="fas fa-paper-plane me-2"></i>Abrir Ordem de Serviço
+              </span>
+              <span *ngIf="isSubmitting" class="d-flex align-items-center justify-content-center gap-2">
+                <span class="spinner"></span> Criando OS...
+              </span>
+            </button>
+          </div>
+
+          <button type="button" class="btn-cancel mt-2 w-100" (click)="goBack()">
+            Cancelar
+          </button>
+        </div>
+
+      </div><!-- /col-lg-4 -->
+
+    </div><!-- /row -->
+  </form>
+
+</div><!-- /create-os-wrapper -->

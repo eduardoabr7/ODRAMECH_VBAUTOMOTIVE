@@ -1,11 +1,11 @@
 import { Component, Input } from '@angular/core';
-import { BaseModalComponent } from '../base-modal.component';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { Enterprise } from '@shared/models/Enterprise';
+import { BaseModalComponent } from '../../base-modal.component';
 
 @Component({
   selector: 'app-modal-select-enterprise',

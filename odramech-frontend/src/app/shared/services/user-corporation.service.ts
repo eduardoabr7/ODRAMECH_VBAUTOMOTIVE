@@ -26,8 +26,8 @@ export class UserCorporationService {
         return this._nestApi.get('usercorp/establishments')
     }
 
-    getEstablishmentsOnAdmin(): Observable<any> {
-        return this._nestApi.get('usercorp/admin-establishments')
+    getEstablishmentsOnAdminOrWorker(): Observable<any> {
+        return this._nestApi.get('usercorp/westablishments')
     }
 
     getUsersByEstablishments(idEstab): Observable<any> {

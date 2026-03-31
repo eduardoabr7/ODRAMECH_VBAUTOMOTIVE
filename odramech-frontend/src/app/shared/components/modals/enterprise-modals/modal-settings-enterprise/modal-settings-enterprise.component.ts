@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, Type } from '@angular/core';
-import { BaseModalComponent } from '../base-modal.component';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
-import { ModalViewEstablishmentsComponent } from '../establishment-modals/modal-view-establishments/modal-view-establishments.component';
+
 import { AuthService } from '@shared/services/auth.service';
 import { AuthContext } from '@shared/models/AuthContext';
 import { UserLogged } from '@shared/models/UserLogged';
+import { BaseModalComponent } from '../../base-modal.component';
+import { ModalViewEstablishmentsComponent } from '../../establishment-modals/modal-view-establishments/modal-view-establishments.component';
 // import { ModalEstablishmentsComponent } from '../modal-establishments/modal-establishments.component';
 // import { ModalPaymentMethodsComponent } from '../modal-payment-methods/modal-payment-methods.component';
 // import { ModalUsersComponent } from '../modal-users/modal-users.component';

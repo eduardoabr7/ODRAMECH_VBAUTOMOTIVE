@@ -8,7 +8,6 @@ import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BsModalService } from 'ngx-bootstrap/modal';
-import { ModalCreateEnterprise } from '@shared/components/modals/modal-create-enterprise/modal-create-enterprise.component';
 import { UserLogged } from '@shared/models/UserLogged';
 import { UserCorporationService } from '@shared/services/user-corporation.service';
 import { EMPTY, finalize, map, Observable, of, switchMap, tap } from 'rxjs';
@@ -16,9 +15,9 @@ import { ModalSelectEstablishment } from '@shared/components/modals/establishmen
 import { PreLogin } from '@shared/models/PreLogin';
 import { EnterpriseWithEstablishments } from '@shared/models/EnterpriseWithEstablishment';
 import { Enterprise } from '@shared/models/Enterprise';
-import { ModalSelectEnterpriseComponent } from '@shared/components/modals/modal-select-enterprise/modal-select-enterprise.component';
 import { Establishment } from '@shared/models/Establishment';
 import { EnterpriseService } from '@shared/services/enterprise.service';
+import { ModalSelectEnterpriseComponent } from '@shared/components/modals/enterprise-modals/modal-select-enterprise/modal-select-enterprise.component';
 @Component({
   selector: 'app-login',
   imports: [CommonModule, FormsModule],
@@ -59,8 +58,6 @@ export class LoginComponent {
 
   tryLogin() {
     if (!this.formValido(this.email, this.password)) return
-    console.log('meú deus')
-
     this.loadingLogin = true;
 
     const dataToSend: PreLogin = {
@@ -78,7 +75,6 @@ export class LoginComponent {
         ()=> this.getUserCorp()
       ),
       switchMap(corps => {
-        console.log('caralho')
         if (!corps.length) {
           this._toastr.info('Verifique com seu mecânico', 'Seu usuário não está vinculado a uma empresa')
           return EMPTY

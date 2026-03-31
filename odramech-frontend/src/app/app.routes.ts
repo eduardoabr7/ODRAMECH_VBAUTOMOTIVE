@@ -6,6 +6,7 @@ import { LayoutComponent } from './pages/layout/layout.component';
 import { AuthGuard } from './guards/Authentication.guard';
 import { ClientsComponent } from './pages/clients/clients.component';
 import { SettingsComponent } from './pages/settings/settings.component';
+import { NewOsComponent } from './pages/OS/new-os/new-os.component';
 
 export const routes: Routes = [
 
@@ -17,7 +18,8 @@ export const routes: Routes = [
       { path: '', redirectTo: 'home', pathMatch: 'full' },
       { path: 'home', component: HomepageComponent },
       { path: 'clients', component: ClientsComponent },
-      { path: 'settings', component: SettingsComponent }
+      { path: 'settings', component: SettingsComponent },
+      { path: 'orders', component: NewOsComponent }
     ]
   },
 

@@ -32,7 +32,7 @@ export class AuthController {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'strict',
-          maxAge: 2 * 60 * 1000
+          maxAge: 15 * 60 * 1000
         });
 
         return user;

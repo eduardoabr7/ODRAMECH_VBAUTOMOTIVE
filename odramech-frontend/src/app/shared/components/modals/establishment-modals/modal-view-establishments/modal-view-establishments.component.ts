@@ -62,7 +62,7 @@ export class ModalViewEstablishmentsComponent extends BaseModalComponent impleme
   load(): void {
     this.loading = true;
 
-    this._userCorpService.getEstablishmentsOnAdmin()
+    this._userCorpService.getEstablishmentsOnAdminOrWorker()
       .pipe(
         tap((data) => {
           this.establishments = data;

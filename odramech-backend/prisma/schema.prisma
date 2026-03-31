@@ -146,6 +146,15 @@ model ArchiveAppointment {
   @@map("archive_appointment")
 }
 
+model Vehicle {
+  id                  Int                 @id @default(autoincrement())
+  plate               String
+  km                  String?
+  model_year          Int?
+  manufactur_year     Int?
+  color               String?
+}
+
 enum Role {
   ADMIN
   USER

@@ -366,6 +366,23 @@ ng-select {
   margin: 12px 0 10px !important;
 }
 
+.modal-loading-wrap {
+  .modal-dialog {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  .modal-content {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+}
+
 // ══════════════════════════════════════════════════════════
 // TOASTS (ngx-toastr)
 // ══════════════════════════════════════════════════════════

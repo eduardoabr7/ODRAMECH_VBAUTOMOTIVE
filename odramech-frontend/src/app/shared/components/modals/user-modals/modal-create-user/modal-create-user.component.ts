@@ -1,8 +1,8 @@
 import { CommonModule } from "@angular/common";
 import { Component } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { BaseModalComponent } from "../base-modal.component";
-import { BsModalRef } from "ngx-bootstrap/modal";
+import { BaseModalComponent } from "../../base-modal.component";
+import { BsModalRef, BsModalService } from "ngx-bootstrap/modal";
 import { GenderEnum } from "@shared/enums/gender.enum";
 import { UserCreate } from "@shared/models/UserCreate";
 import { EMPTY, finalize, Observable, tap, zip } from "rxjs";
@@ -11,6 +11,7 @@ import { ZipCodeService } from "@shared/services/zipcode.service";
 import cloneDeep from 'lodash/cloneDeep';
 import { NgxMaskDirective } from "ngx-mask";
 import { UserService } from "@shared/services/user.service";
+import { ModalLoadingComponent } from "../../modal-loading/modal-loading.component";
 
 interface AddressReturn {
   cep: string,
@@ -34,11 +35,13 @@ export class ModalCreateUserComponent extends BaseModalComponent {
       bsModalRef: BsModalRef,
       private readonly _toastr: ToastrService,
       private readonly _zipCodeService: ZipCodeService,
-      private readonly _userService: UserService
+      private readonly _userService: UserService,
+      private readonly _modalService: BsModalService
     ) {
         super(bsModalRef);
     }
 
+    isSubmitting: boolean = false;
     GenderEnum = GenderEnum;
 
     form: UserCreate = {
@@ -130,10 +133,29 @@ export class ModalCreateUserComponent extends BaseModalComponent {
     }
 
     createUser() {
-      const user: UserCreate = this.normalizeUser(this.form)
-
-
-      this._userService.create(user).subscribe()
+      if (this.isSubmitting) return;
+      this.isSubmitting = true;
+    
+      const user = this.normalizeUser(this.form);
+    
+      const loadingRef = ModalLoadingComponent.open(
+        this._modalService, 'Cadastrando usuário', 'Aguarde...');
+    
+      this._userService.create(user).pipe(
+        finalize(() => {
+          this.isSubmitting = false;
+          loadingRef.hide();
+        })
+      ).subscribe({
+        next: (value) => {
+          this._toastr.success('Usuário cadastrado com sucesso!');
+          this.confirm(value);
+        },
+        error: (err) => {
+          const message = err?.error?.message ?? 'Erro ao cadastrar usuário.';
+          this._toastr.error(message);
+        }
+      });
     }
 
 }

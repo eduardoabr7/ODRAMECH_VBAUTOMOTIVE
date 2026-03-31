@@ -10,7 +10,7 @@ export class BaseModalComponent<T = any> {
   constructor(public bsModalRef: BsModalRef) {}
 
   /** 🔵 CONFIRMAR — fecha retornando dados */
-  confirm(result: T) {
+  confirm(result?: T) {
     this.onClose.next(result);
     this.onClose.complete();
     this.closeImmediately();

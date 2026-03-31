@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgSelectModule } from '@ng-select/ng-select';
-import { ModalCreateUserComponent } from '@shared/components/modals/modal-create-user/modal-create-user.component';
+import { ModalCreateUserComponent } from '@shared/components/modals/user-modals/modal-create-user/modal-create-user.component';
 import { RoleEnum } from '@shared/enums/role.enum';
 import { UserCorporationService } from '@shared/services/user-corporation.service';
 import { BsModalService } from 'ngx-bootstrap/modal';
@@ -55,11 +55,9 @@ export class ClientsComponent implements OnInit {
 
 
   ngOnInit(): void {
-    this._userCoporationService.getEstablishments().subscribe({
+    this._userCoporationService.getEstablishmentsOnAdminOrWorker().subscribe({
       next: (value) => {
-        console.log('estabelecimentos retornados: ', value)
         this.establishments = value;
-        console.log('eesttt: ', this.establishments)
         this.selectedEstablishmentId = this.establishments[0]?.id;
         this.loadUsersByEstablishment(this.selectedEstablishmentId);
       },
@@ -105,9 +103,15 @@ export class ClientsComponent implements OnInit {
   }
 
   openModalCreateUser() {
-    this._bsModalService.show(ModalCreateUserComponent, {
+    const modalRef = this._bsModalService.show(ModalCreateUserComponent, {
       initialState: { title: 'Novo Cliente' },
       class: 'modal-lg'
+    });
+
+    modalRef.content.onClose.subscribe((result: any) => {
+      if (!result) return
+      
+      this.loadUsersByEstablishment(this.selectedEstablishmentId);
     });
   }
 

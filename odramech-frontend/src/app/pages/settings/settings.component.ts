@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, Type } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ModalSettingsEnterpriseComponent } from '@shared/components/modals/enterprise-modals/modal-settings-enterprise/modal-settings-enterprise.component';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { ToastrService } from 'ngx-toastr';
-import { ModalSettingsEnterpriseComponent } from '@shared/components/modals/modal-settings-enterprise/modal-settings-enterprise.component';
+
 
 
 interface SettingCard {

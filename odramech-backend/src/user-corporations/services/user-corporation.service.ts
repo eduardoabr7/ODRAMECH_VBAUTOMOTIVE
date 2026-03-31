@@ -118,12 +118,14 @@ export class UserCorporationService {
       };
     } 
 
-    async getEstablishmentsOnAdmin(enterpriseLoggedId: number, userId: number) {
+    async getEstablishmentsOnAdminOrWorker(enterpriseLoggedId: number, userId: number) {
       const relations = await this._prismaService.userCorporation.findMany({
         where: {
           idEnterprise: enterpriseLoggedId,
           idUser: userId,
-          role: Role.ADMIN,
+          role: {
+            in: [Role.ADMIN, Role.WORKER]
+          }
         },
         include: {
           establishment: {
@@ -145,7 +147,7 @@ export class UserCorporationService {
           email: establishment.email,
           phone: establishment.phone,
           cnpj: establishment.cnpj,
-          role: Role.ADMIN
+          role: relation.role
         }
       })
     

@@ -26,11 +26,11 @@ export class UserCorporationController {
       return this._userCorporationService.getUserCorporationsByUserId(userId);
     }
 
-    @Get('admin-establishments')
+    @Get('westablishments')
     getEstablishmentsOnAdmin(@Req() req) {
       const request = req.authContext as AuthPayload
 
-      return this._userCorporationService.getEstablishmentsOnAdmin(request.enterpriseId, request.sub)
+      return this._userCorporationService.getEstablishmentsOnAdminOrWorker(request.enterpriseId, request.sub)
     }
 
     @Get('establishments')
@@ -42,7 +42,7 @@ export class UserCorporationController {
 
     @Post('establishment-users')
     getUsersByIdEstab(@Body() data: GetEstablishmentById) {
-      return this._userCorporationService.getUsersByEstablishment(data.idEstab)
+      return this._userCorporationService.getUsersByEstablishment(Number(data.idEstab))
     }
 
 }

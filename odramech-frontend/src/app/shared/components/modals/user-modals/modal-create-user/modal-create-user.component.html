@@ -47,6 +47,7 @@
                 type="radio" 
                 name="gender" 
                 [value]="GenderEnum.Fem"
+                required
                 [(ngModel)]="form.gender"/>
               <label class="form-check-label">Feminino</label>
             </div>
@@ -306,8 +307,9 @@
         <div class="row mt-4">
           <div class="col-12 text-end">
             <button 
+              type="button"
               class="btn btn-outline-danger me-2"
-              (click)="attemptClose()">
+              (click)="cancel()">
                 Cancelar
             </button>
             <button 
