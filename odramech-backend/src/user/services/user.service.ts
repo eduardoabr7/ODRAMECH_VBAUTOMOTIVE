@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma-service";
 import { CreateUserDto } from "../dto/create-user.dto";
 import * as bcrypt from "bcrypt";
+import { ListUserDto } from "../dto/list-user.dto";
 
 @Injectable()
 export class UserService {
@@ -50,6 +51,20 @@ export class UserService {
             }
           }
         }
+      });
+    }
+
+    async search(q: string): Promise<ListUserDto[]> {
+      return this._prismaService.user.findMany({
+        where: {
+          OR: [
+            { name:  { contains: q, mode: 'insensitive' } },
+            { email: { contains: q, mode: 'insensitive' } },
+            { principalPhone: { contains: q } },
+          ],
+        },
+        take: 10,
+        select: { id: true, name: true, principalPhone: true, email: true },
       });
     }
 }

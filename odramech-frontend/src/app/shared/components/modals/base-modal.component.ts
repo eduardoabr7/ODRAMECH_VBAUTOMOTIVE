@@ -4,6 +4,7 @@ import { Subject } from 'rxjs';
 export class BaseModalComponent<T = any> {
   title: string;
   message: string;
+  payload: any;
   hasUnsavedChanges = false;
   onClose: Subject<T | null> = new Subject<T | null>();
 

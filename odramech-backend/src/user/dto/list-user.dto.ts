@@ -10,10 +10,11 @@ export class ListUserDto {
 
     @IsString()
     @IsEmail()
-    email: string;
+    @IsOptional()
+    email: string | null;
 
     @IsString()
     @IsOptional()
-    phone?: string;
+    principalPhone: string | null;
 
 }

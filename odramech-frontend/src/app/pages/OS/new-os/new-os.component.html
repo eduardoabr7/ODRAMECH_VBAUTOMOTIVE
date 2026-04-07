@@ -38,7 +38,10 @@
           <div class="row g-3 mt-1">
             <div class="col-12">
               <label class="field-label">Buscar Cliente <span class="required">*</span></label>
-              <div class="search-field-wrap">
+              <div 
+              class="search-field-wrap"
+              closeOnClickOutside 
+              (clickOutside)="showClientDropdown = false">
                 <i class="fas fa-magnifying-glass search-icon"></i>
                 <input
                   type="text"
@@ -48,18 +51,38 @@
                   (input)="onClientSearch($event)"
                   autocomplete="off"
                 />
-                <div class="search-dropdown" *ngIf="showClientDropdown && clientResults.length > 0">
-                  <div
-                    class="search-item"
-                    *ngFor="let client of clientResults"
-                    (click)="selectClient(client)"
-                  >
-                    <div class="search-item-avatar">{{ client.name.charAt(0) }}</div>
-                    <div class="search-item-info">
-                      <span class="search-item-name">{{ client.name }}</span>
-                      <span class="search-item-sub">{{ client.principalPhone }}</span>
-                    </div>
+                <div class="search-dropdown" *ngIf="showClientDropdown">
+                
+                  <!-- Loading -->
+                  <div class="search-state" *ngIf="isSearchingClient">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i>
+                    <span>Buscando clientes...</span>
                   </div>
+                
+                  <!-- Results -->
+                  <ng-container *ngIf="!isSearchingClient && clientResults.length > 0">
+                    <div
+                      class="search-item"
+                      *ngFor="let client of clientResults"
+                      (click)="selectClient(client)"
+                    >
+                      <div class="search-item-avatar">{{ client.name.charAt(0) }}</div>
+                      <div class="search-item-info">
+                        <span class="search-item-name">{{ client.name }}</span>
+                        <span class="search-item-sub">{{ client.principalPhone }}</span>
+                      </div>
+                    </div>
+                  </ng-container>
+                
+                  <!-- No result -->
+                  <div class="search-state search-state--empty" *ngIf="!isSearchingClient && searchEmpty">
+                    <i class="fas fa-user-slash"></i>
+                    <span>Nenhum cliente encontrado</span>
+                    <button type="button" class="btn-new-item" (click)="goToNewClient()">
+                      <i class="fas fa-plus me-1"></i>Cadastrar cliente
+                    </button>
+                  </div>
+                
                 </div>
               </div>
             </div>

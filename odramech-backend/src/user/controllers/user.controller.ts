@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, Req } from "@nestjs/common";
 import { UserService } from "../services/user.service";
 import { AuthPayload } from "src/auth/interfaces/auth-payload.interface";
 import { FrontEndCreateUser } from "../dto/create-user.dto";
@@ -15,9 +15,12 @@ export class UserController {
         const { establishmentId, enterpriseId } = req.authContext as AuthPayload;
         const dataWithCredentials = {establishmentId, enterpriseId, ...data}
 
-        console.log(dataWithCredentials)
-
         return this._userService.create(dataWithCredentials)
+    }
+
+    @Get('search')
+    search(@Query('term') term: string) {
+        return this._userService.search(term);
     }
 
 }

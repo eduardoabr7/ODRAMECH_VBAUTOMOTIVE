@@ -104,7 +104,9 @@ export class ClientsComponent implements OnInit {
 
   openModalCreateUser() {
     const modalRef = this._bsModalService.show(ModalCreateUserComponent, {
-      initialState: { title: 'Novo Cliente' },
+      initialState: { 
+        title: 'Novo Cliente'
+      },
       class: 'modal-lg'
     });
 

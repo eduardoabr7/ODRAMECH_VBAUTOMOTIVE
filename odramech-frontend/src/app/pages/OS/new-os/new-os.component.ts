@@ -7,8 +7,10 @@ import {
 } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-
-// ── Interfaces (ajuste conforme seus serviços reais) ──────────────────────────
+import { ModalCreateUserComponent } from '@shared/components/modals/user-modals/modal-create-user/modal-create-user.component';
+import { CloseOnClickOutsideDirective } from '@shared/directives/close-onclick-outside.directive';
+import { UserService } from '@shared/services/user.service';
+import { BsModalService } from 'ngx-bootstrap/modal';
 
 interface UserSummary {
   id: number;
@@ -29,8 +31,6 @@ interface CorpLogged {
   };
 }
 
-// ── Enums espelhando o schema Prisma ──────────────────────────────────────────
-
 type OrderStatus =
   | 'PENDENTE'
   | 'EM_ATENDIMENTO'
@@ -40,11 +40,9 @@ type OrderStatus =
 
 type TypeAppointment = 'PUBLICO' | 'INTERNO';
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
 @Component({
   selector: 'app-new-os',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, CloseOnClickOutsideDirective],
   templateUrl: './new-os.component.html',
   styleUrls: ['./new-os.component.scss'],
 })
@@ -52,38 +50,39 @@ export class NewOsComponent implements OnInit {
 
   @ViewChild('editorRef') editorRef!: ElementRef<HTMLDivElement>;
 
-  // ── Context (injete seus serviços reais) ──────────────────────────────────
   authContext: AuthContext = { user: { id: 1, name: 'João Silva', principalPhone: '' } };
   corpLogged: CorpLogged = { name: 'Oficina Central', establishment: { name: 'Filial Norte', role: 'ADMIN' } };
 
-  // ── Form ──────────────────────────────────────────────────────────────────
   osForm!: FormGroup;
 
-  // ── State ─────────────────────────────────────────────────────────────────
   nextOsNumber = 1042;
   now = new Date();
   isSubmitting = false;
   isDragging = false;
 
-  // ── Client search ─────────────────────────────────────────────────────────
   clientResults: UserSummary[] = [];
   showClientDropdown = false;
   selectedClient: UserSummary | null = null;
+  searchTimeout: any;
+  isSearchingClient = false;
+  searchEmpty = false;
 
-  // ── Workers list ──────────────────────────────────────────────────────────
   workers: UserSummary[] = [
     { id: 2, name: 'Carlos Mecânico', principalPhone: '51999990001' },
     { id: 3, name: 'Ana Técnica',     principalPhone: '51999990002' },
     { id: 4, name: 'Pedro Elétrica',  principalPhone: '51999990003' },
   ];
 
-  // ── Attachments ───────────────────────────────────────────────────────────
   attachedFiles: File[] = [];
 
-  // ── Rich editor content ───────────────────────────────────────────────────
   editorContent = '';
 
-  constructor(private fb: FormBuilder, private router: Router) {}
+  constructor(
+    private readonly fb: FormBuilder, 
+    private readonly router: Router,
+    private readonly userService: UserService,
+    private readonly _bsModalService: BsModalService
+  ) {}
 
   ngOnInit(): void {
     this.osForm = this.fb.group({
@@ -94,13 +93,11 @@ export class NewOsComponent implements OnInit {
     });
   }
 
-  // ── Navigation ────────────────────────────────────────────────────────────
 
   goBack(): void {
     this.router.navigate(['/']);
   }
 
-  // ── Client search ─────────────────────────────────────────────────────────
 
   onClientSearch(event: Event): void {
     const term = (event.target as HTMLInputElement).value.trim().toLowerCase();
@@ -108,23 +105,22 @@ export class NewOsComponent implements OnInit {
     if (term.length < 2) {
       this.clientResults = [];
       this.showClientDropdown = false;
+      this.searchEmpty = false;
       return;
     }
 
-    // TODO: substitua pela chamada real ao seu UserService
-    const mockUsers: UserSummary[] = [
-      { id: 10, name: 'Maria Fernanda',  principalPhone: '51999990010', email: 'maria@email.com' },
-      { id: 11, name: 'Roberto Alves',   principalPhone: '51999990011' },
-      { id: 12, name: 'Juliana Costa',   principalPhone: '51999990012', email: 'ju@email.com' },
-    ];
-
-    this.clientResults = mockUsers.filter(
-      u =>
-        u.name.toLowerCase().includes(term) ||
-        u.principalPhone.includes(term) ||
-        u.email?.toLowerCase().includes(term),
-    );
+    this.isSearchingClient = true;
+    this.searchEmpty = false;
     this.showClientDropdown = true;
+
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => {
+      this.userService.search(term).subscribe(results => {
+        this.clientResults = results;
+        this.isSearchingClient = false;
+        this.searchEmpty = results.length === 0;
+      });
+    }, 400);
   }
 
   selectClient(client: UserSummary): void {
@@ -132,13 +128,22 @@ export class NewOsComponent implements OnInit {
     this.osForm.patchValue({ clientSearch: '' });
     this.showClientDropdown = false;
     this.clientResults = [];
+    this.searchEmpty = false;
+    this.isSearchingClient = false;
   }
 
   clearClient(): void {
     this.selectedClient = null;
   }
 
-  // ── Derived display values ────────────────────────────────────────────────
+  goToNewClient() {
+    const modalRef = this._bsModalService.show(ModalCreateUserComponent, {
+      initialState: { 
+        title: 'Novo Cliente',
+      },
+      class: 'modal-lg'
+    });
+  }
 
   get responsibleName(): string | null {
     const id = this.osForm.value.userResponsibleId;
@@ -168,7 +173,6 @@ export class NewOsComponent implements OnInit {
     return map[this.osForm.value.status as OrderStatus] ?? '';
   }
 
-  // ── Rich text editor ──────────────────────────────────────────────────────
 
   formatText(command: string): void {
     document.execCommand(command, false);
@@ -178,8 +182,6 @@ export class NewOsComponent implements OnInit {
   onEditorInput(event: Event): void {
     this.editorContent = (event.target as HTMLDivElement).innerHTML;
   }
-
-  // ── File handling ─────────────────────────────────────────────────────────
 
   onFileSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -218,7 +220,6 @@ export class NewOsComponent implements OnInit {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
-  // ── Submit ────────────────────────────────────────────────────────────────
 
   onSubmit(): void {
     if (this.osForm.invalid || !this.selectedClient) return;
@@ -246,10 +247,6 @@ export class NewOsComponent implements OnInit {
       files: this.attachedFiles,
     };
 
-    console.log('Payload OS:', payload);
-
-    // TODO: substitua pela chamada real ao seu WorkOrderService
-    // this.workOrderService.create(payload).subscribe({ ... })
     setTimeout(() => {
       this.isSubmitting = false;
       this.router.navigate(['/work-orders']);
