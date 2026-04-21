@@ -9,34 +9,16 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router } from '@angular/router';
 import { ModalCreateUserComponent } from '@shared/components/modals/user-modals/modal-create-user/modal-create-user.component';
 import { CloseOnClickOutsideDirective } from '@shared/directives/close-onclick-outside.directive';
+import { RoleEnum } from '@shared/enums/role.enum';
+import { StatusOS } from '@shared/enums/status-os.enum';
+import { AuthContext } from '@shared/models/AuthContext';
+import { Role } from '@shared/models/UserCorporation';
+import { UserList } from '@shared/models/UserList';
+import { AuthService } from '@shared/services/auth.service';
+import { UserCorporationService } from '@shared/services/user-corporation.service';
 import { UserService } from '@shared/services/user.service';
 import { BsModalService } from 'ngx-bootstrap/modal';
-
-interface UserSummary {
-  id: number;
-  name: string;
-  principalPhone: string;
-  email?: string;
-}
-
-interface AuthContext {
-  user?: UserSummary;
-}
-
-interface CorpLogged {
-  name: string;
-  establishment?: {
-    name: string;
-    role?: string;
-  };
-}
-
-type OrderStatus =
-  | 'PENDENTE'
-  | 'EM_ATENDIMENTO'
-  | 'AGUARDANDO_PECAS'
-  | 'FINALIZADA'
-  | 'CANCELADA';
+import { filter, map, switchMap, tap } from 'rxjs';
 
 type TypeAppointment = 'PUBLICO' | 'INTERNO';
 
@@ -50,9 +32,6 @@ export class NewOsComponent implements OnInit {
 
   @ViewChild('editorRef') editorRef!: ElementRef<HTMLDivElement>;
 
-  authContext: AuthContext = { user: { id: 1, name: 'João Silva', principalPhone: '' } };
-  corpLogged: CorpLogged = { name: 'Oficina Central', establishment: { name: 'Filial Norte', role: 'ADMIN' } };
-
   osForm!: FormGroup;
 
   nextOsNumber = 1042;
@@ -60,44 +39,71 @@ export class NewOsComponent implements OnInit {
   isSubmitting = false;
   isDragging = false;
 
-  clientResults: UserSummary[] = [];
+  authContext: AuthContext
+  clientResults: UserList[] = [];
   showClientDropdown = false;
-  selectedClient: UserSummary | null = null;
+  selectedClient: UserList | null = null;
   searchTimeout: any;
   isSearchingClient = false;
   searchEmpty = false;
-
-  workers: UserSummary[] = [
-    { id: 2, name: 'Carlos Mecânico', principalPhone: '51999990001' },
-    { id: 3, name: 'Ana Técnica',     principalPhone: '51999990002' },
-    { id: 4, name: 'Pedro Elétrica',  principalPhone: '51999990003' },
-  ];
+  workers: UserList[] = [];
 
   attachedFiles: File[] = [];
 
   editorContent = '';
 
   constructor(
-    private readonly fb: FormBuilder, 
+    private readonly fb: FormBuilder,
     private readonly router: Router,
     private readonly userService: UserService,
-    private readonly _bsModalService: BsModalService
+    private readonly _bsModalService: BsModalService,
+    private readonly _authService: AuthService,
+    private readonly _userCoporationService: UserCorporationService,
   ) {}
 
   ngOnInit(): void {
     this.osForm = this.fb.group({
-      clientSearch:      [''],
+      clientSearch: [''],
       userResponsibleId: [null],
-      status:            ['PENDENTE', Validators.required],
-      appointmentType:   ['PUBLICO'],
+      status: [StatusOS.PENDENTE, Validators.required],
+      appointmentType: ['PUBLICO'],
     });
-  }
+  
+    this._authService.user$
+      .pipe(
+        tap(authCtx => {
+          this.authContext = authCtx;
+          console.log(this.authContext)
+        }),
+      
+        map(authCtx => authCtx?.usercorp?.establishment?.id),
+      
+        filter((id): id is number => !!id),
+      
+        switchMap(idEstab =>
+          this._userCoporationService.getWorkersByEstablishments({
+            idEstab
+          })
+        )
+      )
+      .subscribe(users => {
+        const grouped = users.reduce((acc, user) => {
+          acc[user.role] = acc[user.role] || [];
+          acc[user.role].push(user.user);
+          return acc;
+        }, {} as Record<string, UserList[]>);
+      
+        this.workers = users
+          .filter(u => u.role === RoleEnum.WORKER || u.role === RoleEnum.ADMIN)
+          .map(u => u.user);
 
+          console.log(this.workers)
+      });
+  }
 
   goBack(): void {
     this.router.navigate(['/']);
   }
-
 
   onClientSearch(event: Event): void {
     const term = (event.target as HTMLInputElement).value.trim().toLowerCase();
@@ -123,7 +129,7 @@ export class NewOsComponent implements OnInit {
     }, 400);
   }
 
-  selectClient(client: UserSummary): void {
+  selectClient(client: UserList): void {
     this.selectedClient = client;
     this.osForm.patchValue({ clientSearch: '' });
     this.showClientDropdown = false;
@@ -137,8 +143,8 @@ export class NewOsComponent implements OnInit {
   }
 
   goToNewClient() {
-    const modalRef = this._bsModalService.show(ModalCreateUserComponent, {
-      initialState: { 
+    this._bsModalService.show(ModalCreateUserComponent, {
+      initialState: {
         title: 'Novo Cliente',
       },
       class: 'modal-lg'
@@ -152,27 +158,28 @@ export class NewOsComponent implements OnInit {
   }
 
   get statusLabel(): string {
-    const map: Record<OrderStatus, string> = {
-      PENDENTE:         'Pendente',
-      EM_ATENDIMENTO:   'Em Atendimento',
-      AGUARDANDO_PECAS: 'Aguardando Peças',
-      FINALIZADA:       'Finalizada',
-      CANCELADA:        'Cancelada',
+    const map: Record<StatusOS, string> = {
+      [StatusOS.PENDENTE]: 'Pendente',
+      [StatusOS.EM_ANDAMENTO]: 'Em andamento',
+      [StatusOS.AGUARDANDO_PECAS]: 'Aguardando Peças',
+      [StatusOS.CONCLUIDO]: 'Concluído',
+      [StatusOS.CANCELADO]: 'Cancelado',
     };
-    return map[this.osForm.value.status as OrderStatus] ?? '';
+
+    return map[this.osForm.value.status as StatusOS] ?? '';
   }
 
   get statusClass(): string {
-    const map: Record<OrderStatus, string> = {
-      PENDENTE:         'status-pendente',
-      EM_ATENDIMENTO:   'status-em-atendimento',
-      AGUARDANDO_PECAS: 'status-aguardando',
-      FINALIZADA:       'status-finalizada',
-      CANCELADA:        'status-cancelada',
+    const map: Record<StatusOS, string> = {
+      [StatusOS.PENDENTE]: 'status-pendente',
+      [StatusOS.EM_ANDAMENTO]: 'status-em-atendimento',
+      [StatusOS.AGUARDANDO_PECAS]: 'status-aguardando',
+      [StatusOS.CONCLUIDO]: 'status-finalizada',
+      [StatusOS.CANCELADO]: 'status-cancelada',
     };
-    return map[this.osForm.value.status as OrderStatus] ?? '';
-  }
 
+    return map[this.osForm.value.status as StatusOS] ?? '';
+  }
 
   formatText(command: string): void {
     document.execCommand(command, false);
@@ -205,7 +212,7 @@ export class NewOsComponent implements OnInit {
   }
 
   private addFiles(files: File[]): void {
-    const maxSize = 10 * 1024 * 1024; // 10 MB
+    const maxSize = 10 * 1024 * 1024;
     const allowed = files.filter(f => f.size <= maxSize);
     this.attachedFiles = [...this.attachedFiles, ...allowed];
   }
@@ -220,30 +227,23 @@ export class NewOsComponent implements OnInit {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
-
   onSubmit(): void {
     if (this.osForm.invalid || !this.selectedClient) return;
 
     this.isSubmitting = true;
 
     const payload = {
-      // WorkOrder fields
-      status:            this.osForm.value.status as OrderStatus,
-      clientId:          this.selectedClient.id,
+      status: this.osForm.value.status as StatusOS,
+      clientId: this.selectedClient.id,
       userResponsibleId: this.osForm.value.userResponsibleId ?? null,
-      numberOs:          this.nextOsNumber,
-      // userCreationId será preenchido pelo backend com o usuário autenticado
 
-      // Appointment fields (opcional)
       appointment: this.editorContent
         ? {
-            contentHtml:    this.editorContent,
+            contentHtml: this.editorContent,
             appointmentType: this.osForm.value.appointmentType as TypeAppointment,
-            // userAppointmentId será preenchido pelo backend
           }
         : null,
 
-      // Files
       files: this.attachedFiles,
     };
 

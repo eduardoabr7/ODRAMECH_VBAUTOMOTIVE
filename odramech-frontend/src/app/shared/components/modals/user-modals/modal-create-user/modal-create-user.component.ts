@@ -12,16 +12,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import { NgxMaskDirective } from "ngx-mask";
 import { UserService } from "@shared/services/user.service";
 import { ModalLoadingComponent } from "../../modal-loading/modal-loading.component";
-
-interface AddressReturn {
-  cep: string,
-  logradouro: string,
-  complemento: string,
-  bairro: string,
-  localidade: string,
-  uf: string,
-  ibge: string
-}
+import { AddressReturnApi } from "@shared/models/AddressReturnApi";
 
 @Component({
   selector: 'app-modal-create-user',
@@ -99,7 +90,7 @@ export class ModalCreateUserComponent extends BaseModalComponent {
     }
 
 
-    buscaCep(): Observable<AddressReturn> {
+    buscaCep(): Observable<AddressReturnApi> {
       const zipCode = this.form.address.zipCode;
       const validZipcode = this.validZipCode(zipCode);
     

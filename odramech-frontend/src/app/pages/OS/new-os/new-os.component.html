@@ -13,11 +13,6 @@
         </div>
       </div>
     </div>
-    <div class="col-auto">
-      <span class="os-number-badge">
-        <i class="fas fa-hashtag me-1"></i>OS #{{ nextOsNumber }}
-      </span>
-    </div>
   </div>
 
   <form [formGroup]="osForm" (ngSubmit)="onSubmit()">
@@ -135,7 +130,7 @@
               <div class="select-wrap">
                 <select class="field-input field-select" formControlName="status">
                   <option value="PENDENTE">Pendente</option>
-                  <option value="EM_ATENDIMENTO">Em Atendimento</option>
+                  <option value="EM_ANDAMENTO">Em Atendimento</option>
                 </select>
                 <i class="fas fa-chevron-down select-arrow"></i>
               </div>
@@ -253,10 +248,6 @@
 
           <div class="summary-list mt-3">
             <div class="summary-row">
-              <span class="summary-key">Número</span>
-              <span class="summary-val">#{{ nextOsNumber }}</span>
-            </div>
-            <div class="summary-row">
               <span class="summary-key">Status</span>
               <span class="status-badge" [ngClass]="statusClass">{{ statusLabel }}</span>
             </div>
@@ -302,9 +293,9 @@
           </button>
         </div>
 
-      </div><!-- /col-lg-4 -->
+      </div>
 
-    </div><!-- /row -->
+    </div>
   </form>
 
-</div><!-- /create-os-wrapper -->
+</div>

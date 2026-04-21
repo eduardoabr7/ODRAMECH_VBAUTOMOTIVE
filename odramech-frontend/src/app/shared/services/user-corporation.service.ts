@@ -33,4 +33,8 @@ export class UserCorporationService {
     getUsersByEstablishments(idEstab): Observable<any> {
         return this._nestApi.post('usercorp/establishment-users', idEstab)
     }
+
+    getWorkersByEstablishments(idEstab): Observable<any> {
+        return this._nestApi.post('usercorp/establishment-workers', idEstab)
+    }
 }

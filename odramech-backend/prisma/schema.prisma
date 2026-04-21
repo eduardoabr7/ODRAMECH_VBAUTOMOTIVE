@@ -19,6 +19,7 @@ model User {
   updatedAt       DateTime          @updatedAt @map("updated_at")
   addressId       Int?              @unique @map("address_id")
 
+  vehicles                    Vehicle[]
   address                     Address?          @relation(fields: [addressId], references: [id])
   userCorporation             UserCorporation[]
   workOrdersCreated           WorkOrder[]       @relation("WorkOrderCreatedBy")
@@ -101,19 +102,20 @@ model WorkOrder {
   status                OrderStatus
   dateTimeCreation      DateTime      @default(now()) @map("date_time_creation")
   dateTimeEnd           DateTime?     @db.Timestamptz(6) @map("date_time_end")
+  establishmentId       Int           @map("id_establishment")
   userCreationId        Int           @map("id_user_creation")
   userEndId             Int?          @map("id_user_end")
   userResponsibleId     Int?          @map("id_user_responsible")
   clientId              Int           @map("id_client")
+  vehicleId             Int           @map("id_vehicle")
   numberOs              Int           @map("number_os")
 
   userCreation          User          @relation("WorkOrderCreatedBy", fields: [userCreationId], references: [id])
-
-  userEnd               User?         @relation("WorkOrderEndedBy", fields: [userEndId],references: [id])
-
-  userResponsible       User?         @relation("WorkOrderResponsible", fields: [userResponsibleId],references: [id])
-
+  userEnd               User?         @relation("WorkOrderEndedBy", fields: [userEndId], references: [id])
+  userResponsible       User?         @relation("WorkOrderResponsible", fields: [userResponsibleId], references: [id])
   client                User          @relation("WorkOrderClient", fields: [clientId], references: [id])
+
+  vehicle               Vehicle       @relation(fields: [vehicleId], references: [id])
 
   @@map("work_orders")
 }
@@ -147,12 +149,20 @@ model ArchiveAppointment {
 }
 
 model Vehicle {
-  id                  Int                 @id @default(autoincrement())
-  plate               String
-  km                  String?
-  model_year          Int?
-  manufactur_year     Int?
-  color               String?
+  id              Int    @id @default(autoincrement())
+  plate           String @unique
+  km              String?
+  modelYear       Int?
+  manufactureYear Int?
+  color           String?
+  clientId        Int
+  name            String
+  make            String
+
+  client          User @relation(fields: [clientId], references: [id])
+  workOrders      WorkOrder[]
+
+  @@map("cad_vehicle")
 }
 
 enum Role {

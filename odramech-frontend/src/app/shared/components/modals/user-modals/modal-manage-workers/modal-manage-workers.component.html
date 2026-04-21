@@ -1,0 +1,265 @@
+<div class="modal-wrapper">
+
+  <!-- Header -->
+  <div class="modal-header-bar">
+    <div>
+      <h5 class="modal-title">Gerenciar funcionários</h5>
+      <p class="modal-subtitle">Visualize e cadastre colaboradores do estabelecimento</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-new" (click)="toggleForm()">
+        <i class="fas fa-plus"></i> Novo funcionário
+      </button>
+      <button class="btn-close-x" (click)="attemptClose()">×</button>
+    </div>
+  </div>
+
+  <!-- Formulário colapsável -->
+  <div class="form-section" *ngIf="showForm">
+    <p class="form-title">Novo funcionário</p>
+
+    <form #workerForm="ngForm" (ngSubmit)="submitNewWorker()" (keydown.enter)="$event.preventDefault()">
+
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Nome completo </label>
+          <input type="text" name="name" [(ngModel)]="form.name" placeholder="Ex: João Silva" required>
+        </div>
+        <div class="form-field">
+          <label>E-mail </label>
+          <input 
+            type="email" 
+            class="form-control" 
+            name="email"
+            [(ngModel)]="form.email"
+            email 
+            placeholder="Ex: joaosilva@gmail.com"
+            #emailModel="ngModel"
+            autocomplete="off"
+            pattern="^[^\s@]+@[^\s@]+\.[^\s@]{2,}$"
+            required/>
+        </div>
+        <div class="form-field">
+          <label>Senha para acesso ao sistema </label>
+          <input 
+            type="password" 
+            class="form-control" 
+            name="password"
+            [(ngModel)]="form.password"
+            autocomplete="off"
+            required
+            placeholder="******"
+            minlength="6"/>
+          <div class="form-text">
+              Mínimo de 6 caracteres
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Telefone Principal </label>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="XX XXXXX-XXXX"
+            name="principalPhone"
+            #phone1="ngModel"
+            [(ngModel)]="form.principalPhone"
+            required
+            minlength="12"
+            mask="00 00000-0000"
+            [dropSpecialCharacters]="false"
+            autocomplete="off"/>
+        </div>
+        <div class="form-field">
+          <label>Função </label>
+          <select name="role" [(ngModel)]="form.role" required>
+            <option [value]="RoleEnum.WORKER">Funcionário</option>
+            <option [value]="RoleEnum.ADMIN">Administrador</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Telefone Secundário</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="XX XXXXX-XXXX"
+            name="secondaryPhone"
+            [(ngModel)]="form.secondaryPhone"
+            minlength="12"
+            mask="00 00000-0000"
+            [dropSpecialCharacters]="false"
+            #phone2="ngModel"
+            autocomplete="off"/>
+        </div>
+        <div class="row mb-3">
+          <div class="col-12">
+            <label class="form-label d-block">
+              Sexo 
+            </label>
+            <div class="form-check form-check-inline">
+              <input
+                class="form-check-input"
+                style="cursor: pointer;"
+                type="radio"
+                name="gender"
+                [value]="GenderEnum.Fem"
+                required
+                [(ngModel)]="form.gender"/>
+              <label class="form-check-label">Feminino</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input
+                class="form-check-input"
+                style="cursor: pointer;"
+                type="radio"
+                name="gender"
+                [value]="GenderEnum.Male"
+                [(ngModel)]="form.gender"/>
+              <label class="form-check-label">Masculino</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input
+                class="form-check-input"
+                style="cursor: pointer;"
+                type="radio"
+                name="gender"
+                [value]="GenderEnum.Other"
+                [(ngModel)]="form.gender"/>
+              <label class="form-check-label">Outro</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-check form-switch">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            role="switch"
+            id="switchCheckAddress"
+            name="displayAddress"
+            [(ngModel)]="displayAddress"
+            style="cursor: pointer;">
+          <label class="form-check-label" for="switchCheckAddress" style="cursor: pointer;">Incluir endereço</label>
+        </div>
+
+        <div class="address" *ngIf="displayAddress">
+          <div class="row mb-3 align-items-end">
+            <div class="col-12 col-md-5">
+              <label class="form-label">CEP</label>
+              <input
+                type="text"
+                class="form-control"
+                name="zipcode"
+                [(ngModel)]="form.address.zipCode"
+                autocomplete="off"
+                (keydown.enter)="!loadingSearchZipCode && setAddressFromZipCode()"
+                required/>
+            </div>
+            <div class="col-12 mt-3 mt-md-0 col-md-4">
+              <button
+                type="button"
+                class="btn btn-primary w-100"
+                (click)="setAddressFromZipCode()"
+                [disabled]="loadingSearchZipCode">
+                Pesquisar
+                <span *ngIf="loadingSearchZipCode">
+                  <i class="fa-solid fa-circle-notch fa-spin"></i>
+                </span>
+              </button>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-12 col-md-5">
+              <label class="form-label">Rua</label>
+              <input type="text" class="form-control" name="street"
+                [(ngModel)]="form.address.street" autocomplete="off" required/>
+            </div>
+            <div class="col-12 col-md-2">
+              <label class="form-label">Nº</label>
+              <input type="text" class="form-control" name="number"
+                pattern="^[0-9]+$" [(ngModel)]="form.address.number" autocomplete="off" required/>
+            </div>
+            <div class="col-12 col-md-5">
+              <label class="form-label">Bairro</label>
+              <input type="text" class="form-control" name="neighborhood"
+                [(ngModel)]="form.address.neighborhood" autocomplete="off" required/>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-12 col-md-4">
+              <label class="form-label">Cidade</label>
+              <input type="text" class="form-control" name="city"
+                [(ngModel)]="form.address.city" autocomplete="off" required/>
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">Estado</label>
+              <input type="text" class="form-control" name="district"
+                [(ngModel)]="form.address.district" autocomplete="off" required/>
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">Complemento</label>
+              <input type="text" class="form-control" name="complement"
+                [(ngModel)]="form.address.complement" autocomplete="off"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-cancel" type="button" (click)="toggleForm()">Cancelar</button>
+        <button class="btn-submit" type="submit" [disabled]="isSubmitting || workerForm.invalid">
+          {{ isSubmitting ? 'Cadastrando...' : 'Cadastrar' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Filtros e busca -->
+  <div class="toolbar">
+    <div class="tabs">
+      <button [class.tab-active]="activeTab === 'all'" (click)="setTab('all')">
+        Todos <span class="badge">{{ allEmployees.length }}</span>
+      </button>
+      <button [class.tab-active]="activeTab === RoleEnum.WORKER" (click)="setTab(RoleEnum.WORKER)">
+        Funcionários <span class="badge">{{ workers.length }}</span>
+      </button>
+      <button [class.tab-active]="activeTab === RoleEnum.ADMIN" (click)="setTab(RoleEnum.ADMIN)">
+        Admins <span class="badge">{{ admins.length }}</span>
+      </button>
+    </div>
+    <div class="search-wrapper">
+      <i class="fas fa-search"></i>
+      <input type="text" [(ngModel)]="searchQuery" placeholder="Nome, e-mail ou telefone...">
+    </div>
+  </div>
+
+  <!-- Lista de funcionários -->
+  <div class="employee-list">
+    <div class="employee-row" *ngFor="let emp of filteredEmployees">
+      <div class="avatar">{{ getInitials(emp.name) }}</div>
+      <div class="info">
+        <span class="emp-name">{{ emp.name }}</span>
+        <span class="emp-email">{{ emp.email }}</span>
+      </div>
+      <span class="emp-phone">{{ emp.principalPhone }}</span>
+      <span class="role-badge" [class.role-admin]="emp.role === RoleEnum.ADMIN" [class.role-worker]="emp.role === RoleEnum.WORKER">
+        {{ emp.role === RoleEnum.ADMIN ? 'Admin' : 'Funcionário' }}
+      </span>
+      <div class="row-actions">
+        <button class="action-btn" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="action-btn action-danger" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredEmployees.length === 0">
+      <i class="fas fa-user-slash"></i>
+      <p>Nenhum funcionário encontrado</p>
+      <small *ngIf="searchQuery">Tente buscar por outro termo.</small>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="modal-footer-bar">
+    <button class="btn-cancel" (click)="cancel()">Fechar</button>
+  </div>
+
+</div>

@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, ParseIntPipe, Post, Req } from "@nestjs/c
 import { UserCorporationService } from "../services/user-corporation.service";
 import { AuthPayload } from "src/auth/interfaces/auth-payload.interface";
 
-interface GetEstablishmentById {
+interface EstablishmentId {
   idEstab: number
 }
 
@@ -41,8 +41,13 @@ export class UserCorporationController {
     }
 
     @Post('establishment-users')
-    getUsersByIdEstab(@Body() data: GetEstablishmentById) {
+    getUsersByIdEstab(@Body() data: EstablishmentId) {
       return this._userCorporationService.getUsersByEstablishment(Number(data.idEstab))
+    }
+
+    @Post('establishment-workers')
+    getWorkersByIdEstab(@Body() data: EstablishmentId) {
+      return this._userCorporationService.getWorkersByEstablishment(Number(data.idEstab))
     }
 
 }

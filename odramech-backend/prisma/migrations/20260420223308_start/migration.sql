@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "odramech"."Role" AS ENUM ('ADMIN', 'USER', 'WORKER');
+CREATE TYPE "odramech"."Role" AS ENUM ('ADMIN', 'USER', 'WORKER', 'SUPERUSER');
 
 -- CreateEnum
 CREATE TYPE "odramech"."OrderStatus" AS ENUM ('PENDENTE', 'EM_ATENDIMENTO', 'AGUARDANDO_PECAS', 'FINALIZADA', 'CANCELADA');
@@ -48,6 +48,7 @@ CREATE TABLE "odramech"."cad_establishment" (
     "phone" TEXT NOT NULL,
     "cnpj" TEXT NOT NULL,
     "addressId" INTEGER NOT NULL,
+    "enterpriseId" INTEGER NOT NULL,
 
     CONSTRAINT "cad_establishment_pkey" PRIMARY KEY ("id")
 );
@@ -68,14 +69,6 @@ CREATE TABLE "odramech"."cad_address" (
 );
 
 -- CreateTable
-CREATE TABLE "odramech"."cad_enterprise_establishment" (
-    "idEnterprise" INTEGER NOT NULL,
-    "idEstablishment" INTEGER NOT NULL,
-
-    CONSTRAINT "cad_enterprise_establishment_pkey" PRIMARY KEY ("idEnterprise","idEstablishment")
-);
-
--- CreateTable
 CREATE TABLE "odramech"."cad_user_corporation" (
     "idUser" INTEGER NOT NULL,
     "idEnterprise" INTEGER NOT NULL,
@@ -91,10 +84,12 @@ CREATE TABLE "odramech"."work_orders" (
     "status" "odramech"."OrderStatus" NOT NULL,
     "date_time_creation" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "date_time_end" TIMESTAMPTZ(6),
+    "id_establishment" INTEGER NOT NULL,
     "id_user_creation" INTEGER NOT NULL,
     "id_user_end" INTEGER,
     "id_user_responsible" INTEGER,
     "id_client" INTEGER NOT NULL,
+    "id_vehicle" INTEGER NOT NULL,
     "number_os" INTEGER NOT NULL,
 
     CONSTRAINT "work_orders_pkey" PRIMARY KEY ("id")
@@ -124,6 +119,21 @@ CREATE TABLE "odramech"."archive_appointment" (
     CONSTRAINT "archive_appointment_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "odramech"."cad_vehicle" (
+    "id" SERIAL NOT NULL,
+    "plate" TEXT NOT NULL,
+    "km" TEXT,
+    "modelYear" INTEGER,
+    "manufactureYear" INTEGER,
+    "color" TEXT,
+    "clientId" INTEGER NOT NULL,
+    "name" TEXT NOT NULL,
+    "make" TEXT NOT NULL,
+
+    CONSTRAINT "cad_vehicle_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "cad_user_email_key" ON "odramech"."cad_user"("email");
 
@@ -142,6 +152,9 @@ CREATE UNIQUE INDEX "cad_establishment_cnpj_key" ON "odramech"."cad_establishmen
 -- CreateIndex
 CREATE UNIQUE INDEX "cad_establishment_addressId_key" ON "odramech"."cad_establishment"("addressId");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "cad_vehicle_plate_key" ON "odramech"."cad_vehicle"("plate");
+
 -- AddForeignKey
 ALTER TABLE "odramech"."cad_user" ADD CONSTRAINT "cad_user_address_id_fkey" FOREIGN KEY ("address_id") REFERENCES "odramech"."cad_address"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -149,13 +162,10 @@ ALTER TABLE "odramech"."cad_user" ADD CONSTRAINT "cad_user_address_id_fkey" FORE
 ALTER TABLE "odramech"."cad_enterprise" ADD CONSTRAINT "cad_enterprise_addressId_fkey" FOREIGN KEY ("addressId") REFERENCES "odramech"."cad_address"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "odramech"."cad_establishment" ADD CONSTRAINT "cad_establishment_enterpriseId_fkey" FOREIGN KEY ("enterpriseId") REFERENCES "odramech"."cad_enterprise"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "odramech"."cad_establishment" ADD CONSTRAINT "cad_establishment_addressId_fkey" FOREIGN KEY ("addressId") REFERENCES "odramech"."cad_address"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "odramech"."cad_enterprise_establishment" ADD CONSTRAINT "cad_enterprise_establishment_idEnterprise_fkey" FOREIGN KEY ("idEnterprise") REFERENCES "odramech"."cad_enterprise"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "odramech"."cad_enterprise_establishment" ADD CONSTRAINT "cad_enterprise_establishment_idEstablishment_fkey" FOREIGN KEY ("idEstablishment") REFERENCES "odramech"."cad_establishment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "odramech"."cad_user_corporation" ADD CONSTRAINT "cad_user_corporation_idUser_fkey" FOREIGN KEY ("idUser") REFERENCES "odramech"."cad_user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -179,7 +189,13 @@ ALTER TABLE "odramech"."work_orders" ADD CONSTRAINT "work_orders_id_user_respons
 ALTER TABLE "odramech"."work_orders" ADD CONSTRAINT "work_orders_id_client_fkey" FOREIGN KEY ("id_client") REFERENCES "odramech"."cad_user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "odramech"."work_orders" ADD CONSTRAINT "work_orders_id_vehicle_fkey" FOREIGN KEY ("id_vehicle") REFERENCES "odramech"."cad_vehicle"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "odramech"."appointments" ADD CONSTRAINT "appointments_id_user_appointment_fkey" FOREIGN KEY ("id_user_appointment") REFERENCES "odramech"."cad_user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "odramech"."archive_appointment" ADD CONSTRAINT "archive_appointment_id_appointment_fkey" FOREIGN KEY ("id_appointment") REFERENCES "odramech"."appointments"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "odramech"."cad_vehicle" ADD CONSTRAINT "cad_vehicle_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "odramech"."cad_user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

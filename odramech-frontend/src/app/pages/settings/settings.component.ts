@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Type } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalSettingsEnterpriseComponent } from '@shared/components/modals/enterprise-modals/modal-settings-enterprise/modal-settings-enterprise.component';
+import { ModalManageWorkersComponent } from '@shared/components/modals/user-modals/modal-manage-workers/modal-manage-workers.component';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { ToastrService } from 'ngx-toastr';
 
@@ -66,6 +67,7 @@ export class SettingsComponent {
       iconBg: '#fef3f2',
       enableMode: false,
       connectMode: false,
+      openModal: ModalManageWorkersComponent
     },
     {
       name: 'Financeiro',

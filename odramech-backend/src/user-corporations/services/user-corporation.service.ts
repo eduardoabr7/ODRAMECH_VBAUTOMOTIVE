@@ -220,4 +220,28 @@ export class UserCorporationService {
 
       return users
     }
+
+    async getWorkersByEstablishment(estabId) {
+      const users = await this._prismaService.userCorporation.findMany({
+        where: {
+          idEstablishment: estabId,
+          role: {
+            in: [Role.ADMIN, Role.WORKER]
+          }
+        },
+        select: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              principalPhone: true
+            }
+          },
+          role: true
+        }
+      })
+
+      return users
+    }
 }
