@@ -2,23 +2,27 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   OnInit,
+  OnDestroy,
   ViewChild,
   ElementRef,
 } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ModalCreateUserComponent } from '@shared/components/modals/user-modals/modal-create-user/modal-create-user.component';
+import { ModalCreateVehicleComponent } from '@shared/components/modals/vehicle-modals/modal-create-vehicle/modal-create-vehicle.component';
 import { CloseOnClickOutsideDirective } from '@shared/directives/close-onclick-outside.directive';
 import { RoleEnum } from '@shared/enums/role.enum';
 import { StatusOS } from '@shared/enums/status-os.enum';
 import { AuthContext } from '@shared/models/AuthContext';
-import { Role } from '@shared/models/UserCorporation';
+import { Vehicle } from '@shared/models/Vehicle';
 import { UserList } from '@shared/models/UserList';
 import { AuthService } from '@shared/services/auth.service';
 import { UserCorporationService } from '@shared/services/user-corporation.service';
 import { UserService } from '@shared/services/user.service';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { filter, map, switchMap, tap } from 'rxjs';
+import { VehicleService } from '@shared/services/vehicle.service';
+import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
+import { Subject } from 'rxjs';
+import { filter, map, switchMap, tap, takeUntil } from 'rxjs/operators';
 
 type TypeAppointment = 'PUBLICO' | 'INTERNO';
 
@@ -28,85 +32,87 @@ type TypeAppointment = 'PUBLICO' | 'INTERNO';
   templateUrl: './new-os.component.html',
   styleUrls: ['./new-os.component.scss'],
 })
-export class NewOsComponent implements OnInit {
+export class NewOsComponent implements OnInit, OnDestroy {
 
   @ViewChild('editorRef') editorRef!: ElementRef<HTMLDivElement>;
 
   osForm!: FormGroup;
 
-  nextOsNumber = 1042;
   now = new Date();
   isSubmitting = false;
   isDragging = false;
 
-  authContext: AuthContext
+  authContext!: AuthContext;
+
   clientResults: UserList[] = [];
   showClientDropdown = false;
   selectedClient: UserList | null = null;
-  searchTimeout: any;
   isSearchingClient = false;
   searchEmpty = false;
+  private searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
   workers: UserList[] = [];
 
-  attachedFiles: File[] = [];
+  clientVehicles: Vehicle[] = [];
+  selectedVehicle: Vehicle | null = null;
+  isLoadingVehicles = false;
+  private vehicleModalRef: BsModalRef | null = null;
 
+  attachedFiles: File[] = [];
   editorContent = '';
+
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private readonly fb: FormBuilder,
     private readonly router: Router,
     private readonly userService: UserService,
-    private readonly _bsModalService: BsModalService,
-    private readonly _authService: AuthService,
-    private readonly _userCoporationService: UserCorporationService,
+    private readonly vehicleService: VehicleService,
+    private readonly bsModalService: BsModalService,
+    private readonly authService: AuthService,
+    private readonly userCorporationService: UserCorporationService,
   ) {}
 
   ngOnInit(): void {
+    this.buildForm();
+    this.loadAuthAndWorkers();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private buildForm(): void {
     this.osForm = this.fb.group({
       clientSearch: [''],
+      vehicleId: [null, Validators.required],
       userResponsibleId: [null],
       status: [StatusOS.PENDENTE, Validators.required],
       appointmentType: ['PUBLICO'],
     });
-  
-    this._authService.user$
+  }
+
+  private loadAuthAndWorkers(): void {
+    this.authService.user$
       .pipe(
-        tap(authCtx => {
-          this.authContext = authCtx;
-          console.log(this.authContext)
-        }),
-      
+        takeUntil(this.destroy$),
+        tap(authCtx => { this.authContext = authCtx; }),
         map(authCtx => authCtx?.usercorp?.establishment?.id),
-      
         filter((id): id is number => !!id),
-      
         switchMap(idEstab =>
-          this._userCoporationService.getWorkersByEstablishments({
-            idEstab
-          })
-        )
+          this.userCorporationService.getWorkersByEstablishments({ idEstab })
+        ),
       )
       .subscribe(users => {
-        const grouped = users.reduce((acc, user) => {
-          acc[user.role] = acc[user.role] || [];
-          acc[user.role].push(user.user);
-          return acc;
-        }, {} as Record<string, UserList[]>);
-      
         this.workers = users
           .filter(u => u.role === RoleEnum.WORKER || u.role === RoleEnum.ADMIN)
           .map(u => u.user);
-
-          console.log(this.workers)
       });
   }
 
-  goBack(): void {
-    this.router.navigate(['/']);
-  }
-
   onClientSearch(event: Event): void {
-    const term = (event.target as HTMLInputElement).value.trim().toLowerCase();
+    const term = (event.target as HTMLInputElement).value.trim();
 
     if (term.length < 2) {
       this.clientResults = [];
@@ -119,12 +125,19 @@ export class NewOsComponent implements OnInit {
     this.searchEmpty = false;
     this.showClientDropdown = true;
 
-    clearTimeout(this.searchTimeout);
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
+
     this.searchTimeout = setTimeout(() => {
-      this.userService.search(term).subscribe(results => {
-        this.clientResults = results;
-        this.isSearchingClient = false;
-        this.searchEmpty = results.length === 0;
+      this.userService.search(term).subscribe({
+        next: results => {
+          this.clientResults = results;
+          this.isSearchingClient = false;
+          this.searchEmpty = results.length === 0;
+        },
+        error: () => {
+          this.isSearchingClient = false;
+          this.searchEmpty = true;
+        },
       });
     }, 400);
   }
@@ -136,19 +149,71 @@ export class NewOsComponent implements OnInit {
     this.clientResults = [];
     this.searchEmpty = false;
     this.isSearchingClient = false;
+
+    this.loadClientVehicles(client.id);
   }
 
   clearClient(): void {
     this.selectedClient = null;
+    this.clientVehicles = [];
+    this.selectedVehicle = null;
+    this.osForm.patchValue({ vehicleId: null });
   }
 
-  goToNewClient() {
-    this._bsModalService.show(ModalCreateUserComponent, {
-      initialState: {
-        title: 'Novo Cliente',
-      },
-      class: 'modal-lg'
+  goToNewClient(): void {
+    this.bsModalService.show(ModalCreateUserComponent, {
+      initialState: { title: 'Novo Cliente' },
+      class: 'modal-lg',
     });
+  }
+
+  private loadClientVehicles(userId: number): void {
+    this.isLoadingVehicles = true;
+    this.clientVehicles = [];
+    this.selectedVehicle = null;
+    this.osForm.patchValue({ vehicleId: null });
+  
+    this.vehicleService.getByUser(userId).subscribe({
+      next: vehicles => {
+        this.clientVehicles = vehicles;
+        this.isLoadingVehicles = false;
+      
+        if (vehicles.length === 1) {
+          this.selectVehicle(vehicles[0]);
+        }
+      },
+      error: () => {
+        this.isLoadingVehicles = false;
+      },
+    });
+  }
+
+  selectVehicle(vehicle: Vehicle): void {
+    this.selectedVehicle = vehicle;
+    this.osForm.patchValue({ vehicleId: vehicle.id });
+  }
+
+  clearVehicle(): void {
+    this.selectedVehicle = null;
+    this.osForm.patchValue({ vehicleId: null });
+  }
+
+  openNewVehicleModal(): void {
+    this.vehicleModalRef = this.bsModalService.show(ModalCreateVehicleComponent, {
+      initialState: {
+        userId: this.selectedClient!.id,
+        clientName: this.selectedClient!.name,
+      },
+      class: 'modal-lg',
+    });
+
+    this.vehicleModalRef.content?.vehicleCreated
+      ?.pipe(takeUntil(this.destroy$))
+      .subscribe((newVehicle: Vehicle) => {
+        this.clientVehicles = [...this.clientVehicles, newVehicle];
+        this.selectVehicle(newVehicle);
+        this.vehicleModalRef?.hide();
+      });
   }
 
   get responsibleName(): string | null {
@@ -158,27 +223,25 @@ export class NewOsComponent implements OnInit {
   }
 
   get statusLabel(): string {
-    const map: Record<StatusOS, string> = {
+    const labels: Record<StatusOS, string> = {
       [StatusOS.PENDENTE]: 'Pendente',
-      [StatusOS.EM_ANDAMENTO]: 'Em andamento',
+      [StatusOS.EM_ANDAMENTO]: 'Em Atendimento',
       [StatusOS.AGUARDANDO_PECAS]: 'Aguardando Peças',
       [StatusOS.CONCLUIDO]: 'Concluído',
       [StatusOS.CANCELADO]: 'Cancelado',
     };
-
-    return map[this.osForm.value.status as StatusOS] ?? '';
+    return labels[this.osForm.value.status as StatusOS] ?? '';
   }
 
   get statusClass(): string {
-    const map: Record<StatusOS, string> = {
+    const classes: Record<StatusOS, string> = {
       [StatusOS.PENDENTE]: 'status-pendente',
       [StatusOS.EM_ANDAMENTO]: 'status-em-atendimento',
       [StatusOS.AGUARDANDO_PECAS]: 'status-aguardando',
       [StatusOS.CONCLUIDO]: 'status-finalizada',
       [StatusOS.CANCELADO]: 'status-cancelada',
     };
-
-    return map[this.osForm.value.status as StatusOS] ?? '';
+    return classes[this.osForm.value.status as StatusOS] ?? '';
   }
 
   formatText(command: string): void {
@@ -200,7 +263,7 @@ export class NewOsComponent implements OnInit {
     this.isDragging = true;
   }
 
-  onDragLeave(event: DragEvent): void {
+  onDragLeave(): void {
     this.isDragging = false;
   }
 
@@ -212,13 +275,13 @@ export class NewOsComponent implements OnInit {
   }
 
   private addFiles(files: File[]): void {
-    const maxSize = 10 * 1024 * 1024;
-    const allowed = files.filter(f => f.size <= maxSize);
+    const MAX_SIZE = 10 * 1024 * 1024;
+    const allowed = files.filter(f => f.size <= MAX_SIZE);
     this.attachedFiles = [...this.attachedFiles, ...allowed];
   }
 
   removeFile(index: number): void {
-    this.attachedFiles.splice(index, 1);
+    this.attachedFiles = this.attachedFiles.filter((_, i) => i !== index);
   }
 
   formatFileSize(bytes: number): string {
@@ -227,25 +290,30 @@ export class NewOsComponent implements OnInit {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
+  goBack(): void {
+    this.router.navigate(['/']);
+  }
+
   onSubmit(): void {
-    if (this.osForm.invalid || !this.selectedClient) return;
+    if (this.osForm.invalid || !this.selectedClient || !this.selectedVehicle) return;
 
     this.isSubmitting = true;
 
     const payload = {
       status: this.osForm.value.status as StatusOS,
       clientId: this.selectedClient.id,
+      vehicleId: this.selectedVehicle.id,
       userResponsibleId: this.osForm.value.userResponsibleId ?? null,
-
       appointment: this.editorContent
         ? {
             contentHtml: this.editorContent,
             appointmentType: this.osForm.value.appointmentType as TypeAppointment,
           }
         : null,
-
       files: this.attachedFiles,
     };
+
+    console.log('Payload OS:', payload);
 
     setTimeout(() => {
       this.isSubmitting = false;

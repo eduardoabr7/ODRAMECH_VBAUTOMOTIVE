@@ -1,0 +1,271 @@
+<div class="modal-content">
+  <div class="modal-header modal-header--vehicle">
+    <div class="modal-header-content">
+      <div class="modal-header-icon">
+        <i class="fas fa-car"></i>
+      </div>
+      <div>
+        <h5 class="modal-title">{{ title || 'Cadastrar Veículo' }}</h5>
+        <p class="modal-subtitle" *ngIf="clientName">Para: <strong>{{ clientName }}</strong></p>
+      </div>
+    </div>
+    <button
+      type="button"
+      class="btn-close btn-close-white"
+      aria-label="Close"
+      (click)="attemptClose()">
+    </button>
+  </div>
+
+  <div class="modal-body">
+    <form
+      #vehicleForm="ngForm"
+      (ngSubmit)="createVehicle()"
+      (keydown.enter)="$event.preventDefault()">
+
+      <p class="required-hint">
+        <span class="text-danger">*</span> Campo obrigatório
+      </p>
+
+      <!-- Identificação -->
+      <div class="section-title">
+        <i class="fas fa-id-card me-2"></i>Identificação
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-12 col-md-5">
+          <label class="form-label">Placa <span class="text-danger">*</span></label>
+          <div class="input-wrap position-relative">
+            <input
+              type="text"
+              class="form-control plate-input"
+              name="plate"
+              placeholder="ABC-1234 ou ABC1D23"
+              [ngModel]="form.plate"
+              (input)="onPlateInput($event)"
+              (blur)="onPlateBlur()"
+              #plateModel="ngModel"
+              required
+              minlength="7"
+              autocomplete="off" />
+            <span *ngIf="isCheckingPlate" class="plate-checking">
+              <i class="fa-solid fa-circle-notch fa-spin"></i>
+            </span>
+          </div>
+
+          <div *ngIf="plateModel.invalid && plateModel.touched" class="field-error">
+            <span *ngIf="plateModel.errors?.['required']">A placa é obrigatória.</span>
+            <span *ngIf="plateModel.errors?.['minlength']">Placa incompleta.</span>
+          </div>
+
+          <!-- Placa já existe: oferecer vínculo -->
+          <div class="plate-exists-alert mt-2" *ngIf="plateAlreadyExists && existingVehicle">
+            <div class="plate-exists-info">
+              <i class="fas fa-circle-info me-2"></i>
+              <div>
+                <strong>Veículo já cadastrado no sistema</strong>
+                <span>{{ existingVehicle.make }} {{ existingVehicle.name }}
+                  <ng-container *ngIf="existingVehicle.color"> · {{ existingVehicle.color }}</ng-container>
+                  <ng-container *ngIf="existingVehicle.modelYear"> · {{ existingVehicle.manufactureYear }}/{{ existingVehicle.modelYear }}</ng-container>
+                </span>
+              </div>
+            </div>
+            <div class="plate-exists-actions">
+              <button type="button" class="btn btn-sm btn-primary" (click)="linkExistingVehicle()" [disabled]="isSubmitting">
+                <i class="fas fa-link me-1"></i>Vincular a {{ clientName || 'este cliente' }}
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="plateAlreadyExists = false; existingVehicle = null">
+                Ignorar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-7">
+          <label class="form-label">Cor</label>
+          <div class="color-picker-wrap">
+            <div class="color-swatches">
+              <button
+                type="button"
+                class="color-swatch"
+                *ngFor="let color of colorOptions"
+                [title]="color.label"
+                [style.background]="color.hex"
+                [class.active]="form.color === color.label"
+                (click)="selectColor(color)">
+              </button>
+            </div>
+            <input
+              type="text"
+              class="form-control color-custom"
+              name="color"
+              placeholder="Ou digite..."
+              [(ngModel)]="form.color"
+              autocomplete="off" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Marca e Modelo -->
+      <div class="section-title">
+        <i class="fas fa-car-side me-2"></i>Marca e Modelo
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-12 col-md-5">
+          <div class="autocomplete-wrap" closeOnClickOutside (clickOutside)="showMakeDropdown = false">
+            <label class="form-label">Marca <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              name="make"
+              placeholder="Ex: Toyota, Honda..."
+              [(ngModel)]="form.make"
+              #makeModel="ngModel"
+              (input)="onMakeInput($event)"
+              required
+              autocomplete="off" />
+            <div class="autocomplete-dropdown" *ngIf="showMakeDropdown && filteredMakes.length > 0">
+              <button
+                type="button"
+                class="autocomplete-item"
+                *ngFor="let make of filteredMakes"
+                (click)="selectMake(make)">
+                {{ make }}
+              </button>
+            </div>
+          </div>
+          <div *ngIf="makeModel.invalid && makeModel.touched" class="field-error">
+            <span *ngIf="makeModel.errors?.['required']">A marca é obrigatória.</span>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-7">
+          <label class="form-label">Modelo <span class="text-danger">*</span></label>
+          <input
+            type="text"
+            class="form-control"
+            name="name"
+            placeholder="Ex: Corolla, Civic, HB20..."
+            [(ngModel)]="form.name"
+            #nameModel="ngModel"
+            required
+            autocomplete="off" />
+          <div *ngIf="nameModel.invalid && nameModel.touched" class="field-error">
+            <span *ngIf="nameModel.errors?.['required']">O modelo é obrigatório.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ano -->
+      <div class="section-title">
+        <i class="fas fa-calendar me-2"></i>Ano
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label">Ano de Fabricação</label>
+          <input
+            type="number"
+            class="form-control"
+            name="manufactureYear"
+            placeholder="Ex: 2021"
+            [(ngModel)]="form.manufactureYear"
+            #mfYearModel="ngModel"
+            [min]="1900"
+            [max]="currentYear"
+            autocomplete="off" />
+          <div *ngIf="mfYearModel.invalid && mfYearModel.touched" class="field-error">
+            <span *ngIf="mfYearModel.errors?.['min'] || mfYearModel.errors?.['max']">Ano inválido.</span>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label">Ano do Modelo</label>
+          <input
+            type="number"
+            class="form-control"
+            name="modelYear"
+            placeholder="Ex: 2022"
+            [(ngModel)]="form.modelYear"
+            #mdYearModel="ngModel"
+            [min]="1900"
+            [max]="currentYear + 1"
+            autocomplete="off" />
+          <div *ngIf="mdYearModel.invalid && mdYearModel.touched" class="field-error">
+            <span *ngIf="mdYearModel.errors?.['min'] || mdYearModel.errors?.['max']">Ano inválido.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quilometragem -->
+      <div class="section-title">
+        <i class="fas fa-gauge me-2"></i>Quilometragem
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label">KM Atual</label>
+          <div class="input-group">
+            <input
+              type="text"
+              class="form-control"
+              name="km"
+              placeholder="Ex: 45000"
+              [(ngModel)]="form.km"
+              mask="separator.0"
+              thousandSeparator="."
+              [dropSpecialCharacters]="true"
+              autocomplete="off" />
+            <span class="input-group-text">km</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="vehicle-preview" *ngIf="isPreviewReady && !plateAlreadyExists">
+        <div class="preview-icon">
+          <i class="fas fa-car"></i>
+        </div>
+        <div class="preview-info">
+          <span class="preview-name">{{ form.make }} {{ form.name }}</span>
+          <div class="preview-meta">
+            <span class="preview-plate">{{ form.plate }}</span>
+            <span *ngIf="form.manufactureYear || form.modelYear">
+              {{ form.manufactureYear }}<ng-container *ngIf="form.modelYear">/{{ form.modelYear }}</ng-container>
+            </span>
+            <span *ngIf="form.color">
+              <span class="preview-color-dot" [style.background]="selectedColorHex || '#94a3b8'"></span>
+              {{ form.color }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="row mt-4">
+        <div class="col-12 d-flex justify-content-end gap-2">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="cancel()">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-vehicle"
+            [disabled]="vehicleForm.invalid || isSubmitting || plateAlreadyExists">
+            <span *ngIf="!isSubmitting">
+              <i class="fas fa-plus me-2"></i>Cadastrar Veículo
+            </span>
+            <span *ngIf="isSubmitting" class="d-flex align-items-center gap-2">
+              <span class="spinner-border spinner-border-sm"></span>
+              Cadastrando...
+            </span>
+          </button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>

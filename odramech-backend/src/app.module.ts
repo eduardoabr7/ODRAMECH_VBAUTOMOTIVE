@@ -12,6 +12,7 @@ import { SharedModule } from './shared/shared.module';
 import { EnterpriseModule } from './enterprise/enterprise.module';
 import { EstablishmentModule } from './establishment/establishment.module';
 import { UserCorporationModule } from './user-corporations/user-corporations.module';
+import { VehicleModule } from './vehicle/vehicle.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -27,7 +28,8 @@ import { UserCorporationModule } from './user-corporations/user-corporations.mod
     SharedModule,
     EnterpriseModule,
     EstablishmentModule,
-    UserCorporationModule
+    UserCorporationModule,
+    VehicleModule
   ],
   controllers: [AppController],
   providers: [

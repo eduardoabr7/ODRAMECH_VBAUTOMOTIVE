@@ -120,6 +120,14 @@ CREATE TABLE "odramech"."archive_appointment" (
 );
 
 -- CreateTable
+CREATE TABLE "odramech"."cad_user_vehicle" (
+    "userId" INTEGER NOT NULL,
+    "vehicleId" INTEGER NOT NULL,
+
+    CONSTRAINT "cad_user_vehicle_pkey" PRIMARY KEY ("userId","vehicleId")
+);
+
+-- CreateTable
 CREATE TABLE "odramech"."cad_vehicle" (
     "id" SERIAL NOT NULL,
     "plate" TEXT NOT NULL,
@@ -127,7 +135,6 @@ CREATE TABLE "odramech"."cad_vehicle" (
     "modelYear" INTEGER,
     "manufactureYear" INTEGER,
     "color" TEXT,
-    "clientId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
     "make" TEXT NOT NULL,
 
@@ -177,6 +184,9 @@ ALTER TABLE "odramech"."cad_user_corporation" ADD CONSTRAINT "cad_user_corporati
 ALTER TABLE "odramech"."cad_user_corporation" ADD CONSTRAINT "cad_user_corporation_idEstablishment_fkey" FOREIGN KEY ("idEstablishment") REFERENCES "odramech"."cad_establishment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "odramech"."work_orders" ADD CONSTRAINT "work_orders_id_establishment_fkey" FOREIGN KEY ("id_establishment") REFERENCES "odramech"."cad_establishment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "odramech"."work_orders" ADD CONSTRAINT "work_orders_id_user_creation_fkey" FOREIGN KEY ("id_user_creation") REFERENCES "odramech"."cad_user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -198,4 +208,7 @@ ALTER TABLE "odramech"."appointments" ADD CONSTRAINT "appointments_id_user_appoi
 ALTER TABLE "odramech"."archive_appointment" ADD CONSTRAINT "archive_appointment_id_appointment_fkey" FOREIGN KEY ("id_appointment") REFERENCES "odramech"."appointments"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "odramech"."cad_vehicle" ADD CONSTRAINT "cad_vehicle_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "odramech"."cad_user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "odramech"."cad_user_vehicle" ADD CONSTRAINT "cad_user_vehicle_userId_fkey" FOREIGN KEY ("userId") REFERENCES "odramech"."cad_user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "odramech"."cad_user_vehicle" ADD CONSTRAINT "cad_user_vehicle_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "odramech"."cad_vehicle"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

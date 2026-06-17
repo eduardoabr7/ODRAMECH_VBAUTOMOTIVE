@@ -33,10 +33,10 @@
           <div class="row g-3 mt-1">
             <div class="col-12">
               <label class="field-label">Buscar Cliente <span class="required">*</span></label>
-              <div 
-              class="search-field-wrap"
-              closeOnClickOutside 
-              (clickOutside)="showClientDropdown = false">
+              <div
+                class="search-field-wrap"
+                closeOnClickOutside
+                (clickOutside)="showClientDropdown = false">
                 <i class="fas fa-magnifying-glass search-icon"></i>
                 <input
                   type="text"
@@ -47,20 +47,19 @@
                   autocomplete="off"
                 />
                 <div class="search-dropdown" *ngIf="showClientDropdown">
-                
+
                   <!-- Loading -->
                   <div class="search-state" *ngIf="isSearchingClient">
                     <i class="fa-solid fa-circle-notch fa-spin"></i>
                     <span>Buscando clientes...</span>
                   </div>
-                
+
                   <!-- Results -->
                   <ng-container *ngIf="!isSearchingClient && clientResults.length > 0">
                     <div
                       class="search-item"
                       *ngFor="let client of clientResults"
-                      (click)="selectClient(client)"
-                    >
+                      (click)="selectClient(client)">
                       <div class="search-item-avatar">{{ client.name.charAt(0) }}</div>
                       <div class="search-item-info">
                         <span class="search-item-name">{{ client.name }}</span>
@@ -68,7 +67,7 @@
                       </div>
                     </div>
                   </ng-container>
-                
+
                   <!-- No result -->
                   <div class="search-state search-state--empty" *ngIf="!isSearchingClient && searchEmpty">
                     <i class="fas fa-user-slash"></i>
@@ -77,7 +76,7 @@
                       <i class="fas fa-plus me-1"></i>Cadastrar cliente
                     </button>
                   </div>
-                
+
                 </div>
               </div>
             </div>
@@ -102,8 +101,99 @@
           </div>
         </div>
 
-        <!-- Responsible Card -->
-        <div class="form-card anim-2 mt-3">
+        <div class="form-card anim-2 mt-3" *ngIf="selectedClient">
+          <div class="form-card-header">
+            <div class="form-card-icon" style="background:#fdf4ff;">
+              <i class="fas fa-car" style="color:#a855f7;"></i>
+            </div>
+            <span class="form-card-title">Veículo</span>
+            <span class="required-badge ms-auto">Obrigatório</span>
+          </div>
+
+          <div class="vehicle-loading mt-3" *ngIf="isLoadingVehicles">
+            <div class="vehicle-skeleton" *ngFor="let s of [1,2]">
+              <div class="skel skel-icon"></div>
+              <div class="skel-body">
+                <div class="skel skel-line skel-line--lg"></div>
+                <div class="skel skel-line skel-line--sm"></div>
+              </div>
+            </div>
+          </div>
+
+          <ng-container *ngIf="!isLoadingVehicles">
+
+            <div class="selected-vehicle-card mt-3" *ngIf="selectedVehicle">
+              <div class="sv-icon">
+                <i class="fas fa-car"></i>
+              </div>
+              <div class="sv-info">
+                <span class="sv-name">{{ selectedVehicle.make }} {{ selectedVehicle.name }}</span>
+                <div class="sv-meta">
+                  <span class="sv-plate">
+                    <i class="fas fa-hashtag me-1"></i>{{ selectedVehicle.plate }}
+                  </span>
+                  <span *ngIf="selectedVehicle.modelYear">
+                    <i class="fas fa-calendar me-1"></i>{{ selectedVehicle.manufactureYear }}/{{ selectedVehicle.modelYear }}
+                  </span>
+                  <span *ngIf="selectedVehicle.color">
+                    <i class="fas fa-palette me-1"></i>{{ selectedVehicle.color }}
+                  </span>
+                  <span *ngIf="selectedVehicle.km">
+                    <i class="fas fa-gauge me-1"></i>{{ selectedVehicle.km }} km
+                  </span>
+                </div>
+              </div>
+              <button type="button" class="btn-clear-client" (click)="clearVehicle()">
+                <i class="fas fa-xmark"></i>
+              </button>
+            </div>
+
+            <ng-container *ngIf="!selectedVehicle">
+
+              <ng-container *ngIf="clientVehicles.length > 0">
+                <p class="vehicle-hint mt-3">Selecione um veículo do cliente:</p>
+                <div class="vehicle-list">
+                  <button
+                    type="button"
+                    class="vehicle-option"
+                    *ngFor="let vehicle of clientVehicles"
+                    (click)="selectVehicle(vehicle)">
+                    <div class="vehicle-option-icon">
+                      <i class="fas fa-car"></i>
+                    </div>
+                    <div class="vehicle-option-info">
+                      <span class="vehicle-option-name">{{ vehicle.make }} {{ vehicle.name }}</span>
+                      <div class="vehicle-option-meta">
+                        <span class="vehicle-plate-badge">{{ vehicle.plate }}</span>
+                        <span *ngIf="selectedVehicle?.modelYear">{{ vehicle.manufactureYear }}/{{ vehicle.modelYear }}</span>
+                        <span *ngIf="vehicle.color">{{ vehicle.color }}</span>
+                      </div>
+                    </div>
+                    <i class="fas fa-chevron-right vehicle-option-arrow"></i>
+                  </button>
+                </div>
+
+                <button type="button" class="btn-add-vehicle mt-3" (click)="openNewVehicleModal()">
+                  <i class="fas fa-plus me-2"></i>Cadastrar novo veículo para este cliente
+                </button>
+              </ng-container>
+
+              <div class="vehicle-empty mt-3" *ngIf="clientVehicles.length === 0">
+                <div class="vehicle-empty-icon">
+                  <i class="fas fa-car-burst"></i>
+                </div>
+                <p class="vehicle-empty-title">Nenhum veículo cadastrado</p>
+                <p class="vehicle-empty-sub">{{ selectedClient?.name }} ainda não possui veículos. Cadastre um para continuar.</p>
+                <button type="button" class="btn-submit-outline" (click)="openNewVehicleModal()">
+                  <i class="fas fa-plus me-2"></i>Cadastrar veículo
+                </button>
+              </div>
+
+            </ng-container>
+          </ng-container>
+        </div>
+
+        <div class="form-card anim-3 mt-3">
           <div class="form-card-header">
             <div class="form-card-icon" style="background:#f0fdf4;">
               <i class="fas fa-user-tie" style="color:#22c55e;"></i>
@@ -139,7 +229,7 @@
         </div>
 
         <!-- Appointment Card -->
-        <div class="form-card anim-3 mt-3">
+        <div class="form-card anim-4 mt-3">
           <div class="form-card-header">
             <div class="form-card-icon" style="background:#fff7ed;">
               <i class="fas fa-note-sticky" style="color:#f97316;"></i>
@@ -182,8 +272,8 @@
                 class="rich-editor"
                 contenteditable="true"
                 (input)="onEditorInput($event)"
-                data-placeholder="Descreva o problema relatado pelo cliente, defeitos observados, serviços solicitados..."
-              ></div>
+                data-placeholder="Descreva o problema relatado pelo cliente, defeitos observados, serviços solicitados...">
+              </div>
             </div>
 
             <!-- File Upload -->
@@ -193,10 +283,9 @@
                 class="dropzone"
                 [class.dragging]="isDragging"
                 (dragover)="onDragOver($event)"
-                (dragleave)="onDragLeave($event)"
+                (dragleave)="onDragLeave()"
                 (drop)="onDrop($event)"
-                (click)="fileInput.click()"
-              >
+                (click)="fileInput.click()">
                 <input #fileInput type="file" hidden multiple (change)="onFileSelect($event)" />
                 <i class="fas fa-cloud-arrow-up dropzone-icon"></i>
                 <span class="dropzone-text">Arraste arquivos ou <span class="dropzone-link">clique aqui</span></span>
@@ -221,8 +310,8 @@
       <!-- RIGHT COLUMN -->
       <div class="col-12 col-lg-4 right-col">
 
-        <!-- Tips Card — desktop: topo / mobile: após resumo -->
-        <div class="form-card tips-card anim-5 order-2 order-lg-1">
+        <!-- Tips Card -->
+        <div class="form-card tips-card anim-6 order-2 order-lg-1">
           <div class="form-card-header">
             <div class="form-card-icon" style="background:#eef1fe;">
               <i class="fas fa-lightbulb" style="color:#4f6ef7;"></i>
@@ -231,14 +320,15 @@
           </div>
           <ul class="tips-list mt-2">
             <li>Busque o cliente pelo nome, telefone ou e-mail cadastrado.</li>
+            <li>Após selecionar o cliente, escolha o veículo ou cadastre um novo.</li>
             <li>O apontamento inicial documenta o relato do cliente na abertura.</li>
             <li>Apontamentos <strong>Internos</strong> são visíveis apenas para a equipe.</li>
             <li>Você pode adicionar mais apontamentos e arquivos após a abertura.</li>
           </ul>
         </div>
 
-        <!-- Summary Card — desktop: abaixo das dicas / mobile: primeiro -->
-        <div class="form-card summary-card anim-4 order-1 order-lg-2 mt-3 mt-lg-0">
+        <!-- Summary Card -->
+        <div class="form-card summary-card anim-5 order-1 order-lg-2 mt-3 mt-lg-0">
           <div class="form-card-header">
             <div class="form-card-icon" style="background:#fdf2f8;">
               <i class="fas fa-receipt" style="color:#ec4899;"></i>
@@ -254,6 +344,16 @@
             <div class="summary-row">
               <span class="summary-key">Cliente</span>
               <span class="summary-val">{{ selectedClient?.name || '—' }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-key">Veículo</span>
+              <span class="summary-val">
+                <ng-container *ngIf="selectedVehicle; else noVehicle">
+                  {{ selectedVehicle.make }} {{ selectedVehicle.name }}
+                  <span class="summary-plate">{{ selectedVehicle.plate }}</span>
+                </ng-container>
+                <ng-template #noVehicle>—</ng-template>
+              </span>
             </div>
             <div class="summary-row">
               <span class="summary-key">Responsável</span>
@@ -277,8 +377,7 @@
             <button
               type="submit"
               class="btn-submit"
-              [disabled]="osForm.invalid || !selectedClient || isSubmitting"
-            >
+              [disabled]="osForm.invalid || !selectedClient || !selectedVehicle || isSubmitting">
               <span *ngIf="!isSubmitting">
                 <i class="fas fa-paper-plane me-2"></i>Abrir Ordem de Serviço
               </span>
@@ -286,6 +385,11 @@
                 <span class="spinner"></span> Criando OS...
               </span>
             </button>
+          </div>
+
+          <div class="vehicle-warning mt-2" *ngIf="selectedClient && !selectedVehicle">
+            <i class="fas fa-triangle-exclamation me-1"></i>
+            Selecione um veículo para continuar
           </div>
 
           <button type="button" class="btn-cancel mt-2 w-100" (click)="goBack()">

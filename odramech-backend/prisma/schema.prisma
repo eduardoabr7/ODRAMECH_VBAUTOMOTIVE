@@ -19,7 +19,7 @@ model User {
   updatedAt       DateTime          @updatedAt @map("updated_at")
   addressId       Int?              @unique @map("address_id")
 
-  vehicles                    Vehicle[]
+  vehicles                    UserVehicle[]
   address                     Address?          @relation(fields: [addressId], references: [id])
   userCorporation             UserCorporation[]
   workOrdersCreated           WorkOrder[]       @relation("WorkOrderCreatedBy")
@@ -60,6 +60,7 @@ model Establishment {
   enterprise    Enterprise @relation(fields: [enterpriseId], references: [id])
   address       Address    @relation(fields: [addressId], references: [id])
   users         UserCorporation[]
+  workOrders    WorkOrder[]
 
   @@map("cad_establishment")
 }
@@ -110,6 +111,7 @@ model WorkOrder {
   vehicleId             Int           @map("id_vehicle")
   numberOs              Int           @map("number_os")
 
+  establishment         Establishment @relation(fields: [establishmentId], references: [id])
   userCreation          User          @relation("WorkOrderCreatedBy", fields: [userCreationId], references: [id])
   userEnd               User?         @relation("WorkOrderEndedBy", fields: [userEndId], references: [id])
   userResponsible       User?         @relation("WorkOrderResponsible", fields: [userResponsibleId], references: [id])
@@ -148,6 +150,17 @@ model ArchiveAppointment {
   @@map("archive_appointment")
 }
 
+model UserVehicle {
+  userId     Int
+  vehicleId  Int
+
+  user       User    @relation(fields: [userId], references: [id])
+  vehicle    Vehicle @relation(fields: [vehicleId], references: [id])
+
+  @@id([userId, vehicleId])
+  @@map("cad_user_vehicle")
+}
+
 model Vehicle {
   id              Int    @id @default(autoincrement())
   plate           String @unique
@@ -155,11 +168,10 @@ model Vehicle {
   modelYear       Int?
   manufactureYear Int?
   color           String?
-  clientId        Int
   name            String
   make            String
 
-  client          User @relation(fields: [clientId], references: [id])
+  users           UserVehicle[]
   workOrders      WorkOrder[]
 
   @@map("cad_vehicle")
