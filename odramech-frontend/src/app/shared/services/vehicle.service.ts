@@ -12,7 +12,7 @@ export class VehicleService {
   constructor(private readonly _nestApi: NestAPI) {}
 
   create(payload: VehicleCreate): Observable<Vehicle> {
-    return this._nestApi.post('vehicle/create', payload);
+    return this._nestApi.post('vehicle', payload);
   }
 
   getByUser(userId: number): Observable<Vehicle[]> {

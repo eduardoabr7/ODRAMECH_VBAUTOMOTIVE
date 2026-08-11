@@ -183,7 +183,7 @@
                   <i class="fas fa-car-burst"></i>
                 </div>
                 <p class="vehicle-empty-title">Nenhum veículo cadastrado</p>
-                <p class="vehicle-empty-sub">{{ selectedClient?.name }} ainda não possui veículos. Cadastre um para continuar.</p>
+                <p class="vehicle-empty-sub">{{ selectedClient?.name }} ainda não possui veículos cadastrados no sistema. Cadastre um para continuar.</p>
                 <button type="button" class="btn-submit-outline" (click)="openNewVehicleModal()">
                   <i class="fas fa-plus me-2"></i>Cadastrar veículo
                 </button>
@@ -203,7 +203,7 @@
 
           <div class="row g-3 mt-1">
             <div class="col-12 col-sm-6">
-              <label class="field-label">Técnico Responsável</label>
+              <label class="field-label">Mecânico Responsável</label>
               <div class="select-wrap">
                 <select class="field-input field-select" formControlName="userResponsibleId">
                   <option [ngValue]="null">Sem responsável</option>

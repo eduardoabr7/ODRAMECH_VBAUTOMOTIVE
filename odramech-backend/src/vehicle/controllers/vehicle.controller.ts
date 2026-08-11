@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseIntPipe, Post } from "@nestjs/common";
 import { VehicleService } from "../services/vehicle.service";
 import { CreateVehicleDTO } from "../dto/create-vehicle.dto";
 
@@ -9,9 +9,14 @@ export class VehicleController {
         private readonly _vehicleService: VehicleService
     ){}
 
-    @Post('create')
+    @Post()
     createUser(@Body() data: CreateVehicleDTO) {
         return this._vehicleService.createVehicle(data)
     }
 
+
+    @Get('user/:userId')
+    getUserVehicles(@Param('userId', ParseIntPipe) userId: number) {
+        return this._vehicleService.getByUser(userId)
+    }
 }
