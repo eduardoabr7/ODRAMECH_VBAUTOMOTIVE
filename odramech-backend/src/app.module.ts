@@ -13,6 +13,7 @@ import { EnterpriseModule } from './enterprise/enterprise.module';
 import { EstablishmentModule } from './establishment/establishment.module';
 import { UserCorporationModule } from './user-corporations/user-corporations.module';
 import { VehicleModule } from './vehicle/vehicle.module';
+import { WorkOrderModule } from './work-order/work-order.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -29,7 +30,8 @@ import { VehicleModule } from './vehicle/vehicle.module';
     EnterpriseModule,
     EstablishmentModule,
     UserCorporationModule,
-    VehicleModule
+    VehicleModule,
+    WorkOrderModule
   ],
   controllers: [AppController],
   providers: [

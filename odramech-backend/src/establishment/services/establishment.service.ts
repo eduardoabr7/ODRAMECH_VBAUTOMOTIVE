@@ -16,6 +16,7 @@ export class EstablishmentService {
             ...data,
             enterprise: { connect: { id: enterpriseId } },
             address: { create: address },
+            counter: { create: {} },
           },
         });
       } catch (error: any) {

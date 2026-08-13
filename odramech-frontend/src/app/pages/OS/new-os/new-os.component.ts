@@ -23,6 +23,9 @@ import { VehicleService } from '@shared/services/vehicle.service';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
 import { Subject } from 'rxjs';
 import { filter, map, switchMap, tap, takeUntil } from 'rxjs/operators';
+import { WorkOrderCreate } from '@shared/models/WorkOrderCreate';
+import { WorkOrderService } from '@shared/services/work-orders.service';
+import { AppointmentTypeEnum } from '@shared/enums/type-appointment.enum';
 
 type TypeAppointment = 'PUBLICO' | 'INTERNO';
 
@@ -71,6 +74,7 @@ export class NewOsComponent implements OnInit, OnDestroy {
     private readonly bsModalService: BsModalService,
     private readonly authService: AuthService,
     private readonly userCorporationService: UserCorporationService,
+    private readonly workOrderService: WorkOrderService
   ) {}
 
   ngOnInit(): void {
@@ -225,7 +229,7 @@ export class NewOsComponent implements OnInit, OnDestroy {
   get statusLabel(): string {
     const labels: Record<StatusOS, string> = {
       [StatusOS.PENDENTE]: 'Pendente',
-      [StatusOS.EM_ANDAMENTO]: 'Em Atendimento',
+      [StatusOS.EM_ATENDIMENTO]: 'Em Atendimento',
       [StatusOS.AGUARDANDO_PECAS]: 'Aguardando Peças',
       [StatusOS.CONCLUIDO]: 'Concluído',
       [StatusOS.CANCELADO]: 'Cancelado',
@@ -236,7 +240,7 @@ export class NewOsComponent implements OnInit, OnDestroy {
   get statusClass(): string {
     const classes: Record<StatusOS, string> = {
       [StatusOS.PENDENTE]: 'status-pendente',
-      [StatusOS.EM_ANDAMENTO]: 'status-em-atendimento',
+      [StatusOS.EM_ATENDIMENTO]: 'status-em-atendimento',
       [StatusOS.AGUARDANDO_PECAS]: 'status-aguardando',
       [StatusOS.CONCLUIDO]: 'status-finalizada',
       [StatusOS.CANCELADO]: 'status-cancelada',
@@ -299,25 +303,32 @@ export class NewOsComponent implements OnInit, OnDestroy {
 
     this.isSubmitting = true;
 
-    const payload = {
+    const payload: WorkOrderCreate = {
       status: this.osForm.value.status as StatusOS,
       clientId: this.selectedClient.id,
       vehicleId: this.selectedVehicle.id,
-      userResponsibleId: this.osForm.value.userResponsibleId ?? null,
-      appointment: this.editorContent
-        ? {
-            contentHtml: this.editorContent,
-            appointmentType: this.osForm.value.appointmentType as TypeAppointment,
-          }
-        : null,
-      files: this.attachedFiles,
+      ...(this.osForm.value.userResponsibleId && {
+        userResponsibleId: this.osForm.value.userResponsibleId,
+      }),
+      ...(this.editorContent && {
+        appointment: {
+          contentHtml: this.editorContent,
+          appointmentType: this.osForm.value.appointmentType as AppointmentTypeEnum,
+        },
+      }),
     };
 
-    console.log('Payload OS:', payload);
-
-    setTimeout(() => {
-      this.isSubmitting = false;
-      this.router.navigate(['/work-orders']);
-    }, 1500);
+    this.workOrderService.create(payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.isSubmitting = false;
+          this.router.navigate(['/work-orders']);
+        },
+        error: (err) => {
+          this.isSubmitting = false;
+          console.error('Erro ao criar OS:', err);
+        },
+      });
   }
 }
