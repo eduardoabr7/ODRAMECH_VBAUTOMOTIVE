@@ -1,0 +1,173 @@
+<div class="page">
+  <a class="back reveal" routerLink="/settings"><i class="fa-solid fa-arrow-left"></i> Configurações</a>
+
+  <div class="page-head">
+    <div>
+      <div class="eyebrow reveal">Oficina</div>
+      <h1 class="page-title reveal" style="--i:1">Tema e marca</h1>
+      <p class="page-sub reveal" style="--i:2">Sua logo, nome e cor no lugar do Odramech — no sistema, nos orçamentos e na tela de login.</p>
+    </div>
+    @if (!readOnly()) {
+      <div class="page-actions reveal" style="--i:3">
+        <button class="btn-x btn-ghost" (click)="resetAll()" [disabled]="saving()">Restaurar padrão</button>
+        <button class="btn-x btn-accent" [disabled]="saving() || loading() || !dirty()" (click)="save()">
+          @if (saving()) { <span class="spinner-x"></span> } Salvar tema
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (readOnly()) {
+    <div class="panel note reveal"><i class="fa-solid fa-lock"></i> Só administradores alteram o tema.</div>
+  }
+
+  @if (loading()) {
+    <div class="layout"><div class="panel sk"></div><div class="panel sk"></div></div>
+  } @else {
+    <div class="layout">
+      <div class="col">
+        <!-- Identidade -->
+        <section class="panel reveal" style="--i:2">
+          <div class="panel-head"><span class="panel-title">Identidade</span></div>
+          <div class="panel-body">
+            <div class="field">
+              <label class="field-label" for="bname">Nome exibido <span class="opt">vazio = nome da empresa ({{ data()?.enterpriseName }})</span></label>
+              <input id="bname" class="input" maxlength="60" [disabled]="readOnly()" [placeholder]="data()?.enterpriseName ?? 'Oficina'"
+                     [ngModel]="displayName()" (ngModelChange)="displayName.set($event); touch()">
+            </div>
+
+            <div class="field mt">
+              <span class="field-label">Logo <span class="opt">PNG, JPG, WebP ou SVG · fundo transparente fica melhor</span></span>
+              <div class="upload">
+                <div class="logo-box"><img [src]="previewLogo()" alt=""></div>
+                <div class="upload-actions">
+                  <label class="btn-x btn-outline sm" [class.disabled]="readOnly()">
+                    <i class="fa-solid fa-upload"></i> {{ logoUrl() ? 'Trocar logo' : 'Enviar logo' }}
+                    <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" hidden [disabled]="readOnly()" (change)="pickLogo($event)">
+                  </label>
+                  @if (logoUrl() && !readOnly()) { <button class="btn-x btn-ghost sm" (click)="removeLogo()">Remover</button> }
+                </div>
+              </div>
+            </div>
+
+            <div class="field mt">
+              <span class="field-label">Cor de destaque <span class="opt">botões, links e detalhes</span></span>
+              <div class="colors">
+                @for (c of PRESETS; track c) {
+                  <button type="button" class="swatch" [style.background]="c" [class.on]="accent().toLowerCase() === c" [disabled]="readOnly()"
+                          (click)="setAccent(c)" [attr.aria-label]="'Cor ' + c"></button>
+                }
+                <label class="swatch custom" [style.background]="accent()" title="Escolher outra cor">
+                  <i class="fa-solid fa-eye-dropper"></i>
+                  <input type="color" [value]="accent()" [disabled]="readOnly()" (input)="setAccent($any($event.target).value)">
+                </label>
+                <span class="mono hex">{{ accent() }}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tela de login -->
+        <section class="panel reveal" style="--i:3">
+          <div class="panel-head">
+            <span class="panel-title">Tela de login</span>
+            @if (!canLogin()) { <span class="lock-tag"><i class="fa-solid fa-lock"></i> Intermediário</span> }
+          </div>
+          <div class="panel-body" [class.locked]="!canLogin()">
+            @if (!canLogin()) {
+              <p class="hint left">A imagem e os textos da tela de login ficam disponíveis a partir do plano Intermediário. Logo, nome e cor já aparecem no login em qualquer plano.
+                <a routerLink="/settings/subscription">Ver planos</a></p>
+            }
+            <div class="field">
+              <span class="field-label">Imagem de fundo <span class="opt">no lugar de "Do check-in à entrega, sem papel"</span></span>
+              <div class="upload">
+                <div class="img-box" [style.background-image]="loginImageUrl() ? 'url(' + loginImageUrl() + ')' : null">
+                  @if (!loginImageUrl()) { <i class="fa-regular fa-image"></i> }
+                </div>
+                <div class="upload-actions">
+                  <label class="btn-x btn-outline sm" [class.disabled]="readOnly() || !canLogin()">
+                    <i class="fa-solid fa-upload"></i> {{ loginImageUrl() ? 'Trocar imagem' : 'Enviar imagem' }}
+                    <input type="file" accept="image/png,image/jpeg,image/webp" hidden [disabled]="readOnly() || !canLogin()" (change)="pickLoginImage($event)">
+                  </label>
+                  @if (loginImageUrl() && !readOnly() && canLogin()) { <button class="btn-x btn-ghost sm" (click)="removeLoginImage()">Remover</button> }
+                  <span class="hint left">Paisagem, pelo menos 1200 px de largura.</span>
+                </div>
+              </div>
+            </div>
+            <div class="field mt">
+              <label class="field-label" for="lhead">Frase principal</label>
+              <input id="lhead" class="input" maxlength="120" placeholder="Ex.: Seu carro em boas mãos." [disabled]="readOnly() || !canLogin()"
+                     [ngModel]="loginHeadline()" (ngModelChange)="loginHeadline.set($event); touch()">
+            </div>
+            <div class="field mt">
+              <label class="field-label" for="lsub">Texto de apoio</label>
+              <textarea id="lsub" class="input" rows="2" maxlength="240" placeholder="Ex.: Acompanhe o serviço do seu veículo em tempo real." [disabled]="readOnly() || !canLogin()"
+                        [ngModel]="loginSubtitle()" (ngModelChange)="loginSubtitle.set($event); touch()"></textarea>
+            </div>
+          </div>
+        </section>
+
+        @if (loginLink(); as link) {
+          <section class="panel reveal" style="--i:4">
+            <div class="panel-body share">
+              <div>
+                <b>Link de login com a sua marca</b>
+                <p class="hint left">A tela de login normal é sempre a do Odramech (a oficina só é conhecida depois do login). Para clientes e equipe verem a sua marca já no login, mande este link.</p>
+                <code class="mono">{{ link }}</code>
+              </div>
+              <button class="btn-x btn-outline sm" (click)="copyLink()"><i class="fa-regular fa-copy"></i>Copiar</button>
+            </div>
+          </section>
+        } @else if (!readOnly()) {
+          <p class="hint left">Salve o tema para gerar o link de login com a sua marca.</p>
+        }
+      </div>
+
+      <!-- Pré-visualização -->
+      <aside class="col preview-col">
+        <section class="panel reveal" style="--i:3">
+          <div class="panel-head"><span class="panel-title">Pré-visualização · sistema</span></div>
+          <div class="panel-body pv-wrap">
+            <div class="pv-app">
+              <div class="pv-side">
+                <div class="pv-brand">
+                  <img [src]="previewLogo()" [class.custom]="logoUrl()" alt=""><span>{{ previewName() }}</span>
+                </div>
+                <div class="pv-item on" [style.--a]="accent()"><i class="fa-solid fa-house"></i> Início</div>
+                <div class="pv-item"><i class="fa-solid fa-screwdriver-wrench"></i> Ordens de serviço</div>
+                <div class="pv-item"><i class="fa-solid fa-file-invoice-dollar"></i> Orçamentos</div>
+              </div>
+              <div class="pv-main">
+                <div class="pv-line w60"></div>
+                <div class="pv-line w40"></div>
+                <div class="pv-btn" [style.background]="accent()">Nova OS</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel reveal" style="--i:4">
+          <div class="panel-head"><span class="panel-title">Pré-visualização · login</span></div>
+          <div class="panel-body pv-wrap">
+            <div class="pv-login">
+              <div class="pv-lp" [class.img]="canLogin() && loginImageUrl()" [style.background-image]="canLogin() && loginImageUrl() ? 'url(' + loginImageUrl() + ')' : null">
+                <div class="pv-brand"><img [src]="previewLogo()" [class.custom]="logoUrl()" alt=""><span>{{ previewName() }}</span></div>
+                <div class="pv-head">
+                  @if (canLogin() && loginHeadline().trim()) { {{ loginHeadline() }} }
+                  @else if (!(canLogin() && loginImageUrl())) { Do check-in à entrega, <span [style.color]="accent()">sem papel.</span> }
+                </div>
+                @if (canLogin() && loginSubtitle().trim()) { <div class="pv-sub">{{ loginSubtitle() }}</div> }
+              </div>
+              <div class="pv-form">
+                <b>Entrar</b>
+                <div class="pv-input"></div>
+                <div class="pv-input"></div>
+                <div class="pv-submit">Entrar</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </div>
+  }
+</div>

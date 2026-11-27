@@ -11,6 +11,10 @@ export interface SubscriptionsConfigValues {
   graceDays: number;
   renewalLeadDays: number;
   schedulerIntervalSeconds: number;
+  /** plano do teste grátis (e de quem ainda não escolheu) */
+  defaultPlanCode: string;
+  /** "simular pagamento" só existe no provedor sandbox e fora de produção */
+  allowSimulatedPayments: boolean;
 }
 
 const schema = Joi.object({
@@ -23,6 +27,8 @@ const schema = Joi.object({
   GRACE_DAYS: Joi.number().integer().min(0).default(7),
   RENEWAL_LEAD_DAYS: Joi.number().integer().min(0).default(5),
   SCHEDULER_INTERVAL_SECONDS: Joi.number().integer().min(5).default(60),
+  DEFAULT_PLAN_CODE: Joi.string().default('INTERMEDIARIO'),
+  NODE_ENV: Joi.string().default('development'),
 }).unknown(true);
 
 /** SINGLETON — configuração do serviço, carregada e validada uma única vez. */
@@ -44,6 +50,8 @@ export class SubscriptionsConfig {
       graceDays: value.GRACE_DAYS,
       renewalLeadDays: value.RENEWAL_LEAD_DAYS,
       schedulerIntervalSeconds: value.SCHEDULER_INTERVAL_SECONDS,
+      defaultPlanCode: value.DEFAULT_PLAN_CODE,
+      allowSimulatedPayments: value.PAYMENT_PROVIDER === 'sandbox' && value.NODE_ENV !== 'production',
     });
   }
 

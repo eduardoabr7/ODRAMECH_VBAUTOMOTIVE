@@ -24,6 +24,7 @@ interface EditForm {
   email: string;
   principalPhone: string;
   secondaryPhone: string;
+  active: boolean;
   hasAddress: boolean;
   address: {
     zipCode: string; street: string; number: string; complement: string;
@@ -105,6 +106,7 @@ export class ClientDetailComponent implements OnInit, OnDestroy {
       email: this.user.email ?? '',
       principalPhone: this.user.principalPhone ?? '',
       secondaryPhone: this.user.secondaryPhone ?? '',
+      active: this.user.active !== false,
       hasAddress: !!a,
       address: {
         zipCode: a?.zipCode ?? '', street: a?.street ?? '', number: a?.number ?? '',
@@ -157,6 +159,7 @@ export class ClientDetailComponent implements OnInit, OnDestroy {
       email: f.email.trim() || undefined,
       principalPhone: f.principalPhone,
       secondaryPhone: f.secondaryPhone || undefined,
+      ...(f.active !== (this.user.active !== false) && { active: f.active }),
       ...(f.hasAddress && {
         address: { ...a, complement: a.complement || undefined },
       }),

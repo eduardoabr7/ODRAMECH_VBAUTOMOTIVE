@@ -12,8 +12,21 @@
     }
 }
 
-.selection-card img {
-  width: 100px;
+.selection-card { align-items: center; }
+
+/* foto do estabelecimento/empresa (ou iniciais quando não tem) */
+.sel-photo {
+  width: 84px;
+  height: 84px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #f0eee9;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
+
+  img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  span { color: #fff; font-weight: 700; font-size: 22px; letter-spacing: .02em; }
 }
 
 .info-enterp {

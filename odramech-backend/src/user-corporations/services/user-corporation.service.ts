@@ -20,20 +20,22 @@ export class UserCorporationService {
       return await this._prismaService.userCorporation.findFirst({
         where: { 
           idUser: uId,
-          idEstablishment: estId 
+          idEstablishment: estId,
+          active: true,
         }
       })
     }
 
     async getUserCorporationsByUserId(userId: number) {
       const userCorporations = await this._prismaService.userCorporation.findMany({
-        where: { idUser: userId },
+        where: { idUser: userId, active: true },
         include: {
           establishment: {
             select: {
               id: true,
               logoUrl: true,
               name: true,
+              phone: true,
               address: {
                 select: {
                   street: true,
@@ -48,17 +50,24 @@ export class UserCorporationService {
               id: true,
               logoUrl: true,
               name: true,
+              phone: true,
+              // logo e nome do tema (Configurações → Tema e marca) têm prioridade
+              branding: { select: { logoUrl: true, displayName: true } },
             }
           }
         },
+        orderBy: [{ idEnterprise: 'asc' }, { idEstablishment: 'asc' }],
       });
 
       const grouped = userCorporations.reduce((acc, curr) => {
         const enterpriseId = curr.idEnterprise;
 
         if (!acc[enterpriseId]) {
+          const { branding, ...enterprise } = curr.enterprise;
           acc[enterpriseId] = {
-            ...curr.enterprise,
+            ...enterprise,
+            logoUrl: branding?.logoUrl || enterprise.logoUrl,
+            displayName: branding?.displayName || null,
             establishments: []
           };
         }
@@ -123,6 +132,7 @@ export class UserCorporationService {
         where: {
           idEnterprise: enterpriseLoggedId,
           idUser: userId,
+          active: true,
           role: {
             in: [Role.ADMIN, Role.WORKER]
           }
@@ -159,7 +169,8 @@ export class UserCorporationService {
       const relations = await this._prismaService.userCorporation.findMany({
         where: {
           idEnterprise: enterpriseLoggedId,
-          idUser: userId
+          idUser: userId,
+          active: true,
         },
         include: {
           establishment: {
@@ -214,7 +225,8 @@ export class UserCorporationService {
               principalPhone: true
             }
           },
-          role: true
+          role: true,
+          active: true
         }
       })
 
@@ -238,10 +250,29 @@ export class UserCorporationService {
               principalPhone: true
             }
           },
-          role: true
+          role: true,
+          active: true
         }
       })
 
       return users
+    }
+
+    /** é da equipe (admin/mecânico/super), com vínculo ativo, deste estabelecimento? */
+    async isActiveStaffOf(userId: number, establishmentId: number): Promise<boolean> {
+      const m = await this._prismaService.userCorporation.findFirst({
+        where: { idUser: userId, idEstablishment: establishmentId, active: true, role: { in: [Role.ADMIN, Role.WORKER, Role.SUPERUSER] } },
+        select: { idUser: true },
+      });
+      return !!m;
+    }
+
+    /** vínculo ativo? (checado a cada requisição autenticada) */
+    async isMembershipActive(userId: number, enterpriseId: number, establishmentId: number): Promise<boolean> {
+      const m = await this._prismaService.userCorporation.findUnique({
+        where: { idUser_idEnterprise_idEstablishment: { idUser: userId, idEnterprise: enterpriseId, idEstablishment: establishmentId } },
+        select: { active: true },
+      });
+      return !!m?.active;
     }
 }

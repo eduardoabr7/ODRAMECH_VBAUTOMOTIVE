@@ -1,0 +1,116 @@
+<div class="page">
+  <a class="back reveal" routerLink="/settings"><i class="fa-solid fa-arrow-left"></i> Configurações</a>
+
+  <div class="page-head">
+    <div>
+      <div class="eyebrow reveal">Empresa</div>
+      <h1 class="page-title reveal" style="--i:1">E-mail de envio</h1>
+      <p class="page-sub reveal" style="--i:2">De qual endereço os orçamentos saem para os clientes. Vale para todos os estabelecimentos da empresa.</p>
+    </div>
+  </div>
+
+  @if (!isManager()) {
+    <div class="panel note"><i class="fa-solid fa-lock"></i> Só administradores alteram o e-mail de envio.</div>
+  } @else if (loading()) {
+    <div class="panel sk"></div>
+  } @else {
+  @if (view(); as v) {
+    <!-- situação atual -->
+    <section class="panel mail-status reveal" style="--i:2" [class.own]="v.settings?.enabled">
+      <div class="status-icon"><i class="fa-solid" [class.fa-building]="v.settings?.enabled" [class.fa-paper-plane]="!v.settings?.enabled"></i></div>
+      <div class="status-txt">
+        @if (v.settings?.enabled) {
+          <b>Enviando por <span class="mono">{{ v.settings!.fromEmail }}</span></b>
+          <small>Servidor da empresa ({{ v.settings!.host }}:{{ v.settings!.port }}).
+            @if (v.settings!.verifiedAt) { Testado em {{ v.settings!.verifiedAt | date:'dd/MM HH:mm' }}. } @else { <span class="warn-c">Ainda não testado.</span> }</small>
+        } @else {
+          <b>Enviando pelo e-mail padrão: <span class="mono">{{ v.fallback.fromEmail }}</span></b>
+          <small>O nome da oficina aparece como remetente e as respostas vão para o e-mail do estabelecimento.
+            @if (!v.fallback.configured) { <span class="warn-c">Atenção: o servidor padrão não está configurado neste ambiente — os e-mails só são simulados.</span> }</small>
+        }
+      </div>
+    </section>
+
+    @if (v.settings?.lastError) {
+      <div class="panel err reveal"><i class="fa-solid fa-circle-exclamation"></i> <span><b>Último erro do servidor da empresa:</b> {{ v.settings!.lastError }}</span></div>
+    }
+
+    <section class="panel reveal" style="--i:3">
+      <div class="panel-body">
+        <label class="toggle-row">
+          <span class="switch"><input type="checkbox" [(ngModel)]="enabled" (ngModelChange)="touch()"><span></span></span>
+          <span><b>Usar servidor de e-mail próprio (SMTP)</b>
+            <small>Ex.: noreply&#64;suaoficina.com.br. Desligado: usa o e-mail padrão do Odramech ({{ v.fallback.fromEmail }}).</small></span>
+        </label>
+
+        <div class="form" [class.off]="!enabled">
+          <div class="field">
+            <span class="field-label">Provedor</span>
+            <div class="presets">
+              @for (p of PRESETS; track p.name) {
+                <button type="button" class="chip" [class.on]="preset === p.name" (click)="pickPreset(p.name)">{{ p.name }}</button>
+              }
+            </div>
+            @if (presetHint) { <span class="hint">{{ presetHint }}</span> }
+          </div>
+
+          <div class="grid">
+            <div class="field span2">
+              <label class="field-label" for="host">Servidor SMTP</label>
+              <input id="host" class="input mono" placeholder="smtp.suaoficina.com.br" [(ngModel)]="host" (ngModelChange)="touch()" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field-label" for="port">Porta</label>
+              <input id="port" class="input" type="number" min="1" max="65535" [(ngModel)]="port" (ngModelChange)="portChanged()">
+            </div>
+            <div class="field">
+              <span class="field-label">Segurança</span>
+              <div class="segmented">
+                <button type="button" [class.active]="!secure" (click)="secure = false; touch()">STARTTLS</button>
+                <button type="button" [class.active]="secure" (click)="secure = true; touch()">SSL/TLS</button>
+              </div>
+            </div>
+
+            <div class="field span2">
+              <label class="field-label" for="user">Usuário <span class="opt">geralmente o e-mail completo</span></label>
+              <input id="user" class="input" autocomplete="off" [(ngModel)]="username" (ngModelChange)="touch()">
+            </div>
+            <div class="field span2">
+              <label class="field-label" for="pass">Senha</label>
+              @if (hasPassword() && !changePassword) {
+                <div class="pw-saved"><span><i class="fa-solid fa-lock"></i> Senha salva (criptografada)</span>
+                  <button type="button" class="btn-x btn-ghost sm" (click)="changePassword = true; touch()">Trocar</button></div>
+              } @else {
+                <input id="pass" class="input" type="password" autocomplete="new-password" [(ngModel)]="password" (ngModelChange)="touch()"
+                       [placeholder]="hasPassword() ? 'Nova senha' : 'Senha ou senha de app'">
+              }
+            </div>
+
+            <div class="field span2">
+              <label class="field-label" for="fromEmail">E-mail do remetente</label>
+              <input id="fromEmail" class="input" type="email" placeholder="noreply@suaoficina.com.br" [(ngModel)]="fromEmail" (ngModelChange)="touch()">
+            </div>
+            <div class="field span2">
+              <label class="field-label" for="fromName">Nome do remetente <span class="opt">vazio = nome da oficina</span></label>
+              <input id="fromName" class="input" maxlength="80" placeholder="Oficina do João" [(ngModel)]="fromName" (ngModelChange)="touch()">
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <div class="test">
+            <input class="input" type="email" placeholder="Mandar teste para…" [(ngModel)]="testTo">
+            <button class="btn-x btn-outline" (click)="test()" [disabled]="testing() || !host || !fromEmail">
+              @if (testing()) { <span class="spinner-x"></span> } @else { <i class="fa-regular fa-paper-plane"></i> } Enviar teste
+            </button>
+          </div>
+          <button class="btn-x btn-accent" (click)="save()" [disabled]="saving() || !dirty()">
+            @if (saving()) { <span class="spinner-x"></span> } Salvar
+          </button>
+        </div>
+        <p class="hint">Teste antes de ativar: o teste usa os dados do formulário, mesmo sem salvar. Se o servidor da empresa falhar depois, o envio não troca sozinho para o e-mail padrão — o erro aparece aqui e no orçamento.</p>
+      </div>
+    </section>
+  }
+  }
+</div>

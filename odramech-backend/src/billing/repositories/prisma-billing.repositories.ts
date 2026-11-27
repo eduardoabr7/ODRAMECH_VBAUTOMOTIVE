@@ -16,6 +16,8 @@ const QUOTE_INCLUDE = {
   userCreation: { select: { id: true, name: true } },
   workOrder: { select: { id: true, numberOs: true, status: true } },
   items: { orderBy: { id: 'asc' } },
+  // últimos e-mails enviados ao cliente (histórico na tela do orçamento)
+  emails: { orderBy: { createdAt: 'desc' }, take: 5, select: { id: true, version: true, kind: true, trigger: true, status: true, toEmail: true, error: true, createdAt: true } },
 } satisfies Prisma.QuoteInclude;
 
 function scopeWhere(s: QuoteScope): Prisma.QuoteWhereInput {

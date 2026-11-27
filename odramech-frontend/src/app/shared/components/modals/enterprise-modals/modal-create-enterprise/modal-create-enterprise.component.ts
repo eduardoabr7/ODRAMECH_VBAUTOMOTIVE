@@ -100,23 +100,6 @@ export class ModalCreateEnterprise extends BaseModalComponent {
     return !!this.file
   }
 
-  createFirstUserAdminCorporation(idsEstEtp: IdsReturn) {
-    if(!this.userId) return
-
-    const { idEtp, idEst } = idsEstEtp
-
-    const dataToSend: UserCorporation = {
-      idUser: this.userId,
-      idEnterprise: idEtp,
-      idEstablishment: idEst,
-      role: Role.ADMIN
-    }
-
-    this._userCorporationService.createUserCorporation(dataToSend).subscribe(() => {
-      this.confirm(true);
-    })
-  }
-
   async prosseguir(form: NgForm) {
 
     if(form.valid) {
@@ -136,9 +119,8 @@ export class ModalCreateEnterprise extends BaseModalComponent {
         }
 
         this._enterpriseService.createEnterpriseWithEstablishment(dataToSend).subscribe({
-          next: (rtrn) => {
-            this.createFirstUserAdminCorporation(rtrn)
-          },
+          // o backend já cria o vínculo de quem criou a empresa como ADMIN
+          next: () => this.confirm(true),
           error: (err: HttpErrorResponse) => {
             this._toastr.error(err.message,'Erro ao criar empresa')
           }

@@ -19,19 +19,25 @@
             col-12 
             col-sm-6
             col-lg-4">
-            <h5 class="title p-0">Foto de perfil</h5>
+            <h5 class="title p-0">Foto do estabelecimento</h5>
             <div class="imagePreview" style="padding-left: 0;">
-              <img 
-                [src]="imageUrl ? imageUrl : '../../../../../assets/no-photo-user-default.png'" 
-                alt="User image"/>
-              <label class="btn btn-primary upload" style="margin-bottom: 0 !important;"> Selecionar foto
-                <input 
-                  type="file" 
-                  class="inputSelectPhoto" 
-                  accept="image/png, image/jpeg"
+              <img
+                [src]="imageUrl ? imageUrl : 'assets/enterprise-no-photo.png'"
+                alt="Foto do estabelecimento"/>
+              <label class="btn btn-primary upload" style="margin-bottom: 0 !important;">
+                <span *ngIf="loadingPhoto"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+                {{ imageUrl ? 'Trocar foto' : 'Selecionar foto' }}
+                <input
+                  type="file"
+                  class="inputSelectPhoto"
+                  accept="image/png, image/jpeg, image/webp"
                   (change)="generatePreview($event)">
               </label>
+              <button *ngIf="imageUrl" type="button" class="btn btn-link btn-sm text-danger p-0 mt-2 remove-photo" (click)="removePhoto()">
+                <i class="fa-solid fa-trash me-1"></i>Remover foto
+              </button>
             </div>
+            <p class="text-muted small mt-2 mb-0">PNG, JPG ou WebP. A imagem é reduzida automaticamente.</p>
           </div>
 
           <div class="
@@ -247,7 +253,7 @@
           class="btn btn-primary"
           [disabled]="form.invalid"
           (click)="prosseguir(form)">
-          Prosseguir
+          {{ editing ? 'Salvar alterações' : 'Prosseguir' }}
         </button>
       </div>
     </form>

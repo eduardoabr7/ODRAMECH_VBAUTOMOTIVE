@@ -1,5 +1,5 @@
 import { Gender, Role } from "@prisma/client";
-import { IsEmail, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsEmail, IsOptional, IsString } from "class-validator";
 import { AddressDTO } from "src/address/dto/address.dto";
 
 export class CreateWorkerDTO {
@@ -30,4 +30,8 @@ export class CreateWorkerDTO {
 
     @IsOptional()
     role: Role
+
+    @IsOptional()
+    @IsBoolean()
+    active?: boolean
 }

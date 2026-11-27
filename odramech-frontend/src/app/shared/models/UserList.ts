@@ -16,6 +16,8 @@ export interface UserDetail extends UserList {
     createdAt: string
     address?: (AddressCreate & { id: number }) | null
     role: RoleEnum | null
+    /** ativo neste estabelecimento */
+    active: boolean
     vehicles: Vehicle[]
     workOrdersCount: number
 }

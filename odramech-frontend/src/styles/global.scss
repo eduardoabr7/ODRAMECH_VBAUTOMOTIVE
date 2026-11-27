@@ -964,7 +964,7 @@ label:has(+ select[required])::after {
   text-align: left;
   transition: background var(--dur-1);
   i { width: 14px; color: var(--muted); font-size: 12px; }
-  &:hover { background: var(--surface-3); }
+  &:hover, &.kb-active { background: var(--surface-3); }
   &.danger { color: var(--danger); i { color: var(--danger); } }
 }
 

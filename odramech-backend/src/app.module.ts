@@ -16,6 +16,7 @@ import { BillingModule } from './billing/billing.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { SubscriptionAccessGuard } from './subscription/subscription-access.guard';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { SubscriptionAccessGuard } from './subscription/subscription-access.guar
     BillingModule,
     DashboardModule,
     SubscriptionModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [

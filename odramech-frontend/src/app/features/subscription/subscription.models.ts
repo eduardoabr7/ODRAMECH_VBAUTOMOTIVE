@@ -12,7 +12,26 @@ export interface Plan {
   monthlyEquivalentCents: number;
   savingsPercent: number;
   description: string | null;
+  /** 1 = Basic … 4 = Ultra */
+  tier: number;
+  /** null = ilimitado */
+  maxEstablishments: number | null;
+  features: string[];
 }
+
+/** O que o plano vigente libera (vem junto da decisão de acesso). */
+export interface PlanEntitlements {
+  code: string;
+  name: string;
+  tier: number;
+  maxEstablishments: number | null;
+  features: string[];
+}
+
+export const PLAN_FEATURE_LABEL: Record<string, string> = {
+  QUOTE_DOCUMENT_EDITOR: 'Documento de orçamento personalizado (HTML)',
+  LOGIN_CUSTOMIZATION: 'Tela de login com a sua marca',
+};
 
 export interface PaymentInstructions {
   kind: PaymentMethod;
@@ -53,6 +72,7 @@ export interface AccessDecision {
   until: string | null;
   reason: string;
   degraded?: boolean;
+  plan?: PlanEntitlements | null;
 }
 
 export interface SubscriptionOverview {
@@ -65,6 +85,10 @@ export interface SubscriptionOverview {
   paymentMethods: { method: PaymentMethod; label: string }[];
   enforcement: 'off' | 'warn' | 'block';
   canManage: boolean;
+  /** "Simular pagamento" (sandbox) — falso em produção */
+  canSimulate: boolean;
+  /** estabelecimentos que a empresa já tem (limita a escolha de plano) */
+  establishmentCount: number;
 }
 
 export const STATUS_LABEL: Record<SubscriptionStatus, string> = {

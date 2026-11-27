@@ -11,4 +11,5 @@ export interface WorkerCreate {
   secondaryPhone?: string
   address?: AddressCreate
   role: RoleEnum
+  active?: boolean
 }

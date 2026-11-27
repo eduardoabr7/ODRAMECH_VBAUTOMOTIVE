@@ -17,12 +17,16 @@ import { Vehicle } from '@shared/models/Vehicle';
 import { ItemsEditorComponent } from '@shared/ui/items-editor.component';
 import { InitialsPipe, PhonePipe, PlatePipe, RelativeTimePipe } from '@shared/ui/pipes';
 import { CloseOnClickOutsideDirective } from '@shared/directives/close-onclick-outside.directive';
+import { KeyboardListDirective } from '@shared/directives/keyboard-list.directive';
 import { ModalCreateVehicleComponent } from '@shared/components/modals/vehicle-modals/modal-create-vehicle/modal-create-vehicle.component';
+import { SettingsService } from '@shared/services/settings.service';
+import { QuoteDocument } from '@shared/models/Settings';
+import { printHtml } from '../../../features/quote-document/print-html';
 
 /** Tela única para criar (/quotes/new) e editar (/quotes/:id) orçamentos. */
 @Component({
   selector: 'app-quote-editor',
-  imports: [CommonModule, FormsModule, RouterModule, ItemsEditorComponent, InitialsPipe, PhonePipe, PlatePipe, RelativeTimePipe, CloseOnClickOutsideDirective],
+  imports: [CommonModule, FormsModule, RouterModule, ItemsEditorComponent, InitialsPipe, PhonePipe, PlatePipe, RelativeTimePipe, CloseOnClickOutsideDirective, KeyboardListDirective],
   templateUrl: './quote-editor.component.html',
   styleUrl: './quote-editor.component.scss',
 })
@@ -53,6 +57,14 @@ export class QuoteEditorComponent implements OnInit, OnDestroy {
   saving = false;
   converting = false;
   savingItem = false;
+  printing = false;
+  /** janela de impressão fechada: pergunta se imprimiu de fato (o navegador não informa) */
+  askPrinted = false;
+  sendingEmail = false;
+  private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private refreshTries = 0;
+  /** configuração do documento (modelo, validade padrão, marcar enviado ao imprimir) */
+  doc: QuoteDocument | null = null;
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private tempId = -1;
 
@@ -68,11 +80,15 @@ export class QuoteEditorComponent implements OnInit, OnDestroy {
     private readonly _toastr: ToastrService,
     private readonly _modal: BsModalService,
     private readonly _auth: AuthService,
+    private readonly _settings: SettingsService,
     readonly session: SessionService,
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(this.session.isStaff$.subscribe(v => this.isStaff = v));
+    this.subs.add(this.session.isStaff$.subscribe(v => {
+      this.isStaff = v;
+      if (v && !this.doc) this.loadDocumentSettings();
+    }));
     this.subs.add(this._auth.user$.subscribe(ctx => this.establishmentName = ctx?.usercorp?.establishment?.name ?? ''));
     this.subs.add(this._route.paramMap.pipe(map(p => p.get('id'))).subscribe(id => {
       this.isNew = !id || id === 'new';
@@ -80,12 +96,27 @@ export class QuoteEditorComponent implements OnInit, OnDestroy {
     }));
   }
 
-  ngOnDestroy(): void { this.subs.unsubscribe(); }
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
+    if (this.refreshTimer) clearTimeout(this.refreshTimer);
+  }
 
-  private defaultValidity(): string {
+  private defaultValidity(days = 15): string {
     const d = new Date();
-    d.setDate(d.getDate() + 15);
-    return d.toISOString().slice(0, 10);
+    d.setDate(d.getDate() + days);
+    return localDate(d);
+  }
+
+  private loadDocumentSettings(): void {
+    this._settings.getQuoteDocument().subscribe({
+      next: doc => {
+        // a validade do orçamento novo segue a configuração do estabelecimento
+        const usingDefault = this.isNew && this.validUntil === this.defaultValidity();
+        this.doc = doc;
+        if (usingDefault) this.validUntil = this.defaultValidity(doc.settings.quoteValidityDays);
+      },
+      error: () => { /* sem configuração: imprime no modelo padrão */ },
+    });
   }
 
   private load(id: number): void {
@@ -100,8 +131,57 @@ export class QuoteEditorComponent implements OnInit, OnDestroy {
     this.quote = q;
     this.loading = false;
     this.notes = q.notes ?? '';
-    this.validUntil = q.validUntil ? q.validUntil.slice(0, 10) : '';
+    // data local (a validade é salva às 23:59 do dia; em UTC isso já cai no dia seguinte)
+    this.validUntil = q.validUntil ? localDate(new Date(q.validUntil)) : '';
     this._title.setTitle(`Orçamento #${q.numberQuote} · ${q.client.name} · Odramech`);
+    this.watchPendingEmail();
+  }
+
+  // ── E-mail ao cliente ───────────────────────────────────
+  get clientEmail(): string | null { return this.quote?.client.email || null; }
+  get autoEmail(): boolean { return !!this.doc?.settings.autoEmailQuote; }
+  /** a versão atual já foi enviada? (a mesma versão nunca é reenviada) */
+  get emailUpToDate(): boolean { return !!this.quote?.emailSentAt && this.quote.emailSentVersion === this.quote.version; }
+  /** já foi enviado antes e mudou depois → próximo envio é "atualização" */
+  get emailOutdated(): boolean { return !!this.quote?.emailSentAt && this.quote.emailSentVersion !== this.quote.version; }
+  get lastEmail() { return this.quote?.emails?.[0] ?? null; }
+  get clientLink(): string | null {
+    return this.quote?.publicToken && typeof location !== 'undefined' ? `${location.origin}/orcamento/${this.quote.publicToken}` : null;
+  }
+
+  sendEmail(): void {
+    if (!this.quote || this.sendingEmail || this.emailUpToDate) return;
+    if (!this.clientEmail) { this._toastr.warning('O cliente não tem e-mail cadastrado.'); return; }
+    this.sendingEmail = true;
+    this._billing.emailQuote(this.quote.id).subscribe({
+      next: r => {
+        this.sendingEmail = false;
+        this.setQuote(r.quote);
+        const what = r.result.kind === 'ATUALIZACAO' ? 'Atualização do orçamento' : 'Orçamento';
+        if (r.result.status === 'SIMULADO') this._toastr.warning(`${what} gerado, mas o servidor está sem SMTP configurado — o e-mail não saiu (salvo em outbox).`, 'E-mail simulado');
+        else this._toastr.success(`${what} enviado para ${r.result.to}.`);
+      },
+      error: err => { this.sendingEmail = false; this._toastr.error(err?.error?.message ?? 'Não foi possível enviar o e-mail.'); this.reload(); },
+    });
+  }
+
+  async copyClientLink(): Promise<void> {
+    if (!this.clientLink) return;
+    try { await navigator.clipboard.writeText(this.clientLink); this._toastr.success('Link do cliente copiado.'); }
+    catch { this._toastr.info(this.clientLink); }
+  }
+
+  private reload(): void {
+    if (this.quote) this._billing.getQuote(this.quote.id).subscribe({ next: q => this.setQuote(q), error: () => undefined });
+  }
+
+  /** envio automático em andamento (logo após salvar): atualiza a tela quando sair */
+  private watchPendingEmail(): void {
+    if (this.refreshTimer) { clearTimeout(this.refreshTimer); this.refreshTimer = null; }
+    const pending = this.quote?.emailPendingAt ? new Date(this.quote.emailPendingAt).getTime() : null;
+    if (!pending || pending - Date.now() > 60_000) { this.refreshTries = 0; return; }
+    if (this.refreshTries++ > 6) return;
+    this.refreshTimer = setTimeout(() => this.reload(), 5_000);
   }
 
   get locked(): boolean { return !!this.quote?.workOrder || !this.isStaff; }
@@ -171,7 +251,8 @@ export class QuoteEditorComponent implements OnInit, OnDestroy {
   removeItem(item: ServiceItem): void {
     if (this.isNew) { this.draftItems = this.draftItems.filter(i => i.id !== item.id); return; }
     this._billing.deleteItem(item.id).subscribe({
-      next: () => this.quote && this.setQuote({ ...this.quote, items: this.quote.items.filter(i => i.id !== item.id), total: this.quote.total - item.total }),
+      // recarrega: a remoção gera nova versão do orçamento (e talvez um envio agendado)
+      next: () => this.reload(),
       error: err => this._toastr.error(err?.error?.message ?? 'Não foi possível remover o item.'),
     });
   }
@@ -233,5 +314,49 @@ export class QuoteEditorComponent implements OnInit, OnDestroy {
     });
   }
 
-  print(): void { window.print(); }
+  /** Gera o documento (sem os campos de edição da tela) e abre a impressão / salvar PDF. */
+  async print(): Promise<void> {
+    if (!this.quote || this.printing) return;
+    this.printing = true;
+    try {
+      const doc = this.doc ?? await new Promise<QuoteDocument>((resolve, reject) =>
+        this._settings.getQuoteDocument().subscribe({ next: d => { this.doc = d; resolve(d); }, error: reject }));
+      const html = await new Promise<string>((resolve, reject) =>
+        this._settings.quoteDocumentHtml(this.quote!.id).subscribe({ next: resolve, error: reject }));
+      await printHtml(html);
+      this.afterPrint(doc);
+    } catch {
+      this._toastr.error('Não foi possível gerar o documento de impressão.');
+    } finally {
+      this.printing = false;
+    }
+  }
+
+  /**
+   * O navegador só avisa que a janela de impressão FECHOU — não se a pessoa imprimiu ou cancelou.
+   * Por isso o status só muda depois que ela confirma que imprimiu.
+   */
+  private afterPrint(doc: QuoteDocument): void {
+    if (!this.quote || !doc.settings.markQuoteSentOnPrint || this.quote.status !== 'RASCUNHO' || this.locked) return;
+    this.askPrinted = true;
+  }
+
+  answerPrinted(printed: boolean): void {
+    this.askPrinted = false;
+    if (!printed || !this.quote) return;
+    this._settings.markQuotePrinted(this.quote.id).subscribe({
+      next: r => {
+        if (!r.changed) return;
+        this.setQuote(r.quote);
+        this._toastr.success('Orçamento marcado como enviado.');
+      },
+      error: () => { /* status continua como estava */ },
+    });
+  }
+}
+
+/** yyyy-mm-dd no fuso do navegador (toISOString usaria UTC) */
+function localDate(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }

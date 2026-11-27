@@ -1,0 +1,88 @@
+<main class="pq" [style.--pq-accent]="accent()">
+  @if (loading()) {
+    <div class="card center"><span class="spinner-x"></span></div>
+  } @else if (notFound()) {
+    <div class="card center">
+      <i class="fa-solid fa-link-slash big"></i>
+      <h1>Orçamento não encontrado</h1>
+      <p class="muted">O link pode estar incompleto. Fale com a oficina para receber um novo.</p>
+    </div>
+  } @else {
+  @if (quote(); as q) {
+    <div class="card">
+      <header class="brand">
+        @if (q.branding.logoUrl) { <img [src]="q.branding.logoUrl" alt=""> }
+        <div>
+          <span class="brand-name">{{ brandName() }}</span>
+          <span class="muted small">{{ q.establishment.phone }}@if (q.establishment.email) { · {{ q.establishment.email }} }</span>
+        </div>
+      </header>
+
+      <div class="head">
+        <span class="eyebrow">Orçamento nº {{ q.numberQuote }}</span>
+        <h1>Olá, {{ q.clientFirstName }}!</h1>
+        <p class="muted">{{ q.vehicle.make }} {{ q.vehicle.name }} · placa {{ q.vehicle.plate }}</p>
+      </div>
+
+      <!-- situação / resposta -->
+      @if (q.convertedToWorkOrder) {
+        <div class="banner ok"><i class="fa-solid fa-screwdriver-wrench"></i> Orçamento aprovado — o serviço já está com a oficina.</div>
+      } @else if (q.status === 'APROVADO') {
+        <div class="banner ok"><i class="fa-solid fa-circle-check"></i>
+          {{ justAnswered() ? 'Obrigado! Avisamos a oficina que você aprovou.' : 'Você aprovou este orçamento.' }}
+          @if (q.canRespond) { <button class="link" (click)="respond('recusar')" [disabled]="!!busy()">Mudar para recusado</button> }
+        </div>
+      } @else if (q.status === 'RECUSADO') {
+        <div class="banner bad"><i class="fa-solid fa-circle-xmark"></i>
+          {{ justAnswered() ? 'Resposta registrada. A oficina vai saber que você recusou.' : 'Você recusou este orçamento.' }}
+          @if (q.canRespond) { <button class="link" (click)="respond('aprovar')" [disabled]="!!busy()">Aprovar mesmo assim</button> }
+        </div>
+      } @else if (q.expired || !q.canRespond) {
+        <div class="banner warn"><i class="fa-regular fa-clock"></i> Este orçamento venceu. Fale com a oficina para receber um novo.</div>
+      }
+
+      @if (q.canRespond && q.status !== 'APROVADO' && q.status !== 'RECUSADO') {
+        <section class="answer" [class.focus]="intent()">
+          <p>{{ intent() === 'aprovar' ? 'Confirme a aprovação para a oficina seguir com o serviço:' : intent() === 'recusar' ? 'Confirme que não quer seguir com este orçamento:' : 'Podemos seguir com o serviço?' }}</p>
+          <div class="answer-actions">
+            <button class="btn primary" [class.dim]="intent() === 'recusar'" (click)="respond('aprovar')" [disabled]="!!busy()">
+              @if (busy() === 'aprovar') { <span class="spinner-x"></span> } <i class="fa-solid fa-check"></i> Aprovar orçamento
+            </button>
+            <button class="btn" [class.danger]="intent() === 'recusar'" (click)="respond('recusar')" [disabled]="!!busy()">
+              @if (busy() === 'recusar') { <span class="spinner-x"></span> } Recusar
+            </button>
+          </div>
+        </section>
+      }
+      @if (error()) { <p class="err"><i class="fa-solid fa-triangle-exclamation"></i> {{ error() }}</p> }
+
+      <!-- itens -->
+      <table class="items">
+        <thead><tr><th>Descrição</th><th class="num">Qtd.</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          @for (i of q.items; track $index) {
+            <tr>
+              <td><span class="kind" [class.svc]="i.kind === 'SERVICO'">{{ i.kind === 'SERVICO' ? 'Serviço' : 'Peça' }}</span>{{ i.description }}
+                @if (i.discount) { <small class="muted"> (desconto {{ money(i.discount) }})</small> }</td>
+              <td class="num">{{ i.quantity }}</td>
+              <td class="num">{{ money(i.total) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="totals">
+        <div><span>Peças</span><span>{{ money(parts()) }}</span></div>
+        <div><span>Mão de obra</span><span>{{ money(labor()) }}</span></div>
+        <div class="grand"><span>Total</span><span>{{ money(q.total) }}</span></div>
+      </div>
+
+      @if (q.notes) { <div class="notes"><b>Observações</b><p>{{ q.notes }}</p></div> }
+
+      <footer class="foot">
+        <span class="muted small">Emitido em {{ q.createdAt | date:'dd/MM/yyyy' }}@if (q.validUntil) { · válido até {{ q.validUntil | date:'dd/MM/yyyy' }} }</span>
+        <button class="link" (click)="printDocument()"><i class="fa-solid fa-print"></i> Imprimir / salvar PDF</button>
+      </footer>
+    </div>
+  }
+  }
+</main>

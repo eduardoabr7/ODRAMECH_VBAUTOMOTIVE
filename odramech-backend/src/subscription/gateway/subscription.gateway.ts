@@ -6,6 +6,25 @@
 
 export type AccessLevel = 'full' | 'grace' | 'blocked';
 
+/** Recursos que dependem do plano. */
+export const PlanFeature = {
+  /** editar cabeçalho, corpo e rodapé do documento de orçamento (HTML) */
+  QUOTE_DOCUMENT_EDITOR: 'QUOTE_DOCUMENT_EDITOR',
+  /** imagem e textos próprios na tela de login */
+  LOGIN_CUSTOMIZATION: 'LOGIN_CUSTOMIZATION',
+} as const;
+export type PlanFeature = (typeof PlanFeature)[keyof typeof PlanFeature];
+
+/** O que o plano da empresa libera. */
+export interface PlanEntitlements {
+  code: string;
+  name: string;
+  tier: number;
+  /** null = ilimitado */
+  maxEstablishments: number | null;
+  features: string[];
+}
+
 export interface AccessDecision {
   status: string;
   level: AccessLevel;
@@ -13,6 +32,8 @@ export interface AccessDecision {
   reason: string;
   /** true quando o serviço de assinaturas está fora e a decisão é "falha aberta" */
   degraded?: boolean;
+  /** plano vigente (ausente quando degradado) */
+  plan?: PlanEntitlements | null;
 }
 
 export type PaymentMethod = 'PIX' | 'CARD' | 'BOLETO';

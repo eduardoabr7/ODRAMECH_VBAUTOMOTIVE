@@ -48,6 +48,8 @@ model Enterprise {
   address        Address           @relation(fields: [addressId], references: [id])
   establishments Establishment[]
   users          UserCorporation[]
+  branding       EnterpriseBranding?
+  mailSettings   EnterpriseMailSettings?
 
   @@map("cad_enterprise")
 }
@@ -69,6 +71,7 @@ model Establishment {
   counter    EstablishmentOsCounter?
   quotes     Quote[]
   notes      UserNote[]
+  settings   EstablishmentSettings?
 
   @@map("cad_establishment")
 }
@@ -97,6 +100,8 @@ model UserCorporation {
   idEstablishment Int
 
   role Role
+  /// desativado = o usuário não consegue mais entrar neste estabelecimento
+  active Boolean @default(true)
 
   user          User          @relation(fields: [idUser], references: [id])
   enterprise    Enterprise    @relation(fields: [idEnterprise], references: [id])
@@ -248,15 +253,65 @@ model Quote {
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
 
+  /// sobe a cada alteração de conteúdo (itens, observações, validade)
+  version          Int       @default(1)
+  /// link público do cliente (ver/aprovar/recusar) — criado no primeiro envio
+  publicToken      String?   @unique @map("public_token")
+  /// flag de envio: quando e qual versão foi enviada por e-mail (a mesma versão nunca é reenviada)
+  emailSentAt      DateTime? @map("email_sent_at")
+  emailSentVersion Int?      @map("email_sent_version")
+  /// envio automático agendado (atualizações esperam 10 min para juntar edições seguidas)
+  emailPendingAt   DateTime? @map("email_pending_at")
+  /// resposta do cliente pelo link (aprovou/recusou)
+  clientRespondedAt DateTime? @map("client_responded_at")
+
   establishment Establishment @relation(fields: [establishmentId], references: [id])
   client        User          @relation("QuoteClient", fields: [clientId], references: [id])
   vehicle       Vehicle       @relation(fields: [vehicleId], references: [id])
   userCreation  User          @relation("QuoteCreatedBy", fields: [userCreationId], references: [id])
   workOrder     WorkOrder?    @relation(fields: [workOrderId], references: [id])
   items         ServiceItem[]
+  emails        QuoteEmail[]
 
   @@unique([establishmentId, numberQuote])
+  @@index([emailPendingAt])
   @@map("quotes")
+}
+
+/// Histórico de e-mails de orçamento enviados ao cliente.
+model QuoteEmail {
+  id        Int              @id @default(autoincrement())
+  quoteId   Int              @map("id_quote")
+  version   Int
+  kind      QuoteEmailKind
+  trigger   QuoteEmailTrigger
+  status    QuoteEmailStatus
+  toEmail   String           @map("to_email")
+  error     String?
+  userId    Int?             @map("id_user")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId, createdAt])
+  @@map("quote_emails")
+}
+
+enum QuoteEmailKind {
+  ENVIO
+  ATUALIZACAO
+}
+
+enum QuoteEmailTrigger {
+  AUTOMATICO
+  MANUAL
+}
+
+enum QuoteEmailStatus {
+  ENVIADO
+  /// SMTP não configurado: o e-mail foi gerado e salvo em arquivo (ambiente de desenvolvimento)
+  SIMULADO
+  FALHOU
 }
 
 model ServiceItem {
@@ -345,4 +400,76 @@ enum ArchiveType {
   IMAGEM
   DOCUMENTO
   VIDEO
+}
+
+// ══════════════════════════════════════════════════════════
+// Configurações: documento de orçamento e tema (marca)
+// ══════════════════════════════════════════════════════════
+
+/// Configurações por estabelecimento (documento de orçamento, validade, impressão).
+model EstablishmentSettings {
+  establishmentId      Int           @id @map("id_establishment")
+  /// ODRAMECH | PREMIUM | CUSTOM (CUSTOM exige plano com QUOTE_DOCUMENT_EDITOR)
+  quoteTemplate        QuoteTemplate @default(ODRAMECH) @map("quote_template")
+  quoteHeaderHtml      String?       @map("quote_header_html")
+  quoteBodyHtml        String?       @map("quote_body_html")
+  quoteFooterHtml      String?       @map("quote_footer_html")
+  quoteValidityDays    Int           @default(15) @map("quote_validity_days")
+  markQuoteSentOnPrint Boolean       @default(false) @map("mark_quote_sent_on_print")
+  /// enviar o orçamento (PDF) ao e-mail do cliente ao salvar, e as atualizações depois
+  autoEmailQuote       Boolean       @default(false) @map("auto_email_quote")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id])
+
+  @@map("establishment_settings")
+}
+
+/// Tema da empresa: logo/nome no lugar do Odramech, cor de destaque e tela de login.
+model EnterpriseBranding {
+  enterpriseId   Int      @id @map("id_enterprise")
+  /// chave pública usada no link de login com a marca (/login?marca=<chave>)
+  publicKey      String   @unique @default(uuid()) @map("public_key")
+  displayName    String?  @map("display_name")
+  /// imagens guardadas como data URL (PNG/JPG/WebP/SVG), limitadas no backend
+  logoUrl        String?  @map("logo_url")
+  accentColor    String?  @map("accent_color")
+  loginImageUrl  String?  @map("login_image_url")
+  loginHeadline  String?  @map("login_headline")
+  loginSubtitle  String?  @map("login_subtitle")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  enterprise Enterprise @relation(fields: [enterpriseId], references: [id])
+
+  @@map("enterprise_branding")
+}
+
+enum QuoteTemplate {
+  ODRAMECH
+  PREMIUM
+  CUSTOM
+}
+
+/// Servidor de e-mail (SMTP) próprio da empresa — ex.: noreply@oficinadojoao.com.br.
+/// Vale para todos os estabelecimentos da empresa. Sem isto (ou desativado), o envio usa o SMTP padrão do Odramech (.env).
+model EnterpriseMailSettings {
+  enterpriseId      Int       @id @map("id_enterprise")
+  enabled           Boolean   @default(false)
+  host              String
+  port              Int       @default(587)
+  /// true = SSL/TLS direto (porta 465); false = STARTTLS (587)
+  secure            Boolean   @default(false)
+  username          String?
+  /// senha criptografada (AES-256-GCM); nunca volta para o navegador
+  passwordEncrypted String?   @map("password_encrypted")
+  fromName          String?   @map("from_name")
+  fromEmail         String    @map("from_email")
+  /// último teste de envio
+  verifiedAt        DateTime? @map("verified_at")
+  lastError         String?   @map("last_error")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  enterprise Enterprise @relation(fields: [enterpriseId], references: [id])
+
+  @@map("enterprise_mail_settings")
 }

@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma-service";
 import { CreateVehicleDTO } from "../dto/create-vehicle.dto";
 import { UpdateVehicleDTO } from "../dto/update-vehicle.dto";
@@ -11,7 +11,23 @@ export class VehicleService {
         private readonly _prismaService: PrismaService
     ) {}
 
-    async createVehicle({ userId, ...input }: CreateVehicleDTO) {
+    /** a pessoa tem vínculo com o estabelecimento da sessão? */
+    private async inEstablishment(userId: number, establishmentId: number): Promise<boolean> {
+        const link = await this._prismaService.userCorporation.findFirst({
+            where: { idUser: userId, idEstablishment: establishmentId },
+            select: { idUser: true },
+        });
+        return !!link;
+    }
+
+    private async assertClientHere(auth: AuthPayload, userId: number) {
+        if (!(await this.inEstablishment(userId, auth.establishmentId))) {
+            throw new NotFoundException('Usuário não encontrado neste estabelecimento.');
+        }
+    }
+
+    async createVehicle(auth: AuthPayload, { userId, ...input }: CreateVehicleDTO) {
+        await this.assertClientHere(auth, userId);
         const vehicleData = { ...input, plate: input.plate.toUpperCase().replace(/[^A-Z0-9]/g, '') };
         const existing = await this._prismaService.vehicle.findUnique({
             where: { plate: vehicleData.plate },
@@ -42,7 +58,11 @@ export class VehicleService {
         });
     }
 
-    async getByUser(userId: number) {
+    async getByUser(auth: AuthPayload, userId: number) {
+        if (auth.sub !== userId) {
+            if (!isStaff(auth.role)) throw new ForbiddenException('Seu perfil não tem permissão para esta ação.');
+            await this.assertClientHere(auth, userId);
+        }
         return await this._prismaService.vehicle.findMany({
             where: {
                 users: {
@@ -97,8 +117,12 @@ export class VehicleService {
         }));
     }
 
-    async update(id: number, data: UpdateVehicleDTO) {
-        const exists = await this._prismaService.vehicle.findUnique({ where: { id } });
+    async update(auth: AuthPayload, id: number, data: UpdateVehicleDTO) {
+        // só edita veículo de cliente deste estabelecimento
+        const exists = await this._prismaService.vehicle.findFirst({
+            where: { id, users: { some: { user: { userCorporation: { some: { idEstablishment: auth.establishmentId } } } } } },
+            select: { id: true },
+        });
         if (!exists) throw new NotFoundException('Veículo não encontrado.');
 
         return this._prismaService.vehicle.update({ where: { id }, data });
@@ -116,7 +140,8 @@ export class VehicleService {
         };
     }
 
-    async linkToUser(vehicleId: number, userId: number) {
+    async linkToUser(auth: AuthPayload, vehicleId: number, userId: number) {
+        await this.assertClientHere(auth, userId);
         const vehicle = await this._prismaService.vehicle.findUnique({
             where: { id: vehicleId },
         });

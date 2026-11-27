@@ -46,8 +46,13 @@ describe('UserFactory (Factory)', () => {
 
   it('mecânico cria cliente, com dados normalizados e senha com hash', async () => {
     const data = await factory.createClient(input, { enterpriseId: 1, establishmentId: 2, requesterRole: Role.WORKER });
-    expect(data).toMatchObject({ name: 'Maria Silva', email: 'maria@email.com', password: 'hash(segredo)', principalPhone: '51999990000' });
-    expect((data.userCorporation as any).create.role).toBe(Role.USER);
+    expect(data.user).toMatchObject({ name: 'Maria Silva', email: 'maria@email.com', password: 'hash(segredo)', principalPhone: '51999990000' });
+    expect(data.membership).toEqual({ role: Role.USER, enterpriseId: 1, establishmentId: 2, active: true });
+  });
+
+  it('cadastro pode nascer desativado', async () => {
+    const data = await factory.createClient({ ...input, active: false }, { enterpriseId: 1, establishmentId: 2, requesterRole: Role.ADMIN });
+    expect(data.membership.active).toBe(false);
   });
 
   it('mecânico não cria administrador', async () => {

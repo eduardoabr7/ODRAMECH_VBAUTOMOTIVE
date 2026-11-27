@@ -22,6 +22,7 @@ interface Worker {
   email: string;
   principalPhone: string;
   role: RoleEnum;
+  active: boolean;
   selected?: boolean;
 }
 
@@ -53,6 +54,8 @@ export class ModalManageWorkersComponent extends BaseModalComponent {
 
   workers: Worker[] = [];
   admins: Worker[]  = [];
+  myUserId: number | null = null;
+  togglingId: number | null = null;
 
   form: WorkerCreate = {
     name: '',
@@ -62,6 +65,7 @@ export class ModalManageWorkersComponent extends BaseModalComponent {
     principalPhone: '',
     secondaryPhone: '',
     role: RoleEnum.WORKER,
+    active: true,
     address: {
       street: '',
       number: '',
@@ -91,6 +95,7 @@ export class ModalManageWorkersComponent extends BaseModalComponent {
     // o estabelecimento vem da sessão logada (antes nunca era preenchido e a lista ficava vazia)
     this._authService.user$.pipe(take(1)).subscribe(ctx => {
       this.idEstablishment = this.idEstablishment ?? ctx?.usercorp?.establishment?.id;
+      this.myUserId = ctx?.user?.id ?? null;
       this.loadWorkers();
     });
   }
@@ -134,7 +139,7 @@ export class ModalManageWorkersComponent extends BaseModalComponent {
       next: (value) => {
         const grouped = value.reduce((acc, item) => {
           acc[item.role] = acc[item.role] || [];
-          acc[item.role].push({ ...item.user, role: item.role });
+          acc[item.role].push({ ...item.user, role: item.role, active: item.active !== false });
           return acc;
         }, {} as Record<string, Worker[]>);
 
@@ -142,6 +147,21 @@ export class ModalManageWorkersComponent extends BaseModalComponent {
         this.workers = grouped[RoleEnum.WORKER] || [];
       },
       error: () => this._toastr.warning('Erro ao carregar funcionários', 'Atenção')
+    });
+  }
+
+  /** ativo/inativo vale só para este estabelecimento */
+  toggleActive(emp: Worker, active: boolean): void {
+    this.togglingId = emp.id;
+    this._userService.update(emp.id, { active }).pipe(finalize(() => this.togglingId = null)).subscribe({
+      next: () => {
+        emp.active = active;
+        this._toastr.success(active ? `${emp.name} reativado.` : `${emp.name} desativado: não consegue mais acessar este estabelecimento.`);
+      },
+      error: (err) => {
+        this._toastr.error(err?.error?.message ?? 'Não foi possível alterar o acesso.');
+        this.loadWorkers();
+      },
     });
   }
 
@@ -158,7 +178,7 @@ export class ModalManageWorkersComponent extends BaseModalComponent {
     this.displayAddress = false;
     this.form = {
       name: '', email: '', password: '', principalPhone: '', secondaryPhone: '',
-      role: RoleEnum.WORKER, gender: undefined,
+      role: RoleEnum.WORKER, gender: undefined, active: true,
       address: {
         street: '', number: '', complement: undefined, city: '', district: '',
         zipCode: '', country: 'Brasil', neighborhood: '',
@@ -222,8 +242,10 @@ export class ModalManageWorkersComponent extends BaseModalComponent {
     this._userService.createWorker(payload).pipe(
       finalize(() => this.isSubmitting = false)
     ).subscribe({
-      next: () => {
-        this._toastr.success('Funcionário cadastrado com sucesso!');
+      next: (created: any) => {
+        this._toastr.success(created?.linkedExisting
+          ? 'Esta pessoa já tinha cadastro no Odramech e foi vinculada a este estabelecimento.'
+          : 'Funcionário cadastrado com sucesso!');
         this.loadWorkers();
         this.toggleForm();
       },

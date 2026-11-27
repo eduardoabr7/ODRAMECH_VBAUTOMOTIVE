@@ -9,4 +9,6 @@ export interface UserCreate {
   principalPhone: string
   secondaryPhone?: string
   address?: AddressCreate
+  /** desmarcado = cadastrado, mas sem acesso ao estabelecimento */
+  active?: boolean
 }

@@ -1,12 +1,18 @@
 <section class="login">
 
   <!-- Painel de marca -->
-  <aside class="brand-panel">
+  <aside class="brand-panel" [class.has-image]="brand?.loginImageUrl" [style.background-image]="brand?.loginImageUrl ? 'url(' + brand!.loginImageUrl + ')' : null">
     <div class="bp-top">
-      <img class="mark-img" src="assets/circle-sem-fundo-odramech-orange.png" alt="" width="28" height="28">
-      <span class="word">Odramech</span>
+      <img class="mark-img" [class.custom]="brand?.logoUrl" [src]="brandLogo" alt="" width="28" height="28">
+      <span class="word">{{ brandName }}</span>
     </div>
 
+    @if (brand?.loginImageUrl || brand?.loginHeadline) {
+      <div class="bp-main custom">
+        @if (brand?.loginHeadline) { <h1 class="bp-title custom">{{ brand!.loginHeadline }}</h1> }
+        @if (brand?.loginSubtitle) { <p class="bp-copy">{{ brand!.loginSubtitle }}</p> }
+      </div>
+    } @else {
     <div class="bp-main">
       <p class="bp-kicker">Gestão para oficinas mecânicas</p>
       <h1 class="bp-title">
@@ -35,9 +41,10 @@
         <span>Pastilhas dianteiras substituídas. Aguardando teste de rodagem.</span>
       </div>
     </div>
+    }
 
     <div class="bp-foot">
-      <span>© {{ year }} Odramech</span>
+      <span>© {{ year }} {{ brandName }}</span>
       <span>Feito para quem vive de graxa e prazo.</span>
     </div>
   </aside>
@@ -46,8 +53,8 @@
   <main class="form-panel">
     <div class="form-wrap">
       <div class="mobile-brand">
-        <img class="mark-img" src="assets/circle-sem-fundo-odramech-orange.png" alt="" width="28" height="28">
-        <span class="word">Odramech</span>
+        <img class="mark-img" [class.custom]="brand?.logoUrl" [src]="brandLogo" alt="" width="28" height="28">
+        <span class="word">{{ brandName }}</span>
       </div>
 
       <header class="fh">

@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
 import { ListUserDto } from '../dto/list-user.dto';
 import { UpdateUserDTO } from '../dto/update-user.dto';
 import { FrontEndCreateUser } from '../dto/create-user.dto';
 import { CreateWorkerDTO } from '../dto/create-worker-dto';
-import { UserFactory } from '../factories/user.factory';
+import { canManageRole, UserFactory } from '../factories/user.factory';
 import { UserRepository } from '../repositories/user.repository';
 
 /** Casos de uso de usuários. Criação via UserFactory, persistência via UserRepository. */
@@ -18,11 +18,11 @@ export class UserService {
   }
 
   async createClient(auth: AuthPayload, dto: FrontEndCreateUser) {
-    return this.users.create(await this.factory.createClient(dto, this.tenant(auth)));
+    return this.users.createOrLink(await this.factory.createClient(dto, this.tenant(auth)));
   }
 
   async createStaff(auth: AuthPayload, dto: CreateWorkerDTO) {
-    return this.users.create(await this.factory.createStaff(dto.role ?? Role.WORKER, dto, this.tenant(auth)));
+    return this.users.createOrLink(await this.factory.createStaff(dto.role ?? Role.WORKER, dto, this.tenant(auth)));
   }
 
   search(auth: AuthPayload, term: string): Promise<ListUserDto[]> {
@@ -35,9 +35,20 @@ export class UserService {
     return user;
   }
 
-  async update(id: number, establishmentId: number, data: UpdateUserDTO) {
-    const updated = await this.users.update(id, establishmentId, data);
+  async update(auth: AuthPayload, id: number, data: UpdateUserDTO) {
+    if (data.active !== undefined) await this.assertCanToggleActive(auth, id);
+    const updated = await this.users.update(id, auth.establishmentId, data);
     if (!updated) throw new NotFoundException('Usuário não encontrado neste estabelecimento.');
-    return this.getById(id, establishmentId);
+    return this.getById(id, auth.establishmentId);
+  }
+
+  /** ativar/desativar segue a mesma política de quem pode cadastrar aquele papel */
+  private async assertCanToggleActive(auth: AuthPayload, id: number) {
+    if (auth.sub === id) throw new BadRequestException('Você não pode ativar/desativar o próprio usuário.');
+    const target = await this.users.membership(id, auth.establishmentId);
+    if (!target) throw new NotFoundException('Usuário não encontrado neste estabelecimento.');
+    if (!canManageRole(target.role, auth.role)) {
+      throw new ForbiddenException('Seu perfil não tem permissão para ativar/desativar este usuário.');
+    }
   }
 }

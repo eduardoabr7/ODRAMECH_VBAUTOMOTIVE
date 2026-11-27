@@ -8,6 +8,9 @@ import { escapeHtml } from 'src/shared/utils/html.util';
 import { QuoteRepository, QuoteScope, ServiceItemRepository } from '../repositories/billing.repositories';
 import { ServiceItemFactory } from '../factories/service-item.factory';
 import { QuoteCreateDTO, QuoteListQueryDTO, QuoteUpdateDTO, ServiceItemDTO } from '../dto/billing.dto';
+import { SettingsService } from 'src/settings/services/settings.service';
+import { QuoteMailService } from './quote-mail.service';
+import { DocQuote, renderQuoteDocument } from '../document/quote-document.renderer';
 
 /** Casos de uso de orçamento. */
 @Injectable()
@@ -16,6 +19,8 @@ export class QuoteService {
     private readonly quotes: QuoteRepository,
     private readonly items: ServiceItemRepository,
     private readonly prisma: PrismaService,
+    private readonly settings: SettingsService,
+    private readonly mail: QuoteMailService,
   ) {}
 
   private scope(auth: AuthPayload): QuoteScope {
@@ -41,16 +46,33 @@ export class QuoteService {
     assertStaff(auth.role);
     await this.assertClientOwnsVehicle(auth.establishmentId, dto.clientId, dto.vehicleId);
 
+    // sem data informada, usa a validade padrão do estabelecimento (15 dias se não configurada)
+    let validUntil = dto.validUntil ? new Date(dto.validUntil) : null;
+    if (!dto.validUntil) {
+      const { quoteValidityDays } = await this.settings.quoteSettings(auth.establishmentId);
+      validUntil = new Date();
+      validUntil.setDate(validUntil.getDate() + quoteValidityDays);
+      validUntil.setHours(23, 59, 59, 0);
+    }
+
     const { id } = await this.quotes.create({
       establishmentId: auth.establishmentId,
       clientId: dto.clientId,
       vehicleId: dto.vehicleId,
       userCreationId: auth.sub,
-      validUntil: dto.validUntil ? new Date(dto.validUntil) : null,
+      validUntil,
       notes: dto.notes?.trim() || null,
       items: dto.items.map(ServiceItemFactory.create),
     });
+    await this.mail.onCreated(id, auth.establishmentId);
     return this.get(auth, id);
+  }
+
+  /** HTML do documento (impressão) no modelo configurado */
+  async documentHtml(auth: AuthPayload, id: number): Promise<string> {
+    const quote = await this.get(auth, id);
+    const doc = await this.settings.quoteDocumentFor(auth.enterpriseId, auth.establishmentId);
+    return renderQuoteDocument(quote as unknown as DocQuote, doc);
   }
 
   async update(auth: AuthPayload, id: number, dto: QuoteUpdateDTO) {
@@ -58,18 +80,39 @@ export class QuoteService {
     if (quote.workOrderId && dto.status && dto.status !== QuoteStatus.APROVADO) {
       throw new ConflictException('Orçamento já convertido em OS.');
     }
+    const validUntil = dto.validUntil !== undefined ? (dto.validUntil ? new Date(dto.validUntil) : null) : undefined;
+    const notes = dto.notes !== undefined ? dto.notes?.trim() || null : undefined;
     await this.quotes.update(id, {
       ...(dto.status && { status: dto.status }),
-      ...(dto.validUntil !== undefined && { validUntil: dto.validUntil ? new Date(dto.validUntil) : null }),
-      ...(dto.notes !== undefined && { notes: dto.notes?.trim() || null }),
+      ...(validUntil !== undefined && { validUntil }),
+      ...(notes !== undefined && { notes }),
     });
+    // mudou o conteúdo que o cliente vê? (trocar só o status não conta)
+    const sameDate = (a: Date | null, b: Date | null) => (a?.getTime() ?? null) === (b?.getTime() ?? null);
+    const changed = (notes !== undefined && notes !== quote.notes) || (validUntil !== undefined && !sameDate(validUntil, quote.validUntil));
+    if (changed && !quote.workOrderId) await this.mail.onContentChanged(id);
     return this.get(auth, id);
   }
 
   async addItem(auth: AuthPayload, id: number, dto: ServiceItemDTO) {
     await this.editable(auth, id);
     await this.items.addToQuote(id, ServiceItemFactory.create(dto));
+    await this.mail.onContentChanged(id);
     return this.get(auth, id);
+  }
+
+  /**
+   * Impressão concluída. Se o estabelecimento ativou "marcar como enviado ao imprimir",
+   * um RASCUNHO passa a ENVIADO. Outros status não mudam (não desfaz aprovação/recusa).
+   */
+  async markPrinted(auth: AuthPayload, id: number) {
+    assertStaff(auth.role);
+    const quote = await this.quotes.findOne({ establishmentId: auth.establishmentId }, id);
+    if (!quote) throw new NotFoundException('Orçamento não encontrado');
+    const { markQuoteSentOnPrint } = await this.settings.quoteSettings(auth.establishmentId);
+    const changed = markQuoteSentOnPrint && quote.status === QuoteStatus.RASCUNHO && !quote.workOrderId;
+    if (changed) await this.quotes.update(id, { status: QuoteStatus.ENVIADO });
+    return { changed, quote: await this.get(auth, id) };
   }
 
   /** Aprova e abre a OS com os mesmos itens. */

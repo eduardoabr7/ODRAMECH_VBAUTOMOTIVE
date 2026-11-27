@@ -46,7 +46,7 @@
       </div>
       <div class="hero-side">
         <span class="hero-price">{{ money(o.plan.priceCents) }}</span>
-        <span class="hero-per">/ {{ o.plan.interval === 'YEARLY' ? 'ano' : 'mês' }}</span>
+        <span class="hero-per">/ mês · {{ o.establishmentCount }} de {{ o.plan.maxEstablishments ?? '∞' }} estabelecimento(s)</span>
         @if (o.canManage) {
           @if (o.subscription.cancelAtPeriodEnd) {
             <button class="btn-x btn-outline sm hero-btn" [disabled]="!!facade.busy()" (click)="facade.resume()">Manter assinatura</button>
@@ -71,15 +71,20 @@
         <div class="panel-body">
           <div class="plans">
             @for (p of o.plans; track p.code) {
-              <button type="button" class="plan" [class.on]="selectedPlan()?.code === p.code" (click)="pickPlan(p)" [disabled]="!o.canManage">
-                @if (p.savingsPercent > 0) { <span class="save">−{{ p.savingsPercent }}%</span> }
+              <button type="button" class="plan" [class.on]="selectedPlan()?.code === p.code" [class.too-small]="!fits(p)"
+                      (click)="pickPlan(p)" [disabled]="!o.canManage || !fits(p)"
+                      [title]="fits(p) ? '' : 'A empresa tem mais estabelecimentos do que este plano permite'">
+                @if (p.code === 'INTERMEDIARIO') { <span class="save">Mais escolhido</span> }
+                @if (p.code === o.plan.code) { <span class="save current">Atual</span> }
                 <span class="plan-check"><i class="fa-solid fa-check"></i></span>
-                <span class="plan-name">{{ p.intervalLabel }}</span>
-                <span class="plan-price">{{ money(p.priceCents) }}<small>/{{ p.interval === 'YEARLY' ? 'ano' : 'mês' }}</small></span>
-                <span class="plan-eq">
-                  @if (p.interval === 'YEARLY') { equivale a {{ money(p.monthlyEquivalentCents) }}/mês } @else { sem fidelidade }
-                </span>
-                @if (p.description) { <span class="plan-desc">{{ p.description }}</span> }
+                <span class="plan-name">{{ p.name }}</span>
+                <span class="plan-price">{{ money(p.priceCents) }}<small>/mês</small></span>
+                <span class="plan-eq"><i class="fa-solid fa-warehouse"></i> {{ establishmentsLabel(p) }}</span>
+                <ul class="plan-feats">
+                  <li><i class="fa-solid fa-check"></i> OS, orçamentos, clientes e financeiro</li>
+                  <li><i class="fa-solid fa-check"></i> Logo, nome e cor da oficina</li>
+                  @for (f of p.features; track f) { <li><i class="fa-solid fa-check"></i> {{ FEATURE_LABEL[f] ?? f }}</li> }
+                </ul>
               </button>
             }
           </div>
@@ -97,9 +102,11 @@
           @if (o.canManage && needsNewInvoice()) {
             <button class="btn-x btn-accent lg block mt" [disabled]="!!facade.busy()" (click)="subscribe()">
               @if (facade.busy() === 'plan') { <span class="spinner-x"></span> }
-              {{ o.subscription.status === 'TRIALING' ? 'Garantir' : 'Assinar' }} plano {{ selectedPlan()?.intervalLabel }} · {{ money(selectedPlan()?.priceCents) }}
+              {{ o.subscription.status === 'TRIALING' ? 'Garantir' : 'Assinar' }} plano {{ selectedPlan()?.name }} · {{ money(selectedPlan()?.priceCents) }}
             </button>
-            @if (o.subscription.status === 'TRIALING') {
+            @if (changeHint(); as h) {
+              <p class="hint">{{ h }}</p>
+            } @else if (o.subscription.status === 'TRIALING') {
               <p class="hint">A cobrança começa só no fim do teste grátis.</p>
             }
           }
@@ -116,7 +123,7 @@
           @if (invoice(); as inv) {
             <div class="inv-amount">{{ money(inv.amountCents) }}</div>
             <dl class="kv compact">
-              <dt>Plano</dt><dd>{{ inv.planCode === 'ANUAL' ? 'Anual' : 'Mensal' }}</dd>
+              <dt>Plano</dt><dd>{{ planName(inv.planCode) }}</dd>
               <dt>Período</dt><dd>{{ inv.periodStart | date:'dd/MM/yy' }} – {{ inv.periodEnd | date:'dd/MM/yy' }}</dd>
               <dt>Vencimento</dt><dd>{{ inv.dueDate | date:'dd/MM/yyyy' }}</dd>
             </dl>
@@ -151,7 +158,7 @@
                     @case ('CARD') { <i class="fa-regular fa-credit-card"></i> Pagar com cartão }
                   }
                 </button>
-                @if (inv.gatewayRef && inv.status === 'OPEN') {
+                @if (o.canSimulate && inv.gatewayRef && inv.status === 'OPEN') {
                   <button class="btn-x btn-outline" [disabled]="!!facade.busy()" (click)="facade.simulate(inv.id)" title="Somente no ambiente sandbox">
                     <i class="fa-solid fa-flask"></i> Simular pagamento
                   </button>

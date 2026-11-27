@@ -19,8 +19,9 @@ export class VehicleController {
 
     @Post()
     createVehicle(@Body() data: CreateVehicleDTO, @Req() req) {
-        assertStaff((req.authContext as AuthPayload).role);
-        return this._vehicleService.createVehicle(data)
+        const auth = req.authContext as AuthPayload;
+        assertStaff(auth.role);
+        return this._vehicleService.createVehicle(auth, data)
     }
 
     @Get()
@@ -29,24 +30,28 @@ export class VehicleController {
     }
 
     @Get('check-plate/:plate')
-    checkPlate(@Param('plate') plate: string) {
+    checkPlate(@Param('plate') plate: string, @Req() req) {
+        assertStaff((req.authContext as AuthPayload).role);
         return this._vehicleService.checkPlate(plate);
     }
 
     @Post('link')
     link(@Body() data: LinkVehicleDTO, @Req() req) {
-        assertStaff((req.authContext as AuthPayload).role);
-        return this._vehicleService.linkToUser(data.vehicleId, data.userId);
+        const auth = req.authContext as AuthPayload;
+        assertStaff(auth.role);
+        return this._vehicleService.linkToUser(auth, data.vehicleId, data.userId);
     }
 
+    /** veículos de uma pessoa: a própria pessoa, ou a equipe do estabelecimento onde ela é cliente */
     @Get('user/:userId')
-    getUserVehicles(@Param('userId', ParseIntPipe) userId: number) {
-        return this._vehicleService.getByUser(userId)
+    getUserVehicles(@Param('userId', ParseIntPipe) userId: number, @Req() req) {
+        return this._vehicleService.getByUser(req.authContext as AuthPayload, userId)
     }
 
     @Put(':id')
     update(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateVehicleDTO, @Req() req) {
-        assertStaff((req.authContext as AuthPayload).role);
-        return this._vehicleService.update(id, data);
+        const auth = req.authContext as AuthPayload;
+        assertStaff(auth.role);
+        return this._vehicleService.update(auth, id, data);
     }
 }

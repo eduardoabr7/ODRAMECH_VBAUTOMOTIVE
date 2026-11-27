@@ -41,4 +41,13 @@ export class ModalSelectEstablishment extends BaseModalComponent {
   selectEstablishment(event: Establishment) {
     this.confirm(event)
   }
+  /** iniciais quando não há foto */
+  initials(name: string): string {
+    return (name ?? '').trim().split(/\s+/).slice(0, 2).map(w => w[0] ?? '').join('').toUpperCase() || '?';
+  }
+
+  color(name: string): string {
+    const colors = ['#2563eb', '#16a34a', '#7c3aed', '#dc2626', '#d97706', '#0891b2', '#be185d', '#059669'];
+    return colors[(name ?? '').charCodeAt(0) % colors.length || 0];
+  }
 }

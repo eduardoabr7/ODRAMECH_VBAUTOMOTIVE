@@ -88,6 +88,8 @@
   margin-bottom: 18px;
 }
 
+.ws-logo.photo { padding: 0; overflow: hidden; img { width: 100%; height: 100%; object-fit: cover; display: block; } }
+
 .ws-logo {
   width: 30px;
   height: 30px;
@@ -276,3 +278,7 @@
   transition: transform var(--dur-3) var(--ease-spring);
 }
 .brand-mark:hover .mark-img { transform: scale(1.35) rotate(-45deg); }
+// logo da oficina: sem o ajuste de margem do PNG do Odramech e sem girar
+.mark-img.custom { transform: none; border-radius: 6px; background: #fff; padding: 2px; }
+.brand-mark:hover .mark-img.custom { transform: none; }
+.word { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

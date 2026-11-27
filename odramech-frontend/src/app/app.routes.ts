@@ -67,11 +67,33 @@ export const routes: Routes = [
         loadComponent: () => import('./features/subscription/subscription-page.component').then(m => m.SubscriptionPageComponent),
       },
       {
+        path: 'settings/quote-document',
+        title: 'Documento de orçamento · Odramech',
+        loadComponent: () => import('./features/quote-document/quote-document-settings.component').then(m => m.QuoteDocumentSettingsComponent),
+      },
+      {
+        path: 'settings/theme',
+        title: 'Tema e marca · Odramech',
+        loadComponent: () => import('./features/branding/theme-settings.component').then(m => m.ThemeSettingsComponent),
+      },
+      {
+        path: 'settings/mail',
+        title: 'E-mail de envio · Odramech',
+        loadComponent: () => import('./features/mail-settings/mail-settings.component').then(m => m.MailSettingsComponent),
+      },
+      {
         path: 'settings',
         title: 'Configurações · Odramech',
         loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent),
       },
     ]
+  },
+
+  {
+    // link do e-mail do cliente: ver, aprovar ou recusar o orçamento (sem login)
+    path: 'orcamento/:token',
+    title: 'Orçamento',
+    loadComponent: () => import('./features/public-quote/public-quote.component').then(m => m.PublicQuoteComponent),
   },
 
   {

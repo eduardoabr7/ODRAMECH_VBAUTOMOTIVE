@@ -22,7 +22,7 @@
 
   &::after {
     content: ''; position: absolute; right: -120px; top: -140px; width: 360px; height: 360px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(228,83,28,.25), transparent 65%); pointer-events: none;
+    background: radial-gradient(circle, color-mix(in srgb, var(--accent) 25%, transparent), transparent 65%); pointer-events: none;
   }
   &.warn::after { background: radial-gradient(circle, rgba(241,180,76,.3), transparent 65%); }
   &.bad::after { background: radial-gradient(circle, rgba(255,107,94,.3), transparent 65%); }
@@ -58,7 +58,7 @@
 }
 
 // ── Planos ────────────────────────────────────────────────
-.plans { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; @media (max-width: 560px) { grid-template-columns: 1fr; } }
+.plans { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 6px; @media (max-width: 560px) { grid-template-columns: 1fr; } }
 
 .plan {
   position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
@@ -68,14 +68,22 @@
   &.on { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink), var(--shadow-2); .plan-check { background: var(--ink); border-color: var(--ink); color: #fff; transform: scale(1.1); } }
   &[disabled] { cursor: default !important; }
 }
-.save { position: absolute; top: -9px; left: 14px; font-size: 11px; font-weight: 600; background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 999px; }
+.save { position: absolute; top: -9px; left: 14px; font-size: 11px; font-weight: 600; background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 999px;
+  &.current { left: auto; right: 40px; background: var(--ink); }
+}
+.plan.too-small { opacity: .5; }
+.plan-feats {
+  list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px;
+  li { font-size: 12px; color: var(--ink-2); line-height: 1.35; display: flex; gap: 6px; }
+  i { color: var(--ok); font-size: 10px; margin-top: 3px; }
+}
 .plan-check {
   position: absolute; right: 12px; top: 12px; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line-strong);
   display: grid; place-items: center; color: transparent; font-size: 9px; transition: all var(--dur-2) var(--ease-spring);
 }
 .plan-name { font-size: 12.5px; color: var(--muted); font-weight: 500; }
 .plan-price { font-size: 22px; font-weight: 600; letter-spacing: -0.03em; small { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 2px; } }
-.plan-eq { font-size: 12px; color: var(--ok); }
+.plan-eq { font-size: 12px; color: var(--ink-2); font-weight: 500; i { color: var(--muted); margin-right: 2px; } }
 .plan-desc { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
 
 .methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; @media (max-width: 560px) { grid-template-columns: 1fr; } }

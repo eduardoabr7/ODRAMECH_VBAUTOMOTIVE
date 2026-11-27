@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Headers, HttpCode, Inject, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Headers, HttpCode, Inject, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { SubscriptionsConfig } from '../config/subscriptions-config';
 import { SubscriptionService } from '../application/subscription.service';
 import { PrismaService } from '../repositories/prisma.repositories';
 import { PublicRoute } from './api-key.guard';
@@ -53,8 +54,12 @@ export class EnterpriseSubscriptionController {
     return this.service.payInvoice(id, invoiceId, dto.method, { cardToken: dto.cardToken });
   }
 
+  /** só no sandbox fora de produção — com provedor real, isso daria plano pago de graça */
   @Post('invoices/:invoiceId/simulate-payment')
   simulate(@Param('enterpriseId', ParseIntPipe) id: number, @Param('invoiceId') invoiceId: string) {
+    if (!SubscriptionsConfig.get().values.allowSimulatedPayments) {
+      throw new ForbiddenException('Simulação de pagamento desativada neste ambiente.');
+    }
     return this.service.simulatePayment(id, invoiceId);
   }
 

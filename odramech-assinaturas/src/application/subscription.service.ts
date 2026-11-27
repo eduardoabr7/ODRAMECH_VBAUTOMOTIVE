@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Logger, NotFoundException } fro
 import { cycleFor } from '../domain/billing-cycle.strategy';
 import { decideAccess } from '../domain/access-policy';
 import { InvoiceBuilder } from '../domain/invoice.builder';
-import { Invoice, PaymentMethod, Plan, Subscription } from '../domain/model';
+import { entitlementsOf, Invoice, PaymentMethod, Plan, Subscription } from '../domain/model';
 import { SubscriptionFactory } from '../domain/subscription.factory';
 import { PaymentGateway, WebhookParser } from '../payments/payment-provider';
 import { paymentStrategyFor, PAYMENT_METHODS, PayRequest } from '../payments/payment-method.strategy';
@@ -74,37 +74,73 @@ export class SubscriptionService {
   /** Só a decisão de acesso — chamada frequente do backend da oficina. */
   async access(enterpriseId: number) {
     const sub = await this.getOrStartTrial(enterpriseId, null);
-    return { status: sub.status, ...decideAccess(sub, this.settings.graceDays, this.clock.now()) };
+    const plan = await this.plans.findById(sub.planId);
+    return {
+      status: sub.status,
+      ...decideAccess(sub, this.settings.graceDays, this.clock.now()),
+      plan: plan ? entitlementsOf(plan) : null,
+    };
   }
 
   // ═══ Comandos do cliente ════════════════════════════════
+  /**
+   * Escolhe/troca o plano.
+   *  - Em teste grátis: o plano muda na hora (a empresa experimenta o que vai assinar) e a
+   *    cobrança começa no fim do teste.
+   *  - Assinatura paga, UPGRADE (plano de nível maior): começa agora; o que sobrou do período
+   *    atual vira crédito (desconto proporcional) e o plano novo vale quando a fatura for paga.
+   *  - Assinatura paga, DOWNGRADE ou mesmo nível: vale a partir da próxima renovação.
+   *  - Inadimplente/expirada/cancelada: começa agora.
+   * Fora do teste o plano só muda quando a fatura é paga — escolher um plano maior não libera
+   * os recursos dele sem pagamento.
+   */
   async selectPlan(enterpriseId: number, planCode: string, method: PaymentMethod) {
     const plan = await this.plans.findByCode(planCode);
     if (!plan || !plan.active) throw new NotFoundException('Plano não encontrado.');
     paymentStrategyFor(method); // valida a forma de pagamento
 
     let sub = await this.getOrStartTrial(enterpriseId, null);
+    const current = await this.plans.findById(sub.planId);
     const now = this.clock.now();
 
     // fatura em aberto de outro plano/forma é anulada para gerar a correta
     const open = await this.invoices.findOpen(sub.id);
     if (open) await this.invoices.update(open.id, { status: 'VOID' });
 
-    sub = await this.subs.update(sub.id, { planId: plan.id, paymentMethod: method, cancelAtPeriodEnd: false });
+    const trialing = sub.status === 'TRIALING' && sub.currentPeriodEnd > now;
+    const paidAndCurrent = sub.status === 'ACTIVE' && sub.currentPeriodEnd > now;
+    const isUpgrade = !!current && plan.tier > current.tier;
 
-    // em dia → próxima fatura começa no fim do período atual; senão começa agora
-    const inGoodStanding = (sub.status === 'TRIALING' || sub.status === 'ACTIVE') && sub.currentPeriodEnd > now;
-    const start = inGoodStanding ? sub.currentPeriodEnd : now;
+    sub = await this.subs.update(sub.id, {
+      ...(trialing && { planId: plan.id }),
+      paymentMethod: method,
+      cancelAtPeriodEnd: false,
+    });
+
+    let start = now;
+    let creditCents = 0;
+    if (trialing) start = sub.currentPeriodEnd;
+    else if (paidAndCurrent && !isUpgrade) start = sub.currentPeriodEnd;
+    else if (paidAndCurrent && isUpgrade && current) creditCents = this.unusedCredit(sub, current, now);
 
     const invoice = await this.invoices.create(
-      new InvoiceBuilder().forSubscription(sub).ofPlan(plan).startingAt(start).dueInDays(0).payWith(method).build(),
+      new InvoiceBuilder().forSubscription(sub).ofPlan(plan).startingAt(start).dueInDays(0)
+        .withDiscount(creditCents).payWith(method).build(),
     );
 
     await this.events.publish({
       type: 'subscription.plan_selected', subscriptionId: sub.id, enterpriseId, status: sub.status,
-      data: { planCode: plan.code, method, invoiceId: invoice.id },
+      data: { planCode: plan.code, previousPlanCode: current?.code, method, invoiceId: invoice.id, creditCents },
     });
     return this.overview(enterpriseId);
+  }
+
+  /** valor proporcional ao tempo que ainda resta do período pago (crédito no upgrade) */
+  private unusedCredit(sub: Subscription, plan: Plan, now: Date): number {
+    const total = sub.currentPeriodEnd.getTime() - sub.currentPeriodStart.getTime();
+    const left = sub.currentPeriodEnd.getTime() - now.getTime();
+    if (total <= 0 || left <= 0) return 0;
+    return Math.floor(plan.priceCents * Math.min(1, left / total));
   }
 
   async payInvoice(enterpriseId: number, invoiceId: string, method: PaymentMethod, req: PayRequest) {
@@ -245,8 +281,10 @@ export class SubscriptionService {
     const startsNow = paid.periodStart <= now;
     const recovering = sub.status === 'PAST_DUE' || sub.status === 'EXPIRED' || sub.status === 'CANCELED';
     if (startsNow || recovering) {
+      const plan = await this.plans.findByCode(paid.planCode);
       const updated = await this.subs.update(sub.id, {
         status: 'ACTIVE',
+        ...(plan && { planId: plan.id }),
         currentPeriodStart: startsNow ? paid.periodStart : now,
         currentPeriodEnd: startsNow ? paid.periodEnd : paid.periodEnd,
         cancelAtPeriodEnd: false,

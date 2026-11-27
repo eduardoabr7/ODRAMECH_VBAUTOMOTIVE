@@ -34,7 +34,7 @@
     width: 520px;
     height: 520px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(228, 83, 28, .22), transparent 65%);
+    background: radial-gradient(circle, color-mix(in srgb, var(--accent) 22%, transparent), transparent 65%);
     pointer-events: none;
   }
 }
@@ -246,3 +246,14 @@
 }
 
 .mark-img { width: 28px; height: 28px; object-fit: contain; transform: scale(1.35); }
+
+// ── Marca da oficina (tema) ───────────────────────────────
+.brand-panel.has-image {
+  background-size: cover; background-position: center;
+  &::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.15) 40%, rgba(0,0,0,.7)); pointer-events: none; }
+  &::after { display: none; }
+  > * { position: relative; z-index: 1; }
+}
+.bp-main.custom { margin-bottom: 8px; }
+.bp-title.custom { font-size: clamp(32px, 3.6vw, 48px); line-height: 1.05; }
+.mark-img.custom { transform: none; width: auto; max-width: 120px; height: 32px; border-radius: 4px; }

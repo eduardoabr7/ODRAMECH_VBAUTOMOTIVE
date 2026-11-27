@@ -40,7 +40,10 @@ export class SettingsComponent {
   ];
 
   cards: SettingCard[] = [
-    { name: 'Assinatura', description: 'Plano mensal ou anual, faturas e forma de pagamento do Odramech.', category: 'financeiro', icon: 'fa-solid fa-crown', route: '/settings/subscription', available: true },
+    { name: 'Assinatura', description: 'Plano (Basic, Intermediário, Pro ou Ultra), faturas e forma de pagamento.', category: 'financeiro', icon: 'fa-solid fa-crown', route: '/settings/subscription', available: true },
+    { name: 'Documento de orçamento', description: 'Modelo de impressão/PDF, validade padrão e status ao imprimir.', category: 'oficina', icon: 'fa-solid fa-file-invoice', route: '/settings/quote-document', available: true },
+    { name: 'E-mail de envio', description: 'SMTP próprio da empresa (ex.: noreply@suaoficina.com.br) para enviar orçamentos aos clientes.', category: 'integracao', icon: 'fa-regular fa-envelope', route: '/settings/mail', available: true },
+    { name: 'Tema e marca', description: 'Logo, nome e cor da oficina no sistema e na tela de login.', category: 'oficina', icon: 'fa-solid fa-palette', route: '/settings/theme', available: true },
     { name: 'Minha oficina', description: 'Estabelecimentos da empresa, dados de contato e endereço.', category: 'oficina', icon: 'fa-solid fa-warehouse', openModal: ModalSettingsEnterpriseComponent, available: true },
     { name: 'Equipe e permissões', description: 'Cadastre mecânicos e administradores e defina quem acessa o quê.', category: 'usuarios', icon: 'fa-solid fa-user-shield', openModal: ModalManageWorkersComponent, available: true },
     { name: 'Agendamentos', description: 'Horários de atendimento, bloqueios e agendamento online.', category: 'oficina', icon: 'fa-regular fa-calendar', available: false },

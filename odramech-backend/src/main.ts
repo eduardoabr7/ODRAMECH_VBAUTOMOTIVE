@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import * as cookieParser from 'cookie-parser';
 import { AppConfig } from './core/config/app-config';
 import { createValidationPipe } from './core/http/validation-pipe.factory';
@@ -10,7 +11,9 @@ async function bootstrap() {
   const config = AppConfig.get().values;
   const logger = new CustomLogger();
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // logo e imagem da tela de login chegam como data URL (até ~3 MB)
+  app.useBodyParser('json', { limit: '6mb' });
 
   app.enableCors({
     origin: config.frontendOrigin,

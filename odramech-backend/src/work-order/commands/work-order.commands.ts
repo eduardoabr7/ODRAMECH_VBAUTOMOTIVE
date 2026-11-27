@@ -4,6 +4,7 @@ import { Command } from 'src/core/commands/command-bus';
 import { DomainEventBus } from 'src/core/events/domain-event-bus';
 import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
 import { assertStaff } from 'src/shared/utils/role.util';
+import { sanitizeHtml } from 'src/shared/utils/html.util';
 import { WorkOrderRepository } from '../repositories/work-order.repository';
 import { WorkOrderResponsibleChanged, WorkOrderStatusChanged } from '../domain/work-order.events';
 import { STATUS_LABEL } from '../domain/work-order-status';
@@ -94,7 +95,8 @@ export class AddAppointmentCommand implements Command<any> {
   async execute() {
     const ref = await this.repo.findRef(this.workOrderId, this.auth.establishmentId);
     if (!ref) throw new NotFoundException('Ordem de serviço não encontrada');
-    return this.repo.addAppointment(this.workOrderId, this.auth.sub, this.contentHtml, this.type);
+    // HTML do apontamento aparece para o cliente: remove scripts/eventos antes de gravar
+    return this.repo.addAppointment(this.workOrderId, this.auth.sub, sanitizeHtml(this.contentHtml) ?? '', this.type);
   }
 }
 

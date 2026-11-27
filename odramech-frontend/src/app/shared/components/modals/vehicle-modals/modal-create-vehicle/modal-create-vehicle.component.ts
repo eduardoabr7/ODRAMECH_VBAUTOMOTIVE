@@ -8,6 +8,7 @@ import { ToastrService } from 'ngx-toastr';
 
 import { BaseModalComponent } from '../../base-modal.component';
 import { CloseOnClickOutsideDirective } from '@shared/directives/close-onclick-outside.directive';
+import { KeyboardListDirective } from '@shared/directives/keyboard-list.directive';
 import { VehicleService } from '@shared/services/vehicle.service';
 import { VehicleCreate } from '@shared/models/VehicleCreate';
 import { Vehicle } from '@shared/models/Vehicle';
@@ -20,7 +21,7 @@ interface ColorOption {
 
 @Component({
   selector: 'app-modal-create-vehicle',
-  imports: [CommonModule, FormsModule, NgxMaskDirective, CloseOnClickOutsideDirective],
+  imports: [CommonModule, FormsModule, NgxMaskDirective, CloseOnClickOutsideDirective, KeyboardListDirective],
   templateUrl: './modal-create-vehicle.component.html',
   styleUrl: './modal-create-vehicle.component.scss',
 })
