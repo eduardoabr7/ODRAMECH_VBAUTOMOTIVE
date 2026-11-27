@@ -5,6 +5,7 @@ import { LinkVehicleDTO, UpdateVehicleDTO } from "../dto/update-vehicle.dto";
 import { CustomLogger } from "src/shared/services/custom-logger.service";
 import { AuthPayload } from "src/auth/interfaces/auth-payload.interface";
 import { assertStaff } from "src/shared/utils/role.util";
+import { EstablishmentScope, EstablishmentScopeQueryDTO } from "src/core/auth/establishment-scope.service";
 
 @Controller('vehicle')
 export class VehicleController {
@@ -13,13 +14,14 @@ export class VehicleController {
 
     constructor(
         private readonly _vehicleService: VehicleService,
+        private readonly _scope: EstablishmentScope,
     ){
         this.logger.setContextModule(VehicleController.name);
     }
 
     @Post()
-    createVehicle(@Body() data: CreateVehicleDTO, @Req() req) {
-        const auth = req.authContext as AuthPayload;
+    async createVehicle(@Body() data: CreateVehicleDTO, @Query() q: EstablishmentScopeQueryDTO, @Req() req) {
+        const auth = await this._scope.resolve(req.authContext as AuthPayload, q.establishmentId);
         assertStaff(auth.role);
         return this._vehicleService.createVehicle(auth, data)
     }
@@ -36,8 +38,8 @@ export class VehicleController {
     }
 
     @Post('link')
-    link(@Body() data: LinkVehicleDTO, @Req() req) {
-        const auth = req.authContext as AuthPayload;
+    async link(@Body() data: LinkVehicleDTO, @Query() q: EstablishmentScopeQueryDTO, @Req() req) {
+        const auth = await this._scope.resolve(req.authContext as AuthPayload, q.establishmentId);
         assertStaff(auth.role);
         return this._vehicleService.linkToUser(auth, data.vehicleId, data.userId);
     }

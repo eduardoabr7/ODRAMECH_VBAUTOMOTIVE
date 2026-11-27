@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ArchiveType, TypeAppointment } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, unlinkSync } from 'node:fs';
@@ -6,7 +6,8 @@ import { extname, join, resolve } from 'node:path';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { AppConfig } from 'src/core/config/app-config';
 import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
-import { assertStaff, isStaff } from 'src/shared/utils/role.util';
+import { isStaff } from 'src/shared/utils/role.util';
+import { AppointmentAccess } from 'src/work-order/domain/appointment-access';
 
 /** pasta dos anexos (AppConfig.uploadDir ou ./uploads) */
 export function uploadDir(): string {
@@ -36,18 +37,16 @@ function typeFromMime(mime: string): ArchiveType {
 
 @Injectable()
 export class AttachmentService {
-  constructor(private readonly _prisma: PrismaService) {}
+  constructor(private readonly _prisma: PrismaService, private readonly access: AppointmentAccess) {}
 
   async attach(auth: AuthPayload, appointmentId: number, files: Express.Multer.File[]) {
-    assertStaff(auth.role);
     if (!files?.length) throw new BadRequestException('Nenhum arquivo enviado.');
 
-    const appt = await this._prisma.appointment.findFirst({
-      where: { id: appointmentId, workOrder: { establishmentId: auth.establishmentId } },
-    });
-    if (!appt) {
+    try {
+      await this.assertCanAttach(auth, appointmentId);
+    } catch (e) {
       files.forEach(f => this.safeUnlink(f.path));
-      throw new NotFoundException('Apontamento não encontrado');
+      throw e;
     }
 
     await this._prisma.archiveAppointment.createMany({
@@ -62,6 +61,17 @@ export class AttachmentService {
     });
 
     return this._prisma.archiveAppointment.findMany({ where: { appointmentId }, orderBy: { id: 'asc' } });
+  }
+
+  /** equipe anexa em qualquer apontamento; cliente só no próprio apontamento público da própria OS */
+  private async assertCanAttach(auth: AuthPayload, appointmentId: number) {
+    const appt = await this._prisma.appointment.findFirst({
+      where: { id: appointmentId, workOrder: { establishmentId: auth.establishmentId } },
+      select: { userAppointmentId: true, appointmentType: true, workOrder: { select: { establishmentId: true, clientId: true } } },
+    });
+    const ownPublic = appt && appt.userAppointmentId === auth.sub && appt.appointmentType === TypeAppointment.PUBLICO;
+    if (!appt || (!isStaff(auth.role) && !ownPublic)) throw new NotFoundException('Apontamento não encontrado');
+    await this.access.assertCanAttach(auth, appt.workOrder);
   }
 
   /** Resolve o arquivo garantindo que pertence ao estabelecimento (e ao cliente, se for USER). */
@@ -85,9 +95,13 @@ export class AttachmentService {
     return { path, archive };
   }
 
+  /** equipe remove qualquer anexo; cliente só os do próprio apontamento */
   async remove(auth: AuthPayload, archiveId: number) {
-    assertStaff(auth.role);
     const { path, archive } = await this.resolveFile(auth, archiveId);
+    if (!isStaff(auth.role)) {
+      const appt = await this._prisma.appointment.findUnique({ where: { id: archive.appointmentId }, select: { userAppointmentId: true } });
+      if (appt?.userAppointmentId !== auth.sub) throw new ForbiddenException('Você só pode excluir os seus anexos.');
+    }
     await this._prisma.archiveAppointment.delete({ where: { id: archive.id } });
     this.safeUnlink(path);
     return { deleted: true };

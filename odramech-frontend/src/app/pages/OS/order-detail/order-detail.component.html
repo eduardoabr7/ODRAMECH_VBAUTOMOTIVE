@@ -147,7 +147,7 @@
         </div>
 
         <ol class="timeline">
-          <li *ngFor="let item of timeline; let i = index" class="tl-item reveal" [style.--i]="i" [ngSwitch]="item.kind">
+          <li *ngFor="let item of timeline; let i = index; trackBy: trackTimeline" class="tl-item reveal" [style.--i]="i" [ngSwitch]="item.kind">
 
             <ng-container *ngSwitchCase="'event'">
               <ng-container *ngIf="item.kind === 'event'">
@@ -169,11 +169,24 @@
                     <time [title]="item.at | date:'dd/MM/yyyy HH:mm'">{{ item.at | relativeTime }}</time>
                   </div>
                   <div class="rich" [innerHTML]="item.appt.contentHtml"></div>
-                  <div class="files" *ngIf="item.appt.archives?.length">
-                    <div class="file" *ngFor="let a of item.appt.archives" [class.img]="a.archiveType === 'IMAGEM'">
+                  <div class="photos" #photosArea *ngIf="imagesOf(item.appt).length">
+                    <div class="photo" *ngFor="let a of imagesOf(item.appt); trackBy: trackArchive">
+                      <app-resizable-image
+                        [src]="fileUrl(a)"
+                        [alt]="a.originalName"
+                        [storageKey]="a.id"
+                        [boundary]="photosArea"
+                        (open)="openImage(a)">
+                      </app-resizable-image>
+                      <button *ngIf="canDeleteFile(item.appt)" type="button" class="file-del" (click)="deleteFile(item.appt.id, a)" title="Excluir foto">
+                        <i class="fa-solid fa-xmark"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="files" *ngIf="othersOf(item.appt).length">
+                    <div class="file" *ngFor="let a of othersOf(item.appt); trackBy: trackArchive">
                       <a [href]="fileUrl(a)" target="_blank" rel="noopener" class="file-link" [title]="a.originalName">
-                        <img *ngIf="a.archiveType === 'IMAGEM'" [src]="fileUrl(a)" [alt]="a.originalName" loading="lazy">
-                        <span class="file-ico" *ngIf="a.archiveType !== 'IMAGEM'">
+                        <span class="file-ico">
                           <i class="fa-regular" [class.fa-file-pdf]="a.mimeType === 'application/pdf'" [class.fa-file-video]="a.archiveType === 'VIDEO'" [class.fa-file]="a.mimeType !== 'application/pdf' && a.archiveType !== 'VIDEO'"></i>
                         </span>
                         <span class="file-meta">
@@ -181,7 +194,7 @@
                           <span class="file-size">{{ fileSize(a.sizeBytes) }}</span>
                         </span>
                       </a>
-                      <button *ngIf="isStaff" type="button" class="file-del" (click)="deleteFile(item.appt.id, a)" title="Excluir anexo">
+                      <button *ngIf="canDeleteFile(item.appt)" type="button" class="file-del" (click)="deleteFile(item.appt.id, a)" title="Excluir anexo">
                         <i class="fa-solid fa-xmark"></i>
                       </button>
                     </div>
@@ -194,14 +207,18 @@
         </ol>
 
         <!-- Composer -->
-        <div class="composer" *ngIf="isStaff">
+        <p class="composer-off" *ngIf="!canWrite && !isStaff">
+          <i class="fa-regular fa-comment-dots"></i> A oficina registra aqui o andamento do serviço.
+        </p>
+
+        <div class="composer" *ngIf="canWrite">
           <div class="editor" [class.internal]="noteType === AppointmentType.INTERNO">
             <div class="editor-bar">
               <button type="button" (click)="format('bold')" title="Negrito"><i class="fa-solid fa-bold"></i></button>
               <button type="button" (click)="format('italic')" title="Itálico"><i class="fa-solid fa-italic"></i></button>
               <button type="button" (click)="format('insertUnorderedList')" title="Lista"><i class="fa-solid fa-list-ul"></i></button>
-              <span class="sep"></span>
-              <div class="segmented type-toggle">
+              <span class="sep" *ngIf="canWriteInternal"></span>
+              <div class="segmented type-toggle" *ngIf="canWriteInternal">
                 <button type="button" [class.active]="noteType === AppointmentType.PUBLICO" (click)="noteType = AppointmentType.PUBLICO">
                   <i class="fa-regular fa-eye"></i> Público
                 </button>
@@ -216,26 +233,33 @@
               contenteditable="true"
               (input)="onEditorInput()"
               (keydown)="onEditorKeydown($event)"
-              [attr.data-placeholder]="noteType === AppointmentType.INTERNO ? 'Nota para a equipe — o cliente não vê…' : 'Registre o andamento: diagnóstico, peças trocadas, próximos passos…'">
+              (paste)="onEditorPaste($event)"
+              (drop)="onEditorDrop($event)"
+              [attr.data-placeholder]="!isStaff ? 'Escreva para a oficina: dúvidas, fotos, autorização…' : noteType === AppointmentType.INTERNO ? 'Nota para a equipe — o cliente não vê…' : 'Registre o andamento: diagnóstico, peças trocadas, próximos passos…'">
             </div>
           </div>
           <div class="picked-files" *ngIf="noteFiles.length">
-            <span class="chip" *ngFor="let f of noteFiles; let i = index">
-              <i class="fa-solid fa-paperclip"></i>{{ f.name }}
-              <button type="button" (click)="removePicked(i)" aria-label="Remover"><i class="fa-solid fa-xmark"></i></button>
-            </span>
+            <ng-container *ngFor="let p of noteFiles; let i = index">
+              <span class="thumb" *ngIf="p.preview; else chip" [title]="p.file.name">
+                <img [src]="p.preview" [alt]="p.file.name">
+                <button type="button" (click)="removePicked(i)" aria-label="Remover foto"><i class="fa-solid fa-xmark"></i></button>
+              </span>
+              <ng-template #chip>
+                <span class="chip">
+                  <i class="fa-solid fa-paperclip"></i>{{ p.file.name }}
+                  <button type="button" (click)="removePicked(i)" aria-label="Remover"><i class="fa-solid fa-xmark"></i></button>
+                </span>
+              </ng-template>
+            </ng-container>
           </div>
           <div class="composer-foot">
             <div class="foot-left">
-              <label class="btn-x btn-ghost sm attach">
-                <i class="fa-solid fa-paperclip"></i> Anexar
-                <input type="file" multiple hidden accept="image/*,application/pdf,video/mp4,video/quicktime,video/webm" (change)="onPickFiles($event)">
-              </label>
+              <app-media-picker *ngIf="canAttach" [disabled]="sendingNote" (picked)="addFiles($event)"></app-media-picker>
               <span class="faint hide-sm"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> para enviar</span>
             </div>
             <button type="button" class="btn-x btn-solid sm" [disabled]="(noteIsEmpty && !noteFiles.length) || sendingNote" (click)="sendNote()">
               <span class="spinner-x" *ngIf="sendingNote"></span>
-              {{ noteType === AppointmentType.INTERNO ? 'Salvar nota interna' : 'Registrar apontamento' }}
+              {{ !isStaff ? 'Enviar' : noteType === AppointmentType.INTERNO ? 'Salvar nota interna' : 'Registrar apontamento' }}
             </button>
           </div>
         </div>
@@ -354,4 +378,11 @@
       </aside>
     </div>
   </ng-container>
+
+  <app-image-lightbox
+    *ngIf="lightbox"
+    [images]="lightbox.images"
+    [index]="lightbox.index"
+    (closed)="lightbox = null">
+  </app-image-lightbox>
 </div>

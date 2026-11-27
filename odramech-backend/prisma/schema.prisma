@@ -416,6 +416,8 @@ model EstablishmentSettings {
   markQuoteSentOnPrint Boolean       @default(false) @map("mark_quote_sent_on_print")
   /// manda o PDF pro e-mail do cliente ao salvar (e nas atualizações)
   autoEmailQuote       Boolean       @default(false) @map("auto_email_quote")
+  /// cliente pode escrever (e anexar fotos) na OS — só apontamentos públicos; só admin altera
+  clientAppointmentsEnabled Boolean  @default(false) @map("client_appointments_enabled")
   updatedAt            DateTime      @updatedAt @map("updated_at")
 
   establishment Establishment @relation(fields: [establishmentId], references: [id])

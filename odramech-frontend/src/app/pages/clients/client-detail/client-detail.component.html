@@ -1,13 +1,18 @@
 <div class="page">
 
-  <a class="back reveal" routerLink="/clients"><i class="fa-solid fa-arrow-left"></i> Clientes</a>
+  <a class="back reveal" routerLink="/clients" [queryParams]="backQueryParams"><i class="fa-solid fa-arrow-left"></i> Clientes</a>
+
+  <div class="panel scope-note reveal" *ngIf="isForeign && user">
+    <i class="fa-solid fa-building"></i>
+    <span>Ficha em <b>{{ establishmentName || 'outro estabelecimento' }}</b> — você não está logado nele. Dá para editar o cadastro e os veículos; para abrir ou criar OS, troque de estabelecimento.</span>
+  </div>
 
   <div class="panel" *ngIf="notFound">
     <div class="empty">
       <div class="empty-mark"><i class="fa-solid fa-user-slash"></i></div>
       <h4>Cliente não encontrado</h4>
       <p>Ele não está vinculado a este estabelecimento.</p>
-      <a routerLink="/clients" class="btn-x btn-outline sm">Voltar</a>
+      <a routerLink="/clients" [queryParams]="backQueryParams" class="btn-x btn-outline sm">Voltar</a>
     </div>
   </div>
 
@@ -41,7 +46,7 @@
       </div>
       <div class="page-actions reveal" style="--i:3">
         <button class="btn-x btn-outline" (click)="startEdit()" *ngIf="!editing"><i class="fa-solid fa-pen"></i>Editar</button>
-        <button class="btn-x btn-solid" (click)="newOrder()"><i class="fa-solid fa-plus"></i>Abrir OS</button>
+        <button class="btn-x btn-solid" (click)="newOrder()" *ngIf="!isForeign"><i class="fa-solid fa-plus"></i>Abrir OS</button>
       </div>
     </header>
 

@@ -17,6 +17,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { SubscriptionAccessGuard } from './subscription/subscription-access.guard';
 import { SettingsModule } from './settings/settings.module';
+import { ExportModule } from './export/export.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { SettingsModule } from './settings/settings.module';
     DashboardModule,
     SubscriptionModule,
     SettingsModule,
+    ExportModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { sanitizeHtml } from 'src/shared/utils/html.util';
+import { sanitizeNoteHtml } from 'src/shared/utils/html.util';
 import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
 import { DomainEventBus } from 'src/core/events/domain-event-bus';
 import { isStaff } from 'src/shared/utils/role.util';
@@ -9,6 +9,7 @@ import { WorkOrderCriteriaBuilder } from '../domain/work-order-criteria';
 import { WorkOrderOpened } from '../domain/work-order.events';
 import { WoListQueryDTO } from '../dto/wo-update.dto';
 import { WoCreateFrontDTO } from '../dto/wo-create-front.dto';
+import { AppointmentAccess } from '../domain/appointment-access';
 
 /**
  * Casos de uso de LEITURA e abertura de OS.
@@ -20,6 +21,7 @@ export class WorkOrderService {
   constructor(
     private readonly repo: WorkOrderRepository,
     private readonly events: DomainEventBus,
+    private readonly access: AppointmentAccess,
   ) {}
 
   async open(auth: AuthPayload, dto: WoCreateFrontDTO) {
@@ -38,7 +40,7 @@ export class WorkOrderService {
       status: dto.status,
       userResponsibleId: dto.userResponsibleId ?? null,
       firstAppointment: dto.appointment
-        ? { contentHtml: sanitizeHtml(dto.appointment.contentHtml) ?? '', appointmentType: dto.appointment.appointmentType }
+        ? { contentHtml: sanitizeNoteHtml(dto.appointment.contentHtml) ?? '', appointmentType: dto.appointment.appointmentType }
         : null,
     });
     await this.events.publish(new WorkOrderOpened(ref.id, ref.numberOs, auth.establishmentId, auth.sub));
@@ -72,6 +74,7 @@ export class WorkOrderService {
     const { items, payments, ...rest } = wo;
     return {
       ...rest,
+      permissions: await this.access.permissions(auth, wo),
       items: items.map(serializeItem),
       payments: payments.map((p: any) => ({ ...p, amount: toNum(p.amount) })),
       summary: summarizeMoney(items, payments),

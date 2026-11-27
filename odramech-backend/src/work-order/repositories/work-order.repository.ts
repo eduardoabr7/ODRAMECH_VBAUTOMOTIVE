@@ -17,6 +17,7 @@ export interface WorkOrderRef {
   status: OrderStatus;
   userResponsibleId: number | null;
   establishmentId: number;
+  clientId: number;
 }
 
 export interface Page<T> {
@@ -39,6 +40,8 @@ export abstract class WorkOrderRepository {
   abstract countByStatus(criteria: WorkOrderCriteria): Promise<Record<OrderStatus, number>>;
   abstract count(criteria: WorkOrderCriteria): Promise<number>;
   abstract findRecent(criteria: WorkOrderCriteria, take: number): Promise<any[]>;
+  /** lista completa com itens e pagamentos (exportação para planilha) */
+  abstract findForExport(criteria: WorkOrderCriteria, take: number): Promise<any[]>;
 
   abstract findDetail(criteria: WorkOrderCriteria, id: number, includeInternal: boolean): Promise<any | null>;
   abstract findRef(id: number, establishmentId: number): Promise<WorkOrderRef | null>;

@@ -8,6 +8,9 @@
         <span class="tnum">{{ vehicles.length }}</span> {{ vehicles.length === 1 ? 'veículo' : 'veículos' }} de clientes deste estabelecimento.
       </p>
     </div>
+    <div class="page-actions reveal" style="--i:3">
+      <app-export-button [options]="exportOptions"></app-export-button>
+    </div>
   </div>
 
   <div class="toolbar reveal" style="--i:3">

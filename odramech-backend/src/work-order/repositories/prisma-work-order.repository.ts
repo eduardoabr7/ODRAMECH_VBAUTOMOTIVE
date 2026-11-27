@@ -15,7 +15,7 @@ const LIST_INCLUDE = {
   _count: { select: { appointments: true } },
 } satisfies Prisma.WorkOrderInclude;
 
-const REF_SELECT = { id: true, numberOs: true, status: true, userResponsibleId: true, establishmentId: true } as const;
+const REF_SELECT = { id: true, numberOs: true, status: true, userResponsibleId: true, establishmentId: true, clientId: true } as const;
 
 /** REPOSITORY (implementação) — traduz critérios de domínio para consultas Prisma. */
 @Injectable()
@@ -31,7 +31,7 @@ export class PrismaWorkOrderRepository extends WorkOrderRepository {
     if (c.clientId && !c.onlyClientId) where.clientId = c.clientId;
     if (c.vehicleId) where.vehicleId = c.vehicleId;
     if (c.status) where.status = c.status;
-    if (c.createdFrom) where.dateTimeCreation = { gte: c.createdFrom };
+    if (c.createdFrom || c.createdTo) where.dateTimeCreation = { ...(c.createdFrom && { gte: c.createdFrom }), ...(c.createdTo && { lte: c.createdTo }) };
     if (c.finishedFrom) where.dateTimeEnd = { gte: c.finishedFrom };
 
     if (c.term) {
@@ -148,6 +148,21 @@ export class PrismaWorkOrderRepository extends WorkOrderRepository {
     return this.prisma.workOrder.findMany({
       where: this.where(c),
       include: LIST_INCLUDE,
+      orderBy: { dateTimeCreation: 'desc' },
+      take,
+    });
+  }
+
+  findForExport(c: WorkOrderCriteria, take: number) {
+    return this.prisma.workOrder.findMany({
+      where: this.where(c),
+      include: {
+        ...LIST_INCLUDE,
+        vehicle: true,
+        userEnd: { select: { id: true, name: true } },
+        items: { orderBy: { id: 'asc' } },
+        payments: { select: { amount: true } },
+      },
       orderBy: { dateTimeCreation: 'desc' },
       take,
     });

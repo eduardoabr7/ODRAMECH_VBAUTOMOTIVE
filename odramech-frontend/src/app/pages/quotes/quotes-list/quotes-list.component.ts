@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ExportButtonComponent, ExportOption } from '../../../features/export/export-button.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -10,7 +11,7 @@ import { InitialsPipe, PlatePipe, RelativeTimePipe } from '@shared/ui/pipes';
 
 @Component({
   selector: 'app-quotes-list',
-  imports: [CommonModule, FormsModule, RouterModule, InitialsPipe, PlatePipe, RelativeTimePipe],
+  imports: [CommonModule, FormsModule, RouterModule, InitialsPipe, PlatePipe, RelativeTimePipe, ExportButtonComponent],
   templateUrl: './quotes-list.component.html',
   styleUrl: './quotes-list.component.scss',
 })
@@ -23,6 +24,10 @@ export class QuotesListComponent implements OnInit, OnDestroy {
   status: QuoteStatus | null = null;
   search = '';
   loading = true;
+
+  readonly exportOptions: ExportOption[] = [{
+    kind: 'quotes', label: 'Orçamentos', filters: () => ({ status: this.status, search: this.search }),
+  }];
 
   private readonly reload$ = new Subject<void>();
   private readonly subs = new Subscription();

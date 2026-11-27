@@ -3,6 +3,7 @@ import { IsUUID } from 'class-validator';
 import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
 import { CurrentAuth } from 'src/core/auth/current-auth.decorator';
 import { CommandBus } from 'src/core/commands/command-bus';
+import { EstablishmentScope } from 'src/core/auth/establishment-scope.service';
 import { assertStaff } from 'src/shared/utils/role.util';
 import { WorkOrderService } from '../services/work-order.service';
 import { WorkOrderCommandFactory } from '../commands/work-order.commands';
@@ -21,6 +22,7 @@ export class WorkOrderController {
     private readonly workOrders: WorkOrderService,
     private readonly commands: WorkOrderCommandFactory,
     private readonly bus: CommandBus,
+    private readonly scope: EstablishmentScope,
   ) {}
 
   @Post()
@@ -30,8 +32,8 @@ export class WorkOrderController {
   }
 
   @Get()
-  list(@Query() query: WoListQueryDTO, @CurrentAuth() auth: AuthPayload) {
-    return this.workOrders.list(auth, query);
+  async list(@Query() query: WoListQueryDTO, @CurrentAuth() auth: AuthPayload) {
+    return this.workOrders.list(await this.scope.resolve(auth, query.establishmentId), query);
   }
 
   /** desfaz a última ação reversível (status/responsável) — válido por 30s */

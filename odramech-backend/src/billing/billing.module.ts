@@ -39,6 +39,6 @@ import {
     { provide: ReviewRepository, useClass: PrismaReviewRepository },
     { provide: NoteRepository, useClass: PrismaNoteRepository },
   ],
-  exports: [WorkOrderMoneyService],
+  exports: [WorkOrderMoneyService, QuoteRepository],
 })
 export class BillingModule {}

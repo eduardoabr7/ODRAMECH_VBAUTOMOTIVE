@@ -76,6 +76,8 @@ export class VehicleService {
         const term = search?.trim();
         const plate = term?.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
+        const ownerHere = { user: { userCorporation: { some: { idEstablishment: auth.establishmentId } } } };
+
         const vehicles = await this._prismaService.vehicle.findMany({
             where: {
                 users: {
@@ -91,19 +93,19 @@ export class VehicleService {
                         { name: { contains: term, mode: 'insensitive' } },
                         { make: { contains: term, mode: 'insensitive' } },
                         ...(plate ? [{ plate: { contains: plate } }] : []),
-                        { users: { some: { user: { name: { contains: term, mode: 'insensitive' } } } } },
+                        { users: { some: { user: { name: { contains: term, mode: 'insensitive' }, userCorporation: { some: { idEstablishment: auth.establishmentId } } } } } },
                     ],
                 }),
             },
             include: {
-                users: { include: { user: { select: { id: true, name: true, principalPhone: true } } } },
+                users: { where: ownerHere, include: { user: { select: { id: true, name: true, principalPhone: true } } } },
                 workOrders: {
                     where: { establishmentId: auth.establishmentId },
                     select: { id: true, numberOs: true, status: true, dateTimeCreation: true },
                     orderBy: { dateTimeCreation: 'desc' },
                     take: 1,
                 },
-                _count: { select: { workOrders: true } },
+                _count: { select: { workOrders: { where: { establishmentId: auth.establishmentId } } } },
             },
             orderBy: { id: 'desc' },
             take: 200,

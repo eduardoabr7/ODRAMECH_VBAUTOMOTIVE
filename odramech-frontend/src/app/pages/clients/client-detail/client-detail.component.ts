@@ -6,8 +6,10 @@ import { Title } from '@angular/platform-browser';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { ToastrService } from 'ngx-toastr';
 import { NgxMaskDirective } from 'ngx-mask';
-import { map, Subscription, switchMap, tap } from 'rxjs';
+import { combineLatest, map, Subscription, switchMap, take, tap } from 'rxjs';
 import { UserService } from '@shared/services/user.service';
+import { AuthService } from '@shared/services/auth.service';
+import { UserCorporationService } from '@shared/services/user-corporation.service';
 import { WorkOrderService } from '@shared/services/work-orders.service';
 import { ZipCodeService } from '@shared/services/zipcode.service';
 import { UserDetail } from '@shared/models/UserList';
@@ -53,6 +55,10 @@ export class ClientDetailComponent implements OnInit, OnDestroy {
   loadingCep = false;
   form: EditForm | null = null;
 
+  /** estabelecimento da ficha quando não é o da sessão (veio da lista de clientes) */
+  establishmentId: number | null = null;
+  establishmentName: string | null = null;
+
   private readonly subs = new Subscription();
 
   constructor(
@@ -64,13 +70,24 @@ export class ClientDetailComponent implements OnInit, OnDestroy {
     private readonly _zip: ZipCodeService,
     private readonly _modal: BsModalService,
     private readonly _toastr: ToastrService,
+    private readonly _auth: AuthService,
+    private readonly _userCorp: UserCorporationService,
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(this._route.paramMap.pipe(
-      map(p => Number(p.get('id'))),
-      tap(() => { this.loading = true; this.notFound = false; this.editing = false; }),
-      switchMap(id => this._users.getById(id)),
+    const sessionEstab$ = this._auth.user$.pipe(map(ctx => ctx?.usercorp?.establishment?.id ?? null), take(1));
+
+    this.subs.add(combineLatest([this._route.paramMap, this._route.queryParamMap, sessionEstab$]).pipe(
+      map(([p, q, sessionEstab]) => {
+        const estab = Number(q.get('estab')) || null;
+        return { id: Number(p.get('id')), estab: estab && estab !== sessionEstab ? estab : null };
+      }),
+      tap(({ estab }) => {
+        this.loading = true; this.notFound = false; this.editing = false;
+        this.establishmentId = estab;
+        this.loadEstablishmentName();
+      }),
+      switchMap(({ id, estab }) => this._users.getById(id, estab)),
     ).subscribe({
       next: user => {
         this.user = user;
@@ -84,9 +101,25 @@ export class ClientDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }
 
+  private loadEstablishmentName(): void {
+    this.establishmentName = null;
+    if (!this.establishmentId) return;
+    this._userCorp.getEstablishmentsOnAdminOrWorker().subscribe({
+      next: (list: { id: number; name: string }[]) => this.establishmentName = list?.find(e => e.id === this.establishmentId)?.name ?? null,
+      error: () => this.establishmentName = null,
+    });
+  }
+
+  /** a ficha é de outro estabelecimento (as OS de lá só abrem entrando nele) */
+  get isForeign(): boolean { return !!this.establishmentId; }
+
+  get backQueryParams(): Record<string, number> {
+    return this.establishmentId ? { estab: this.establishmentId } : {};
+  }
+
   private loadOrders(): void {
     if (!this.user) return;
-    this._workOrders.list({ clientId: this.user.id, pageSize: 50 }).subscribe({
+    this._workOrders.list({ clientId: this.user.id, pageSize: 50, establishmentId: this.establishmentId }).subscribe({
       next: page => { this.orders = page.items; this.ordersTotal = page.total; },
       error: () => this.orders = [],
     });
@@ -163,7 +196,7 @@ export class ClientDetailComponent implements OnInit, OnDestroy {
       ...(f.hasAddress && {
         address: { ...a, complement: a.complement || undefined },
       }),
-    }).subscribe({
+    }, this.establishmentId).subscribe({
       next: user => {
         this.user = user;
         this.saving = false;
@@ -184,7 +217,7 @@ export class ClientDetailComponent implements OnInit, OnDestroy {
   addVehicle(): void {
     if (!this.user) return;
     const ref = this._modal.show(ModalCreateVehicleComponent, {
-      initialState: { title: 'Novo veículo', userId: this.user.id, clientName: this.user.name },
+      initialState: { title: 'Novo veículo', userId: this.user.id, clientName: this.user.name, establishmentId: this.establishmentId },
       class: 'modal-lg',
     });
     ref.content?.vehicleCreated.subscribe((v: Vehicle) => {
@@ -194,7 +227,13 @@ export class ClientDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  openOrder(wo: WorkOrder): void { this._router.navigate(['/orders', wo.id]); }
+  openOrder(wo: WorkOrder): void {
+    if (this.isForeign) {
+      this._toastr.info(`Esta OS é de ${this.establishmentName ?? 'outro estabelecimento'}. Troque de estabelecimento para abri-la.`);
+      return;
+    }
+    this._router.navigate(['/orders', wo.id]);
+  }
 
   newOrder(): void { this._router.navigate(['/orders/new']); }
 

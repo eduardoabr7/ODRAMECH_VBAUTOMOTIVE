@@ -6,8 +6,9 @@
       <h1 class="page-title reveal" style="--i:1">{{ (session.isStaff$ | async) ? 'Ordens de serviço' : 'Meus serviços' }}</h1>
       <p class="page-sub reveal" style="--i:2">Acompanhe cada veículo do check-in à entrega.</p>
     </div>
-    <div class="page-actions reveal" style="--i:3" *ngIf="session.isStaff$ | async">
-      <a routerLink="/orders/new" class="btn-x btn-solid"><i class="fa-solid fa-plus"></i>Abrir OS</a>
+    <div class="page-actions reveal" style="--i:3">
+      <app-export-button [options]="(session.isStaff$ | async) ? [exportOrders, exportPayments] : [exportOrders]"></app-export-button>
+      <a *ngIf="session.isStaff$ | async" routerLink="/orders/new" class="btn-x btn-solid"><i class="fa-solid fa-plus"></i>Abrir OS</a>
     </div>
   </div>
 

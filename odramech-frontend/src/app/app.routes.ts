@@ -72,6 +72,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/quote-document/quote-document-settings.component').then(m => m.QuoteDocumentSettingsComponent),
       },
       {
+        path: 'settings/work-order',
+        title: 'Ordens de serviço · Configurações · Odramech',
+        loadComponent: () => import('./features/work-order-settings/work-order-settings.component').then(m => m.WorkOrderSettingsComponent),
+      },
+      {
         path: 'settings/theme',
         title: 'Tema e marca · Odramech',
         loadComponent: () => import('./features/branding/theme-settings.component').then(m => m.ThemeSettingsComponent),

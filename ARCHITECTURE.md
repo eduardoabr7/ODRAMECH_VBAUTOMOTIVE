@@ -38,6 +38,8 @@ usuário, descobre a empresa pela sessão e repassa a chamada com uma chave de s
 | 5 | **Strategy** | `assinaturas/src/domain/billing-cycle.strategy.ts` | Mensal × Anual: cálculo de período sem `if (interval === …)`. Trimestral = nova classe. |
 | | | `assinaturas/src/payments/payment-method.strategy.ts` | Pix, Cartão e Boleto: cada um sabe cobrar. |
 | | | `frontend/src/app/features/subscription/payment-method.strategies.ts` | O que mostrar por forma de pagamento. |
+| | | `backend/src/work-order/domain/appointment-access.ts` | Quem escreve no histórico da OS: equipe (público + interno) × cliente (só público, só na própria OS e só se o estabelecimento liberou). Novo perfil = nova estratégia. |
+| | | `backend/src/export/sources/*` | Cada documento exportável (OS, orçamentos, clientes, veículos, pagamentos) monta suas abas; o `ExportService` escolhe pelo tipo. Novo documento = nova classe na lista do módulo. |
 | 6 | **Observer** | `backend/src/core/events/domain-event-bus.ts` + `work-order/listeners/status-timeline.listener.ts` | Mudou o status da OS → o histórico público ganha uma linha (o cliente acompanha). Quem muda o status não conhece quem reage. Falha de um listener não derruba a operação. |
 | | | `assinaturas/src/events/*` | Todo evento de assinatura vai para auditoria (tabela `subscription_events`), console e webhook do backend. |
 | | | `frontend/.../connection.service.ts` (RxJS) | Queda/volta da conexão notifica banner, layout e assinatura. |
@@ -47,9 +49,13 @@ usuário, descobre a empresa pela sessão e repassa a chamada com uma chave de s
 | 8 | **Adapter** | `backend/src/subscription/gateway/http-subscription.gateway.ts` | Traduz a porta `SubscriptionGateway` para a API REST do serviço de assinaturas. |
 | | | `assinaturas/src/payments/sandbox/sandbox.provider.ts` | Implementa a porta `PaymentGateway`. Mercado Pago/Asaas/Stripe entram como outros adapters. |
 | | | `frontend/src/app/shared/services/zipcode.service.ts` | Formato da OpenCEP (`logradouro`, `uf`…) fica só nesse arquivo. |
+| | | `backend/src/export/writers/exceljs-spreadsheet.writer.ts` | Porta `SpreadsheetWriter` → ExcelJS (.xlsx com formatos BR, filtro, total em fórmula, proteção contra fórmula injetada). Trocar o formato = outro writer. |
+| | | `backend/src/work-order/adapters/settings-client-participation.adapter.ts` | A OS pergunta "cliente pode escrever?" por uma porta; o adapter responde com as configurações do estabelecimento. |
+| | | `frontend/src/app/shared/media/camera-session.ts` | `getUserMedia` (câmera ao vivo + pedido de permissão) atrás de uma classe; sem https cai para a câmera nativa do celular. |
 | 9 | **Facade** | `backend/src/dashboard/dashboard.facade.ts` | A tela inicial faz **uma** chamada; a fachada orquestra OS, financeiro e clientes. Também resolveu a dependência circular OS ↔ financeiro. |
 | | | `backend/src/subscription/subscription.facade.ts` | Empresa da sessão, nome da empresa, permissão de admin e modo de cobrança numa interface simples. |
 | | | `frontend/src/app/features/subscription/subscription.facade.ts` | Estado (signals) + operações da assinatura; componentes só apresentam. |
+| | | `backend/src/export/export.service.ts` | Exportar = achar a fonte, aplicar estabelecimento/permissão, gerar o arquivo — o controller só devolve o download. |
 | 10 | **Proxy** | `backend/src/subscription/gateway/resilient-subscription.proxy.ts` | Controla o acesso ao serviço remoto (circuit breaker). Serviço de assinaturas fora do ar **nunca para a oficina**: acesso em "falha aberta", demais operações com 503 claro. |
 | | | `frontend/src/app/app.routes.ts` (lazy `loadComponent`) + `AuthGuard` | Proxy virtual (carrega a tela só quando acessada) e de proteção (exige sessão). |
 | 11 | **Command** | `backend/src/core/commands/command-bus.ts` + `work-order/commands/*` | Mudar status/responsável da OS são comandos com **undo** (30 s). |
@@ -102,6 +108,15 @@ SubscriptionFacade
 3. Adicionar as credenciais ao `.env` e ao schema do `SubscriptionsConfig`.
 
 Nenhum serviço, regra ou tela precisa mudar.
+
+---
+
+## Estabelecimento escolhido na tela (sem trocar de login)
+
+Quem é da equipe de vários estabelecimentos pode abrir dados de outro (ex.: ficha de cliente pela lista de clientes)
+mandando `?establishmentId=`. O `EstablishmentScope` (`backend/src/core/auth/establishment-scope.service.ts`) confere
+que a pessoa é da equipe de lá e usa o **papel que ela tem lá**. Usado em: ficha/edição de usuário, lista de OS,
+cadastro/vínculo de veículo, cadastro de cliente e exportações. Abrir/criar OS continua exigindo entrar no estabelecimento.
 
 ---
 

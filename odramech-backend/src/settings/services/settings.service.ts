@@ -6,7 +6,7 @@ import { sanitizeHtml } from 'src/shared/utils/html.util';
 import { assertManager } from 'src/shared/utils/role.util';
 import { PlanFeature } from 'src/subscription/gateway/subscription.gateway';
 import { PlanEntitlementsService } from 'src/subscription/plan-entitlements.service';
-import { BrandingDTO, QuoteDocumentPreviewDTO, QuoteDocumentSettingsDTO } from '../dto/settings.dto';
+import { BrandingDTO, QuoteDocumentPreviewDTO, QuoteDocumentSettingsDTO, WorkOrderSettingsDTO } from '../dto/settings.dto';
 import { CUSTOM_STARTER, renderQuoteDocument, sampleQuote, TEMPLATE_VARIABLES } from 'src/billing/document/quote-document.renderer';
 
 const DEFAULT_QUOTE_SETTINGS = {
@@ -17,6 +17,7 @@ const DEFAULT_QUOTE_SETTINGS = {
   quoteValidityDays: 15,
   markQuoteSentOnPrint: false,
   autoEmailQuote: false,
+  clientAppointmentsEnabled: false,
 };
 
 // Configurações do estabelecimento e tema da empresa. Recurso de plano é conferido aqui,
@@ -105,6 +106,27 @@ export class SettingsService {
       update: data,
     });
     return this.quoteDocument(auth);
+  }
+
+  // ordens de serviço
+  async workOrderSettings(establishmentId: number) {
+    const row = await this.prisma.establishmentSettings.findUnique({
+      where: { establishmentId },
+      select: { clientAppointmentsEnabled: true },
+    });
+    return { clientAppointmentsEnabled: row?.clientAppointmentsEnabled ?? DEFAULT_QUOTE_SETTINGS.clientAppointmentsEnabled };
+  }
+
+  /** só administradores mudam o que o cliente pode fazer na OS */
+  async saveWorkOrderSettings(auth: AuthPayload, dto: WorkOrderSettingsDTO) {
+    assertManager(auth.role);
+    const data = { ...(dto.clientAppointmentsEnabled !== undefined && { clientAppointmentsEnabled: dto.clientAppointmentsEnabled }) };
+    await this.prisma.establishmentSettings.upsert({
+      where: { establishmentId: auth.establishmentId },
+      create: { establishmentId: auth.establishmentId, ...data },
+      update: data,
+    });
+    return this.workOrderSettings(auth.establishmentId);
   }
 
   // tema

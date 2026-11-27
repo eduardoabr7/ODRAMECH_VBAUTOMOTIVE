@@ -19,3 +19,8 @@ export function sanitizeHtml(html: string | null | undefined): string | null {
   s = s.replace(/expression\s*\(/gi, '');
   return s.trim() || null;
 }
+
+export function sanitizeNoteHtml(html: string | null | undefined): string | null {
+  const s = sanitizeHtml(html);
+  return s ? s.replace(/<img\b[^>]*>/gi, '').trim() || null : null;
+}
