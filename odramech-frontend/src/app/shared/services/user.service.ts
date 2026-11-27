@@ -29,7 +29,7 @@ export class UserService {
       return this._nestApi.get(`user/${id}`);
     }
 
-    update(id: number, data: Partial<UserCreate>): Observable<UserDetail> {
+    update(id: number, data: Partial<UserCreate> & { active?: boolean }): Observable<UserDetail> {
       return this._nestApi.put(`user/${id}`, data);
     }
 

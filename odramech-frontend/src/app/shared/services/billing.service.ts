@@ -28,6 +28,11 @@ export class BillingService {
 
   addQuoteItem(id: number, item: ServiceItemInput): Observable<Quote> { return this._api.post(`quote/${id}/items`, item); }
 
+  /** envia ao e-mail do cliente (primeiro envio ou atualização) */
+  emailQuote(id: number): Observable<{ result: { status: 'ENVIADO' | 'SIMULADO'; to: string; kind: 'ENVIO' | 'ATUALIZACAO' }; quote: Quote }> {
+    return this._api.post(`quote/${id}/email`, {});
+  }
+
   convertQuote(id: number): Observable<{ workOrderId: number; numberOs: number }> {
     return this._api.post(`quote/${id}/convert`, {});
   }

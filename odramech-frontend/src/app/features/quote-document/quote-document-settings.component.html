@@ -1,0 +1,138 @@
+<div class="page">
+  <a class="back reveal" routerLink="/settings"><i class="fa-solid fa-arrow-left"></i> Configurações</a>
+
+  <div class="page-head">
+    <div>
+      <div class="eyebrow reveal">Oficina</div>
+      <h1 class="page-title reveal" style="--i:1">Documento de orçamento</h1>
+      <p class="page-sub reveal" style="--i:2">Modelo de impressão/PDF, validade padrão e o que acontece depois de imprimir.</p>
+    </div>
+    @if (!readOnly()) {
+      <div class="page-actions reveal" style="--i:3">
+        <button class="btn-x btn-accent" [disabled]="saving() || loading() || !dirty()" (click)="save()">
+          @if (saving()) { <span class="spinner-x"></span> } Salvar alterações
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (readOnly()) {
+    <div class="panel note reveal"><i class="fa-solid fa-lock"></i> Só administradores alteram estas configurações.</div>
+  }
+
+  @if (loading()) {
+    <div class="layout"><div class="panel sk"></div><div class="panel sk"></div></div>
+  } @else if (doc()) {
+    <div class="layout">
+      <div class="col">
+        <!-- Modelo -->
+        <section class="panel reveal" style="--i:2">
+          <div class="panel-head"><span class="panel-title">Modelo</span></div>
+          <div class="panel-body">
+            <div class="templates">
+              @for (t of TEMPLATES; track t.code) {
+                <button type="button" class="tpl" [class.on]="template() === t.code" [class.locked]="t.code === 'CUSTOM' && !canCustomize()"
+                        [disabled]="readOnly()" (click)="pick(t.code)">
+                  <span class="tpl-icon"><i [class]="t.icon"></i></span>
+                  <span class="tpl-name">
+                    {{ t.name }}
+                    @if (t.code === 'CUSTOM' && !canCustomize()) { <span class="lock-tag"><i class="fa-solid fa-lock"></i> Intermediário</span> }
+                  </span>
+                  <span class="tpl-desc">{{ t.desc }}</span>
+                </button>
+              }
+            </div>
+            @if (template() === 'CUSTOM' && !canCustomize()) {
+              <p class="hint left warn"><i class="fa-solid fa-triangle-exclamation"></i> Seu plano não inclui o documento personalizado — ele imprime no modelo padrão até você fazer upgrade.
+                <a routerLink="/settings/subscription">Ver planos</a></p>
+            }
+          </div>
+        </section>
+
+        <!-- Validade e impressão -->
+        <section class="panel reveal" style="--i:3">
+          <div class="panel-head"><span class="panel-title">Validade e impressão</span></div>
+          <div class="panel-body">
+            <div class="field narrow">
+              <label class="field-label" for="validity">Validade padrão do orçamento</label>
+              <div class="days">
+                <input id="validity" class="input" type="number" min="1" max="365" [disabled]="readOnly()"
+                       [ngModel]="validityDays()" (ngModelChange)="validityDays.set($event); touch()">
+                <span class="muted">dias</span>
+              </div>
+              <span class="hint left">Usada nos orçamentos novos (dá para mudar em cada um).</span>
+            </div>
+
+            <label class="toggle-row">
+              <span class="switch"><input type="checkbox" [disabled]="readOnly()" [ngModel]="markSent()" (ngModelChange)="markSent.set($event); touch()"><span></span></span>
+              <span>
+                <b>Marcar como "Enviado" ao imprimir</b>
+                <small>Ao fechar a janela de impressão, o sistema pergunta se o orçamento foi impresso; confirmando, um rascunho passa para Enviado. Desligado: o status não muda.</small>
+              </span>
+            </label>
+
+            <label class="toggle-row">
+              <span class="switch"><input type="checkbox" [disabled]="readOnly()" [ngModel]="autoEmail()" (ngModelChange)="autoEmail.set($event); touch()"><span></span></span>
+              <span>
+                <b>Enviar orçamento para o cliente ao salvar (e-mail)</b>
+                <small>O PDF vai para o e-mail do cliente assim que o orçamento é salvo, com botões para ele aprovar ou recusar.
+                  Se o orçamento for alterado depois, o cliente recebe "Seu orçamento foi atualizado" — 10 minutos após a última alteração, para juntar edições seguidas num e-mail só.
+                  A mesma versão nunca é enviada duas vezes. Desligado: o envio é pelo botão "Enviar por e-mail" na tela do orçamento.</small>
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Editor -->
+        @if (template() === 'CUSTOM' && canCustomize()) {
+          <section class="panel reveal" style="--i:4">
+            <div class="panel-head">
+              <span class="panel-title">Editor do documento</span>
+              @if (!readOnly()) { <button class="btn-x btn-ghost sm" (click)="restoreStarter()"><i class="fa-solid fa-rotate-left"></i>Modelo inicial</button> }
+            </div>
+            <div class="panel-body">
+              <div class="segmented parts">
+                <button type="button" [class.active]="part() === 'header'" (click)="part.set('header')">Cabeçalho</button>
+                <button type="button" [class.active]="part() === 'body'" (click)="part.set('body')">Corpo</button>
+                <button type="button" [class.active]="part() === 'footer'" (click)="part.set('footer')">Rodapé</button>
+              </div>
+
+              @switch (part()) {
+                @case ('header') { <app-summernote-editor [value]="header()" (valueChange)="setPart($event, 'header')" [height]="200" [disabled]="readOnly()" /> }
+                @case ('body') { <app-summernote-editor [value]="body()" (valueChange)="setPart($event, 'body')" [height]="240" [disabled]="readOnly()" placeholder="Vazio = cliente, veículo, itens e observações" /> }
+                @case ('footer') { <app-summernote-editor [value]="footer()" (valueChange)="setPart($event, 'footer')" [height]="140" [disabled]="readOnly()" /> }
+              }
+
+              <div class="vars">
+                <span class="field-label">Variáveis <span class="opt">clique para inserir no cursor</span></span>
+                <div class="chips">
+                  @for (v of VARIABLES(); track v.key) {
+                    <button type="button" class="chip" [disabled]="readOnly()" (mousedown)="editors.first?.saveRange()" (click)="insertVariable(v.key)" [title]="token(v.key)">
+                      {{ v.label }}
+                    </button>
+                  }
+                </div>
+                <p class="hint left"><i class="fa-solid fa-code"></i> Use o botão <b>&lt;/&gt;</b> do editor para colar HTML. Scripts e formulários são removidos por segurança.</p>
+              </div>
+            </div>
+          </section>
+        }
+      </div>
+
+      <!-- Pré-visualização -->
+      <aside class="col preview-col">
+        <section class="panel reveal" style="--i:3">
+          <div class="panel-head">
+            <span class="panel-title">Pré-visualização</span>
+            <span class="muted small">orçamento de exemplo</span>
+          </div>
+          <div class="preview">
+            @if (preview(); as html) {
+              <iframe class="sheet" sandbox="" title="Pré-visualização do orçamento" [srcdoc]="html"></iframe>
+            }
+          </div>
+        </section>
+      </aside>
+    </div>
+  }
+</div>

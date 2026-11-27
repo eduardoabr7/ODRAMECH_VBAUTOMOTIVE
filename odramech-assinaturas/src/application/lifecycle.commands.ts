@@ -48,8 +48,11 @@ export class RollPeriodCommand implements LifecycleCommand {
     this.label = `avanço de período ${sub.enterpriseId}`;
   }
   async execute() {
+    // a fatura paga pode ser de outro plano (troca agendada para a virada do período)
+    const plan = await this.d.plans.findByCode(this.paid.planCode);
     const updated = await this.d.subs.update(this.sub.id, {
       status: 'ACTIVE', currentPeriodStart: this.paid.periodStart, currentPeriodEnd: this.paid.periodEnd,
+      ...(plan && { planId: plan.id }),
     });
     await this.d.events.publish({
       type: this.sub.status === 'TRIALING' ? 'subscription.activated' : 'subscription.renewed',

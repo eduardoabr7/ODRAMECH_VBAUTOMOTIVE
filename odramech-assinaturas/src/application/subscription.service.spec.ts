@@ -9,10 +9,24 @@ import { Plan } from '../domain/model';
 import { addMonthsClamped, cycleFor } from '../domain/billing-cycle.strategy';
 import { decideAccess } from '../domain/access-policy';
 
+const plan = (id: number, code: string, priceCents: number, tier: number, maxEstablishments: number | null, features: string[] = []): Plan =>
+  ({ id, code, name: code, interval: 'MONTHLY', priceCents, currency: 'BRL', description: null, active: true, sortOrder: tier, tier, maxEstablishments, features });
+
 const PLANS: Plan[] = [
-  { id: 1, code: 'MENSAL', name: 'Mensal', interval: 'MONTHLY', priceCents: 14990, currency: 'BRL', description: null, active: true, sortOrder: 1 },
-  { id: 2, code: 'ANUAL', name: 'Anual', interval: 'YEARLY', priceCents: 143880, currency: 'BRL', description: null, active: true, sortOrder: 2 },
+  plan(1, 'BASIC', 22990, 1, 1),
+  plan(2, 'INTERMEDIARIO', 42500, 2, 3, ['QUOTE_DOCUMENT_EDITOR']),
+  plan(3, 'PRO', 79900, 3, 5, ['QUOTE_DOCUMENT_EDITOR']),
+  plan(4, 'ULTRA', 239900, 4, null, ['QUOTE_DOCUMENT_EDITOR']),
 ];
+
+/** assina o plano com cartão e deixa ATIVA (passa o teste) */
+async function activate(service: SubscriptionService, clock: FixedClock, code: string) {
+  await service.overview(1);
+  const { openInvoice } = await service.selectPlan(1, code, 'CARD');
+  await service.payInvoice(1, openInvoice!.id, 'CARD', { cardToken: 'tok_ok' });
+  clock.advanceDays(15);
+  await service.processLifecycle();
+}
 
 function setup(start = new Date('2026-01-10T12:00:00Z')) {
   const clock = new FixedClock(start);
@@ -26,7 +40,7 @@ function setup(start = new Date('2026-01-10T12:00:00Z')) {
   const service = new SubscriptionService(
     new InMemoryPlanRepository(PLANS), subs, invoices,
     provider.createGateway(), provider.createWebhookParser(), publisher, clock,
-    { trialDays: 14, graceDays: 7, renewalLeadDays: 5, defaultPlanCode: 'MENSAL' },
+    { trialDays: 14, graceDays: 7, renewalLeadDays: 5, defaultPlanCode: 'INTERMEDIARIO' },
   );
   return { service, clock, subs, invoices, events };
 }
@@ -52,26 +66,56 @@ describe('SubscriptionService', () => {
     expect(events.map(e => e.type)).toContain('subscription.trial_started');
   });
 
-  it('plano anual mostra desconto de 20% e equivalente mensal', async () => {
+  it('teste grátis usa o plano padrão e o acesso informa limites e recursos', async () => {
     const { service } = setup();
-    const anual = (await service.listPlans()).find(p => p.code === 'ANUAL')!;
-    expect(anual.monthlyEquivalentCents).toBe(11990);
-    expect(anual.savingsPercent).toBe(20);
+    const a = await service.access(1);
+    expect(a.plan).toEqual({ code: 'INTERMEDIARIO', name: 'INTERMEDIARIO', tier: 2, maxEstablishments: 3, features: ['QUOTE_DOCUMENT_EDITOR'] });
   });
 
-  it('escolher plano no teste gera fatura começando no fim do teste', async () => {
+  it('escolher plano no teste troca o plano na hora e a fatura começa no fim do teste', async () => {
     const { service } = setup();
     await service.overview(1);
-    const o = await service.selectPlan(1, 'ANUAL', 'PIX');
-    expect(o.openInvoice!.amountCents).toBe(143880);
+    const o = await service.selectPlan(1, 'PRO', 'PIX');
+    expect(o.plan!.code).toBe('PRO');
+    expect(o.openInvoice!.amountCents).toBe(79900);
     expect(o.openInvoice!.periodStart.toISOString()).toBe('2026-01-24T12:00:00.000Z');
-    expect(o.openInvoice!.periodEnd.toISOString()).toBe('2027-01-24T12:00:00.000Z');
+    expect(o.openInvoice!.periodEnd.toISOString()).toBe('2026-02-24T12:00:00.000Z');
+  });
+
+  it('upgrade com assinatura paga: começa agora, com crédito do período restante, e só libera após pagar', async () => {
+    const { service, clock } = setup();
+    await activate(service, clock, 'BASIC'); // período 24/01 → 24/02
+    clock.set(new Date('2026-02-08T12:00:00Z')); // metade do período (15 de 31 dias)
+
+    const o = await service.selectPlan(1, 'PRO', 'CARD');
+    expect(o.plan!.code).toBe('BASIC'); // ainda não pagou
+    const inv = o.openInvoice!;
+    expect(inv.periodStart.toISOString()).toBe('2026-02-08T12:00:00.000Z');
+    expect(inv.amountCents).toBe(79900 - Math.floor(22990 * 16 / 31));
+
+    const paid = await service.payInvoice(1, inv.id, 'CARD', { cardToken: 'tok_ok' });
+    expect(paid.plan!.code).toBe('PRO');
+    expect(paid.subscription.currentPeriodEnd.toISOString()).toBe('2026-03-08T12:00:00.000Z');
+  });
+
+  it('downgrade com assinatura paga: vale só na renovação', async () => {
+    const { service, clock } = setup();
+    await activate(service, clock, 'PRO');
+    const o = await service.selectPlan(1, 'BASIC', 'CARD');
+    expect(o.plan!.code).toBe('PRO');
+    expect(o.openInvoice!.periodStart.toISOString()).toBe('2026-02-24T12:00:00.000Z');
+    await service.payInvoice(1, o.openInvoice!.id, 'CARD', { cardToken: 'tok_ok' });
+    expect((await service.overview(1)).plan!.code).toBe('PRO');
+
+    clock.set(new Date('2026-02-25T12:00:00Z'));
+    await service.processLifecycle();
+    expect((await service.overview(1)).plan!.code).toBe('BASIC');
   });
 
   it('cartão aprovado no teste: segue em teste e vira ATIVA na virada do período', async () => {
     const { service, clock } = setup();
     await service.overview(1);
-    const { openInvoice } = await service.selectPlan(1, 'MENSAL', 'CARD');
+    const { openInvoice } = await service.selectPlan(1, 'BASIC', 'CARD');
     const paid = await service.payInvoice(1, openInvoice!.id, 'CARD', { cardToken: 'tok_ok' });
     expect(paid.invoice.status).toBe('PAID');
     expect(paid.subscription.status).toBe('TRIALING');
@@ -86,7 +130,7 @@ describe('SubscriptionService', () => {
   it('cartão recusado não altera a fatura para paga', async () => {
     const { service } = setup();
     await service.overview(1);
-    const { openInvoice } = await service.selectPlan(1, 'MENSAL', 'CARD');
+    const { openInvoice } = await service.selectPlan(1, 'BASIC', 'CARD');
     await expect(service.payInvoice(1, openInvoice!.id, 'CARD', { cardToken: 'tok_recusado' })).rejects.toThrow('recusado');
     expect((await service.overview(1)).openInvoice!.status).toBe('OPEN');
   });
@@ -98,7 +142,7 @@ describe('SubscriptionService', () => {
     await service.processLifecycle();
     expect((await service.overview(1)).subscription.status).toBe('PAST_DUE');
 
-    const { openInvoice } = await service.selectPlan(1, 'MENSAL', 'PIX');
+    const { openInvoice } = await service.selectPlan(1, 'BASIC', 'PIX');
     const pending = await service.payInvoice(1, openInvoice!.id, 'PIX', {});
     expect(pending.invoice.status).toBe('OPEN');
     expect(pending.invoice.instructions?.pixCode).toBeTruthy();
@@ -133,7 +177,7 @@ describe('SubscriptionService', () => {
   it('cancelamento agendado mantém acesso até o fim do período e então encerra', async () => {
     const { service, clock } = setup();
     await service.overview(1);
-    const { openInvoice } = await service.selectPlan(1, 'MENSAL', 'CARD');
+    const { openInvoice } = await service.selectPlan(1, 'BASIC', 'CARD');
     await service.payInvoice(1, openInvoice!.id, 'CARD', { cardToken: 'tok_ok' });
     clock.advanceDays(15);
     await service.processLifecycle(); // ativa
@@ -153,7 +197,7 @@ describe('SubscriptionService', () => {
   it('renovação: gera a fatura do próximo mês alguns dias antes do vencimento', async () => {
     const { service, clock, invoices } = setup();
     await service.overview(1);
-    const { openInvoice } = await service.selectPlan(1, 'MENSAL', 'CARD');
+    const { openInvoice } = await service.selectPlan(1, 'BASIC', 'CARD');
     await service.payInvoice(1, openInvoice!.id, 'CARD', { cardToken: 'tok_ok' });
     clock.advanceDays(15);
     await service.processLifecycle(); // ativa: período 24/01 → 24/02

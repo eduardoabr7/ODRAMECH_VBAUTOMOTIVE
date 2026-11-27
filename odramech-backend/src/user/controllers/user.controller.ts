@@ -36,6 +36,6 @@ export class UserController {
   @Put(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateUserDTO, @CurrentAuth() auth: AuthPayload) {
     if (auth.sub !== id) assertStaff(auth.role);
-    return this.users.update(id, auth.establishmentId, data);
+    return this.users.update(auth, id, data);
   }
 }

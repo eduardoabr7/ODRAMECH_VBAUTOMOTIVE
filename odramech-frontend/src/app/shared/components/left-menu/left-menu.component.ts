@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
@@ -6,6 +6,7 @@ import { AuthService } from '@shared/services/auth.service';
 import { AuthContext } from '@shared/models/AuthContext';
 import { RoleEnum } from '@shared/enums/role.enum';
 import { InitialsPipe, RoleLabelPipe } from '@shared/ui/pipes';
+import { BrandingService } from '../../../features/branding/branding.service';
 
 interface NavItem {
   label: string;
@@ -22,6 +23,8 @@ interface NavItem {
   styleUrl: './left-menu.component.scss',
 })
 export class LeftMenuComponent implements OnInit, OnDestroy {
+  /** logo e nome da oficina (tema) no lugar do Odramech */
+  readonly brand = inject(BrandingService);
 
   constructor(
     private readonly _authService: AuthService,

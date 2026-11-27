@@ -11,6 +11,7 @@ import { Role } from '@shared/models/UserCorporation';
 import { EstablishmentCreate } from '@shared/models/EstablishmentCreate';
 import { EstablishmentService } from '@shared/services/establishment.service';
 import { ModalCreateEstablishmentComponent } from '../modal-create-establishment/modal-create-establishment.component';
+import { AuthService } from '@shared/services/auth.service';
 
 interface Establishment {
   id: number;
@@ -50,7 +51,8 @@ export class ModalViewEstablishmentsComponent extends BaseModalComponent impleme
     private readonly _modalService: BsModalService,
     private readonly _toastr: ToastrService,
     private readonly _userCorpService: UserCorporationService,
-    private readonly _establishmentService: EstablishmentService
+    private readonly _establishmentService: EstablishmentService,
+    private readonly _auth: AuthService,
   ) {
     super(bsModalRef);
   }
@@ -137,9 +139,37 @@ export class ModalViewEstablishmentsComponent extends BaseModalComponent impleme
     });
   }
 
-  // Edição e exclusão dependem de endpoints ainda não existentes no backend.
+  canEdit(est: Establishment): boolean {
+    return est.role === 'ADMIN' || est.role === 'SUPERUSER';
+  }
+
   openEdit(est: Establishment): void {
-    this._toastr.info(`Edição de "${est.name}" ainda não está disponível.`);
+    if (!this.canEdit(est)) {
+      this._toastr.info('Só administradores do estabelecimento podem editá-lo.');
+      return;
+    }
+    const ref = this._modalService.show(ModalCreateEstablishmentComponent, {
+      initialState: { title: `Editar ${est.name}`, withCadEnterprise: true, editing: est as any },
+      class: 'modal-lg',
+    });
+
+    ref.content?.onClose.subscribe((form: EstablishmentCreate | null) => {
+      if (!form) return;
+      this._establishmentService.update(est.id, form).subscribe({
+        next: saved => {
+          this._toastr.success(`${saved.name} atualizado.`);
+          this.load();
+          // é o estabelecimento em uso? atualiza nome/foto no menu
+          this._auth.user$.subscribe(ctx => {
+            if (ctx?.usercorp?.establishment?.id === est.id) this._auth.refreshAuthContext().subscribe();
+          }).unsubscribe();
+        },
+        error: err => {
+          const first = err?.error?.errors?.[0]?.constraints;
+          this._toastr.error(first ? String(Object.values(first)[0]) : err?.error?.message ?? 'Não foi possível salvar.');
+        },
+      });
+    });
   }
 
   confirmDelete(est: Establishment): void {

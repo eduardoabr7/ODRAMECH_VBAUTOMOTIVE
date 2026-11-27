@@ -1,39 +1,39 @@
-import { Body, Controller, Get, LoggerService, Param, Post } from "@nestjs/common";
+import { Body, Controller, ForbiddenException, Get, Param, ParseIntPipe, Post } from "@nestjs/common";
+import { Role } from "@prisma/client";
 import { EnterpriseService } from "../services/enterprise.service";
-import { CustomLogger } from "src/shared/services/custom-logger.service";
 import { EnterpriseWithEstablishmentDTO } from "../dto/enterprise-with-establishment.dto";
+import { AuthPayload } from "src/auth/interfaces/auth-payload.interface";
+import { CurrentAuth } from "src/core/auth/current-auth.decorator";
+import { assertManager } from "src/shared/utils/role.util";
 
 @Controller('enterprise')
 export class EnterpriseController {
 
-    private readonly _logger = new CustomLogger()
-
     constructor(
         private readonly _enterpriseService: EnterpriseService
-    ){
-        this._logger.setContextModule(EnterpriseController.name);
-    }
+    ){}
 
+    /** lista TODAS as empresas do sistema — só para o super usuário (suporte Odramech) */
     @Get()
-    async getAllEnterprises() {
-        const enterprises = await this._enterpriseService.getAll();
-        // Converte o array de empresas para uma string JSON formatada
-        const enterprisesJson = JSON.stringify(enterprises, null, 2);
-    
-        this._logger.log(`Retornando empresas: ${enterprisesJson}`, '#00ca9f');
-        return enterprises;
+    getAllEnterprises(@CurrentAuth() auth: AuthPayload) {
+        if (auth.role !== Role.SUPERUSER) throw new ForbiddenException('Sem permissão.');
+        return this._enterpriseService.getAll();
     }
 
+    /** estabelecimentos de uma empresa — só se o usuário tem vínculo ativo com ela */
     @Get('establishments/:idEnterprise')
-    getAllEstablishmentsFromEnterprise(@Param('idEnterprise') idEnterprise: number){
-        this._logger.log('Retornando estabelecimentos da empresa ID: '+idEnterprise, '#00ffb2');
+    async getAllEstablishmentsFromEnterprise(@Param('idEnterprise', ParseIntPipe) idEnterprise: number, @CurrentAuth() auth: AuthPayload) {
+        if (!(await this._enterpriseService.userBelongsTo(auth.sub, idEnterprise))) {
+            throw new ForbiddenException('Você não tem acesso a esta empresa.');
+        }
         return this._enterpriseService.getAllEstablishmentsFromEnterprise(idEnterprise);
     }
 
+    /** cria uma empresa nova com o primeiro estabelecimento; quem cria vira o administrador dela */
     @Post('establishment')
-    createEnterpriseWithEstablishment(
-        @Body() body: EnterpriseWithEstablishmentDTO) {
-        return this._enterpriseService.createEnterpriseWithEstablishment(body)
+    createEnterpriseWithEstablishment(@Body() body: EnterpriseWithEstablishmentDTO, @CurrentAuth() auth: AuthPayload) {
+        assertManager(auth.role);
+        return this._enterpriseService.createEnterpriseWithEstablishment(body, auth.sub)
     }
 
 }

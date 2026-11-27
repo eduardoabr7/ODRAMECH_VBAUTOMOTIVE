@@ -25,7 +25,7 @@
         <section class="panel reveal" style="--i:2" [class.raise]="showResults">
           <div class="panel-head"><span class="panel-title">Cliente e veículo</span></div>
           <div class="panel-body">
-            <div *ngIf="!client" class="search-wrap" closeOnClickOutside (clickOutside)="showResults = false">
+            <div *ngIf="!client" class="search-wrap" closeOnClickOutside (clickOutside)="showResults = false" keyboardList (escape)="showResults = false">
               <div class="input-icon">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input class="input" placeholder="Buscar cliente por nome, telefone ou e-mail" [(ngModel)]="clientTerm" (ngModelChange)="onClientInput()" autofocus>
@@ -99,13 +99,25 @@
         <p class="page-sub reveal" style="--i:2">{{ quote.vehicle.make }} {{ quote.vehicle.name }} · <span class="plate">{{ quote.vehicle.plate | plate }}</span></p>
       </div>
       <div class="page-actions reveal" style="--i:3">
-        <button class="btn-x btn-outline" (click)="print()"><i class="fa-solid fa-print"></i>Imprimir / PDF</button>
+        <button class="btn-x btn-outline" (click)="print()" [disabled]="printing">
+          <span class="spinner-x" *ngIf="printing"></span><i class="fa-solid fa-print" *ngIf="!printing"></i>Imprimir / PDF
+        </button>
         <a *ngIf="quote.workOrder" class="btn-x btn-solid" [routerLink]="['/orders', quote.workOrder.id]">Ver OS #{{ quote.workOrder.numberOs }}<i class="fa-solid fa-arrow-right"></i></a>
         <button *ngIf="!locked" class="btn-x btn-accent" [disabled]="converting || !quote.items.length" (click)="convert()">
           <span class="spinner-x" *ngIf="converting"></span><i class="fa-solid fa-check" *ngIf="!converting"></i>Aprovar e abrir OS
         </button>
       </div>
     </header>
+
+    <!-- Confirmação depois de fechar a janela de impressão -->
+    <div class="print-ask panel no-print" *ngIf="askPrinted" role="alertdialog" aria-live="polite">
+      <i class="fa-solid fa-print"></i>
+      <span>O orçamento <b>#{{ quote.numberQuote }}</b> foi impresso / salvo em PDF?</span>
+      <div class="print-ask-actions">
+        <button class="btn-x btn-ghost sm" (click)="answerPrinted(false)">Não, cancelei</button>
+        <button class="btn-x btn-accent sm" (click)="answerPrinted(true)">Sim, marcar como Enviado</button>
+      </div>
+    </div>
 
     <div class="status-bar panel reveal no-print" style="--i:3" *ngIf="isStaff">
       <span class="muted">Status</span>
@@ -118,26 +130,13 @@
 
     <div class="layout">
       <div class="col">
-        <!-- Documento (também é o que sai na impressão) -->
+        <!-- A impressão é gerada à parte (modelo do documento), sem os campos de edição desta tela -->
         <section class="panel doc reveal" style="--i:4">
-          <div class="doc-head print-only">
-            <div>
-              <strong class="doc-brand">{{ establishmentName }}</strong>
-              <span>Orçamento #{{ quote.numberQuote }} · {{ quote.createdAt | date:'dd/MM/yyyy' }}</span>
-            </div>
-            <div class="doc-to">
-              <span>{{ quote.client.name }}</span>
-              <span>{{ quote.vehicle.make }} {{ quote.vehicle.name }} · {{ quote.vehicle.plate | plate }}</span>
-            </div>
-          </div>
-          <div class="panel-head no-print"><span class="panel-title">Peças e serviços <span class="count">{{ quote.items.length }}</span></span></div>
+          <div class="panel-head"><span class="panel-title">Peças e serviços <span class="count">{{ quote.items.length }}</span></span></div>
           <app-items-editor [items]="quote.items" [editable]="!locked" [busy]="savingItem" (add)="addItem($event)" (remove)="removeItem($event)"></app-items-editor>
           <div class="doc-notes" *ngIf="quote.notes">
             <span class="field-label">Observações</span>
             <p>{{ quote.notes }}</p>
-          </div>
-          <div class="doc-foot print-only">
-            Válido até {{ quote.validUntil ? (quote.validUntil | date:'dd/MM/yyyy') : '—' }} · Gerado pelo Odramech
           </div>
         </section>
       </div>
@@ -159,6 +158,56 @@
             </div>
             <button *ngIf="!locked" class="btn-x btn-outline block mt" (click)="saveMeta()">Salvar observações</button>
             <p class="hint" *ngIf="quote.workOrder"><i class="fa-solid fa-lock"></i> Convertido em OS — os itens agora são editados na OS.</p>
+          </div>
+        </section>
+
+        <!-- E-mail para o cliente -->
+        <section class="panel reveal mail-panel" style="--i:6" *ngIf="isStaff && !quote.workOrder">
+          <div class="panel-head">
+            <span class="panel-title"><i class="fa-regular fa-envelope"></i> E-mail ao cliente</span>
+            <span class="mail-mode" [class.on]="autoEmail" [title]="autoEmail ? 'Envio automático ligado em Configurações → Documento de orçamento' : 'Envio manual'">{{ autoEmail ? 'Automático' : 'Manual' }}</span>
+          </div>
+          <div class="panel-body">
+            <p class="mail-to" *ngIf="clientEmail"><span class="muted">Para</span> {{ clientEmail }}</p>
+            <p class="mail-warn" *ngIf="!clientEmail"><i class="fa-solid fa-triangle-exclamation"></i> Cliente sem e-mail cadastrado.</p>
+
+            <!-- situação -->
+            <div class="mail-state" *ngIf="emailUpToDate">
+              <i class="fa-solid fa-circle-check ok"></i>
+              <span>Enviado {{ quote.emailSentAt | date:"dd/MM 'às' HH:mm" }}<br><small>Sem alterações desde então — não será reenviado.</small></span>
+            </div>
+            <div class="mail-state" *ngIf="emailOutdated">
+              <i class="fa-solid fa-pen-to-square warn-c"></i>
+              <span>Alterado depois do último envio ({{ quote.emailSentAt | date:"dd/MM HH:mm" }}).
+                <br><small *ngIf="quote.emailPendingAt">Atualização automática às <b>{{ quote.emailPendingAt | date:'HH:mm' }}</b> (aguarda 10 min sem novas alterações).</small>
+                <small *ngIf="!quote.emailPendingAt">O cliente ainda vê a versão anterior.</small></span>
+            </div>
+            <div class="mail-state" *ngIf="!quote.emailSentAt && quote.emailPendingAt">
+              <span class="spinner-x"></span><span>Enviando…</span>
+            </div>
+            <div class="mail-state" *ngIf="!quote.emailSentAt && !quote.emailPendingAt">
+              <i class="fa-regular fa-paper-plane muted"></i><span>Ainda não enviado ao cliente.</span>
+            </div>
+            <div class="mail-state bad" *ngIf="lastEmail?.status === 'FALHOU' && lastEmail?.version === quote.version">
+              <i class="fa-solid fa-circle-exclamation"></i><span>Último envio falhou: <small>{{ lastEmail?.error }}</small></span>
+            </div>
+            <div class="mail-state" *ngIf="lastEmail?.status === 'SIMULADO' && emailUpToDate">
+              <i class="fa-solid fa-flask muted"></i><span><small>Servidor de e-mail não configurado: o e-mail foi gerado mas não saiu. Configure em Configurações → E-mail de envio.</small></span>
+            </div>
+
+            <button class="btn-x block mt" [class.btn-accent]="!emailUpToDate" [class.btn-outline]="emailUpToDate"
+                    [disabled]="sendingEmail || emailUpToDate || !clientEmail || !quote.items.length" (click)="sendEmail()">
+              <span class="spinner-x" *ngIf="sendingEmail"></span>
+              <i class="fa-regular fa-paper-plane" *ngIf="!sendingEmail"></i>
+              {{ emailUpToDate ? 'Já enviado' : quote.emailPendingAt ? 'Enviar agora' : emailOutdated ? 'Enviar atualização' : 'Enviar por e-mail' }}
+            </button>
+
+            <button class="btn-x btn-ghost sm block mt-s" *ngIf="clientLink" (click)="copyClientLink()">
+              <i class="fa-solid fa-link"></i> Copiar link do cliente (aprovar/recusar)
+            </button>
+            <p class="hint" *ngIf="quote.clientRespondedAt">
+              Cliente {{ quote.status === 'APROVADO' ? 'aprovou' : 'recusou' }} pelo link em {{ quote.clientRespondedAt | date:"dd/MM 'às' HH:mm" }}.
+            </p>
           </div>
         </section>
       </aside>

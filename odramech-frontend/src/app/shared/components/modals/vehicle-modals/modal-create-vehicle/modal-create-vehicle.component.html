@@ -113,7 +113,7 @@
 
       <div class="row mb-3">
         <div class="col-12 col-md-5">
-          <div class="autocomplete-wrap" closeOnClickOutside (clickOutside)="showMakeDropdown = false">
+          <div class="autocomplete-wrap" closeOnClickOutside (clickOutside)="showMakeDropdown = false" keyboardList (escape)="showMakeDropdown = false">
             <label class="form-label">Marca <span class="text-danger">*</span></label>
             <input
               type="text"
@@ -123,12 +123,17 @@
               [(ngModel)]="form.make"
               #makeModel="ngModel"
               (input)="onMakeInput($event)"
+              (focus)="onMakeInput($event)"
+              role="combobox"
+              [attr.aria-expanded]="showMakeDropdown"
               required
               autocomplete="off" />
-            <div class="autocomplete-dropdown" *ngIf="showMakeDropdown && filteredMakes.length > 0">
+            <div class="autocomplete-dropdown" role="listbox" *ngIf="showMakeDropdown && filteredMakes.length > 0">
               <button
                 type="button"
                 class="autocomplete-item"
+                role="option"
+                tabindex="-1"
                 *ngFor="let make of filteredMakes"
                 (click)="selectMake(make)">
                 {{ make }}

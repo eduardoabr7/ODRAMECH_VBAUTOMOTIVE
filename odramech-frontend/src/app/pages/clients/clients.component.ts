@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { AuthService } from '@shared/services/auth.service';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
@@ -23,6 +25,10 @@ interface ClientRow {
   styleUrl: './clients.component.scss'
 })
 export class ClientsComponent implements OnInit {
+
+  /** estabelecimento da sessão (a lista abre nele) */
+  private readonly _ctx = toSignal(inject(AuthService).user$, { initialValue: null });
+  private _authService_currentEstablishmentId(): number | null { return this._ctx()?.usercorp?.establishment?.id ?? null; }
 
   constructor(
     private readonly _bsModalService: BsModalService,
@@ -54,7 +60,9 @@ export class ClientsComponent implements OnInit {
     this._userCorporationService.getEstablishmentsOnAdminOrWorker().subscribe({
       next: (value) => {
         this.establishments = value ?? [];
-        this.selectedEstablishmentId = this.establishments[0]?.id ?? null;
+        // abre no estabelecimento da sessão (antes abria no primeiro da lista)
+        const current = this._authService_currentEstablishmentId();
+        this.selectedEstablishmentId = this.establishments.find(e => e.id === current)?.id ?? this.establishments[0]?.id ?? null;
         if (this.selectedEstablishmentId) this.loadUsersByEstablishment(this.selectedEstablishmentId);
         else this.loading = false;
       },

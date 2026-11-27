@@ -27,15 +27,18 @@
     class="row selection-card mt-1"
     (click)="selectEstablishment(establishment)">
       <div class="col-4">
-        <img src="../../../../../assets/enterprise-no-photo.png">
+        <div class="sel-photo" [style.background]="establishment.logoUrl ? null : color(establishment.name)">
+          <img *ngIf="establishment.logoUrl" [src]="establishment.logoUrl" alt="">
+          <span *ngIf="!establishment.logoUrl">{{ initials(establishment.name) }}</span>
+        </div>
       </div>
       <div class="col-8 p-sm-0">
         <div class="
         info-enterp
         mt-3">
           <span>{{ establishment.name }}</span>
-          <h6 class="m-0">(51)99708-2562</h6>
-          <h6 class="m-0">Av. Barão do Cerro Largo, 1201</h6>
+          <h6 class="m-0" *ngIf="establishment.phone">{{ establishment.phone }}</h6>
+          <h6 class="m-0" *ngIf="establishment.address">{{ establishment.address.street }}, {{ establishment.address.number }} · {{ establishment.address.city }}</h6>
         </div>
       </div>
     </div>

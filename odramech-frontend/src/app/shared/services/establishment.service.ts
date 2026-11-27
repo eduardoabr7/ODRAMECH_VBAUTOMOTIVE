@@ -12,4 +12,14 @@ export class EstablishmentService {
     const { id, ...payload } = data;
     return this._nestApi.post('establishment', { ...payload, email: payload.email || undefined, enterpriseId });
   }
+
+  /** edita (só admin do estabelecimento); logoUrl: data URL nova, null remove, ausente mantém */
+  update(id: number, data: EstablishmentCreate): Observable<EstablishmentCreate & { id: number }> {
+    const { id: _id, address, ...payload } = data;
+    return this._nestApi.put(`establishment/${id}`, {
+      ...payload,
+      email: payload.email || null,
+      address: { ...address, complement: address.complement || null },
+    });
+  }
 }

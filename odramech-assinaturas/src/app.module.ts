@@ -63,7 +63,7 @@ function providerFactory(): PaymentProviderFactory {
           provider.createGateway(),
           provider.createWebhookParser(),
           events, clock,
-          { trialDays: cfg.trialDays, graceDays: cfg.graceDays, renewalLeadDays: cfg.renewalLeadDays, defaultPlanCode: 'MENSAL' },
+          { trialDays: cfg.trialDays, graceDays: cfg.graceDays, renewalLeadDays: cfg.renewalLeadDays, defaultPlanCode: cfg.defaultPlanCode },
         );
       },
     },

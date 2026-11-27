@@ -5,6 +5,7 @@ import { HttpSubscriptionGateway } from './gateway/http-subscription.gateway';
 import { ResilientSubscriptionProxy } from './gateway/resilient-subscription.proxy';
 import { CachingSubscriptionGateway } from './gateway/caching-subscription.gateway';
 import { SubscriptionFacade } from './subscription.facade';
+import { PlanEntitlementsService } from './plan-entitlements.service';
 import { SubscriptionAccessGuard } from './subscription-access.guard';
 import { SubscriptionController, SubscriptionWebhookController } from './subscription.controller';
 
@@ -30,7 +31,8 @@ import { SubscriptionController, SubscriptionWebhookController } from './subscri
     },
     SubscriptionFacade,
     SubscriptionAccessGuard,
+    PlanEntitlementsService,
   ],
-  exports: [SubscriptionGateway, SubscriptionAccessGuard],
+  exports: [SubscriptionGateway, SubscriptionAccessGuard, PlanEntitlementsService],
 })
 export class SubscriptionModule {}

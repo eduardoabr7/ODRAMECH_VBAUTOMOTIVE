@@ -2,9 +2,9 @@
 
   <!-- Marca -->
   <div class="brand">
-    <a routerLink="/home" class="brand-mark" aria-label="Odramech — início">
-      <img class="mark-img" src="assets/circle-sem-fundo-odramech-orange.png" alt="" width="26" height="26">
-      <span class="word">Odramech</span>
+    <a routerLink="/home" class="brand-mark" [attr.aria-label]="brand.name() + ' — início'">
+      <img class="mark-img" [class.custom]="brand.hasCustomLogo()" [src]="brand.logo()" alt="" width="26" height="26">
+      <span class="word" [title]="brand.name()">{{ brand.name() }}</span>
     </a>
     <button class="collapse-btn" type="button" (click)="toggleCollapse()" [attr.aria-label]="isCollapsed ? 'Expandir menu' : 'Recolher menu'">
       <i class="fa-solid" [class.fa-angles-left]="!isCollapsed" [class.fa-angles-right]="isCollapsed"></i>
@@ -13,7 +13,10 @@
 
   <!-- Estabelecimento atual -->
   <div class="workspace" [title]="authContext?.usercorp?.establishment?.name ?? ''">
-    <div class="ws-logo">{{ authContext?.usercorp?.name | initials }}</div>
+    <div class="ws-logo" [class.photo]="authContext?.usercorp?.establishment?.logoUrl">
+      <img *ngIf="authContext?.usercorp?.establishment?.logoUrl as photo" [src]="photo" alt="">
+      <ng-container *ngIf="!authContext?.usercorp?.establishment?.logoUrl">{{ authContext?.usercorp?.name | initials }}</ng-container>
+    </div>
     <div class="ws-text">
       <span class="ws-name">{{ authContext?.usercorp?.establishment?.name || '—' }}</span>
       <span class="ws-sub">{{ authContext?.usercorp?.name }}</span>

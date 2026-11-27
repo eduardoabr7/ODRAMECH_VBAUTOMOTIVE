@@ -6,6 +6,7 @@ import { serializeItem, toNum } from 'src/shared/utils/money.util';
 import { WorkOrderRepository } from 'src/work-order/repositories/work-order.repository';
 import { PaymentRepository, ReviewRepository, ServiceItemRepository } from '../repositories/billing.repositories';
 import { ServiceItemFactory } from '../factories/service-item.factory';
+import { QuoteMailService } from './quote-mail.service';
 import { FinancialReportBuilder } from '../reports/financial-report.builder';
 import { PaymentDTO, ReviewDTO, ServiceItemDTO, UpdateServiceItemDTO } from '../dto/billing.dto';
 
@@ -17,6 +18,7 @@ export class WorkOrderMoneyService {
     private readonly items: ServiceItemRepository,
     private readonly payments: PaymentRepository,
     private readonly reviews: ReviewRepository,
+    private readonly quoteMail: QuoteMailService,
   ) {}
 
   private async openWorkOrder(auth: AuthPayload, id: number) {
@@ -35,13 +37,21 @@ export class WorkOrderMoneyService {
 
   async updateItem(auth: AuthPayload, itemId: number, dto: UpdateServiceItemDTO) {
     const { item } = await this.ownedItem(auth, itemId);
-    return serializeItem(await this.items.update(itemId, ServiceItemFactory.patch(item, dto)));
+    const updated = serializeItem(await this.items.update(itemId, ServiceItemFactory.patch(item, dto)));
+    await this.quoteChanged(item);
+    return updated;
   }
 
   async deleteItem(auth: AuthPayload, itemId: number) {
-    await this.ownedItem(auth, itemId);
+    const { item } = await this.ownedItem(auth, itemId);
     await this.items.delete(itemId);
+    await this.quoteChanged(item);
     return { deleted: true };
+  }
+
+  /** item de orçamento (ainda não virou OS) mudou → nova versão do orçamento para o cliente */
+  private async quoteChanged(item: { quoteId: number | null; workOrderId: number | null }) {
+    if (item.quoteId && !item.workOrderId) await this.quoteMail.onContentChanged(item.quoteId);
   }
 
   private async ownedItem(auth: AuthPayload, itemId: number) {

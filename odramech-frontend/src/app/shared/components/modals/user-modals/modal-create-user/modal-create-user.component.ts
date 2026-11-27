@@ -42,6 +42,7 @@ export class ModalCreateUserComponent extends BaseModalComponent {
       password: '',
       principalPhone: '',
       secondaryPhone: '',
+      active: true,
       address: {
         street: '',
         number: '',
@@ -139,7 +140,9 @@ export class ModalCreateUserComponent extends BaseModalComponent {
         })
       ).subscribe({
         next: (value) => {
-          this._toastr.success('Usuário cadastrado com sucesso!');
+          this._toastr.success(value?.linkedExisting
+            ? 'Esta pessoa já tinha cadastro no Odramech (outro estabelecimento) e foi vinculada a este.'
+            : 'Usuário cadastrado com sucesso!');
           this.confirm(value);
         },
         error: (err) => {

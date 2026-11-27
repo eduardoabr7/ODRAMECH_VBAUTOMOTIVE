@@ -9,6 +9,7 @@ import { RequestWithUser } from '../dto/request-with-user.dto';
 import { PreLoginDTO } from '../dto/pre-login.dto';
 import { LoginDTO } from '../dto/login.dto';
 import { AuthPayload } from '../interfaces/auth-payload.interface';
+import { AppConfig } from 'src/core/config/app-config';
 
 @Controller('auth')
 export class AuthController {
@@ -23,16 +24,16 @@ export class AuthController {
 
     @Post('login')
     @Public()
-    async login(@Body() data: LoginDTO, @Res({ passthrough: true }) res: Response) {
+    async login(@Body() data: LoginDTO, @Res({ passthrough: true }) res: Response, @Req() req: any) {
         this.logger.log(`LOGIN SUCEDIDO - Acesso liberado para: ` + this._emailMaskService.mask(data.email), '#1abf44')
 
-        const { user, token } = await this._authService.login(data)
+        const { user, token } = await this._authService.login(data, req.ip)
 
         res.cookie('access', token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'strict',
-          maxAge: 15 * 60 * 1000
+          maxAge: AppConfig.get().values.sessionHours * 60 * 60 * 1000
         });
 
         return user;
@@ -40,10 +41,10 @@ export class AuthController {
 
     @Post('preLogin')
     @Public()
-    async preLogin(@Body() data: PreLoginDTO, @Res({ passthrough: true }) res: Response) {
+    async preLogin(@Body() data: PreLoginDTO, @Res({ passthrough: true }) res: Response, @Req() req: any) {
         this.logger.log(`Tentativa de login: ` + this._emailMaskService.mask(data.email), '#e1e5aa')
 
-        const { user, temporaryToken } = await this._authService.preLogin(data);
+        const { user, temporaryToken } = await this._authService.preLogin(data, req.ip);
 
         res.cookie('access', temporaryToken, {
           httpOnly: true,

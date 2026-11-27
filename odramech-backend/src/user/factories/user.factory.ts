@@ -11,6 +11,7 @@ export interface NewUserInput {
   principalPhone: string;
   secondaryPhone?: string | null;
   address?: AddressDTO | null;
+  active?: boolean;
 }
 
 export interface TenantContext {
@@ -18,6 +19,20 @@ export interface TenantContext {
   establishmentId: number;
   /** papel de quem está criando */
   requesterRole: Role;
+}
+
+/** Vínculo do usuário com um estabelecimento (cad_user_corporation). */
+export interface Membership {
+  role: Role;
+  enterpriseId: number;
+  establishmentId: number;
+  active: boolean;
+}
+
+/** Resultado da fábrica: dados da pessoa (globais) + vínculo com o estabelecimento. */
+export interface NewUser {
+  user: Omit<Prisma.UserCreateInput, 'userCorporation'>;
+  membership: Membership;
 }
 
 /** Quem pode criar cada tipo de usuário. */
@@ -28,6 +43,11 @@ const CREATION_POLICY: Record<Role, Role[]> = {
   [Role.SUPERUSER]: [Role.SUPERUSER],
 };
 
+/** Quem pode criar um usuário com este papel (também vale para ativar/desativar). */
+export function canManageRole(target: Role, requester: Role): boolean {
+  return CREATION_POLICY[target].includes(requester);
+}
+
 /**
  * FACTORY — cria os diferentes tipos de usuário (cliente, mecânico, administrador)
  * a partir da mesma entrada, aplicando:
@@ -36,8 +56,8 @@ const CREATION_POLICY: Record<Role, Role[]> = {
  *   - normalização (e-mail minúsculo, telefones só com dígitos);
  *   - o vínculo com empresa/estabelecimento no papel correto.
  *
- * Antes havia dois métodos quase idênticos no UserService; agora um novo papel é
- * uma linha na política, não um método novo.
+ * A pessoa (cad_user) é global — o mesmo e-mail pode ser cliente de vários estabelecimentos,
+ * inclusive de empresas diferentes. Por isso a fábrica separa os dados da pessoa do vínculo.
  */
 @Injectable()
 export class UserFactory {
@@ -51,8 +71,8 @@ export class UserFactory {
     return this.build(role === Role.USER ? Role.WORKER : role, input, ctx);
   }
 
-  private async build(role: Role, input: NewUserInput, ctx: TenantContext): Promise<Prisma.UserCreateInput> {
-    if (!CREATION_POLICY[role].includes(ctx.requesterRole)) {
+  private async build(role: Role, input: NewUserInput, ctx: TenantContext): Promise<NewUser> {
+    if (!canManageRole(role, ctx.requesterRole)) {
       throw new ForbiddenException(
         role === Role.ADMIN
           ? 'Apenas administradores e super usuários podem criar perfis de nível administrativo.'
@@ -64,21 +84,22 @@ export class UserFactory {
     const password = input.password ? await this.bcrypt.hashPassword(input.password) : undefined;
 
     return {
-      name: input.name.trim().replace(/\s+/g, ' '),
-      gender: input.gender,
-      email,
-      password,
-      principalPhone: onlyDigits(input.principalPhone),
-      secondaryPhone: input.secondaryPhone ? onlyDigits(input.secondaryPhone) : undefined,
-      address: input.address
-        ? { create: { ...input.address, complement: input.address.complement ?? undefined } }
-        : undefined,
-      userCorporation: {
-        create: {
-          role,
-          enterprise: { connect: { id: ctx.enterpriseId } },
-          establishment: { connect: { id: ctx.establishmentId } },
-        },
+      user: {
+        name: input.name.trim().replace(/\s+/g, ' '),
+        gender: input.gender,
+        email,
+        password,
+        principalPhone: onlyDigits(input.principalPhone),
+        secondaryPhone: input.secondaryPhone ? onlyDigits(input.secondaryPhone) : undefined,
+        address: input.address
+          ? { create: { ...input.address, complement: input.address.complement ?? undefined } }
+          : undefined,
+      },
+      membership: {
+        role,
+        enterpriseId: ctx.enterpriseId,
+        establishmentId: ctx.establishmentId,
+        active: input.active ?? true,
       },
     };
   }

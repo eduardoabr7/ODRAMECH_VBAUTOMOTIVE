@@ -66,6 +66,28 @@ export interface Quote {
   workOrder: { id: number; numberOs: number; status: StatusOS } | null;
   items: ServiceItem[];
   total: number;
+  /** sobe a cada alteração de conteúdo */
+  version: number;
+  /** link do cliente (ver/aprovar/recusar) — existe depois do primeiro envio */
+  publicToken: string | null;
+  emailSentAt: string | null;
+  /** versão que foi enviada; igual a `version` = nada novo para enviar */
+  emailSentVersion: number | null;
+  /** envio automático agendado */
+  emailPendingAt: string | null;
+  clientRespondedAt: string | null;
+  emails: QuoteEmailLog[];
+}
+
+export interface QuoteEmailLog {
+  id: number;
+  version: number;
+  kind: 'ENVIO' | 'ATUALIZACAO';
+  trigger: 'AUTOMATICO' | 'MANUAL';
+  status: 'ENVIADO' | 'SIMULADO' | 'FALHOU';
+  toEmail: string;
+  error: string | null;
+  createdAt: string;
 }
 
 export interface QuoteCreate {

@@ -177,6 +177,14 @@ export class PrismaWorkOrderRepository extends WorkOrderRepository {
     return this.prisma.workOrder.findFirst({ where: { id, establishmentId }, select: REF_SELECT });
   }
 
+  async clientOwnsVehicleHere(clientId: number, vehicleId: number, establishmentId: number) {
+    const [client, vehicle] = await Promise.all([
+      this.prisma.userCorporation.findFirst({ where: { idUser: clientId, idEstablishment: establishmentId }, select: { idUser: true } }),
+      this.prisma.userVehicle.findUnique({ where: { userId_vehicleId: { userId: clientId, vehicleId } }, select: { userId: true } }),
+    ]);
+    return { client: !!client, vehicle: !!vehicle };
+  }
+
   async isStaffOf(userId: number, establishmentId: number): Promise<boolean> {
     const relation = await this.prisma.userCorporation.findFirst({
       where: { idUser: userId, idEstablishment: establishmentId, role: { in: [Role.ADMIN, Role.WORKER, Role.SUPERUSER] } },

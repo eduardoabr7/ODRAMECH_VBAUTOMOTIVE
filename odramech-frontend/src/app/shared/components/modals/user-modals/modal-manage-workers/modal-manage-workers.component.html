@@ -51,7 +51,7 @@
             placeholder="******"
             minlength="6"/>
           <div class="form-text">
-              Mínimo de 6 caracteres
+              Mínimo de 6 caracteres. Se a pessoa já tem acesso ao Odramech em outro lugar, ela mantém a senha atual.
           </div>
         </div>
         <div class="form-field">
@@ -127,6 +127,19 @@
               <label class="form-check-label">Outro</label>
             </div>
           </div>
+        </div>
+        <div class="form-check form-switch">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            role="switch"
+            id="switchWorkerActive"
+            name="active"
+            [(ngModel)]="form.active"
+            style="cursor: pointer;">
+          <label class="form-check-label" for="switchWorkerActive" style="cursor: pointer;">
+            Ativo <small class="text-muted">(desmarcado = não consegue acessar o sistema)</small>
+          </label>
         </div>
         <div class="form-check form-switch">
           <input
@@ -234,10 +247,10 @@
 
   <!-- Lista de funcionários -->
   <div class="employee-list">
-    <div class="employee-row" *ngFor="let emp of filteredEmployees">
+    <div class="employee-row" *ngFor="let emp of filteredEmployees" [class.inactive]="!emp.active">
       <div class="avatar">{{ getInitials(emp.name) }}</div>
       <div class="info">
-        <span class="emp-name">{{ emp.name }}</span>
+        <span class="emp-name">{{ emp.name }} <span class="inactive-tag" *ngIf="!emp.active">Inativo</span></span>
         <span class="emp-email">{{ emp.email }}</span>
       </div>
       <span class="emp-phone">{{ emp.principalPhone }}</span>
@@ -245,8 +258,11 @@
         {{ emp.role === RoleEnum.ADMIN ? 'Admin' : 'Funcionário' }}
       </span>
       <div class="row-actions">
-        <button class="action-btn" title="Editar"><i class="fa-solid fa-pen"></i></button>
-        <button class="action-btn action-danger" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+        <div class="form-check form-switch m-0" [title]="emp.active ? 'Ativo — clique para desativar o acesso' : 'Inativo — clique para reativar'">
+          <input class="form-check-input" type="checkbox" role="switch" style="cursor: pointer;"
+                 [checked]="emp.active" [disabled]="emp.id === myUserId || togglingId === emp.id"
+                 (change)="toggleActive(emp, $any($event.target).checked)">
+        </div>
       </div>
     </div>
 

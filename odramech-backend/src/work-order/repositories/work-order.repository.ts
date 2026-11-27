@@ -55,4 +55,6 @@ export abstract class WorkOrderRepository {
 
   /** o usuário trabalha (ADMIN/WORKER/SUPERUSER) neste estabelecimento? */
   abstract isStaffOf(userId: number, establishmentId: number): Promise<boolean>;
+  /** o cliente é deste estabelecimento e o veículo é dele? */
+  abstract clientOwnsVehicleHere(clientId: number, vehicleId: number, establishmentId: number): Promise<{ client: boolean; vehicle: boolean }>;
 }

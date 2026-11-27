@@ -1,7 +1,8 @@
 import { APP_INITIALIZER, ApplicationConfig, importProvidersFrom, LOCALE_ID, provideZoneChangeDetection } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import localePt from '@angular/common/locales/pt';
-import { provideRouter } from '@angular/router';
+import { provideRouter, TitleStrategy } from '@angular/router';
+import { BrandTitleStrategy } from './features/branding/brand-title.strategy';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ToastrModule } from 'ngx-toastr';
 import { routes } from './app.routes';
@@ -30,6 +31,7 @@ export const appConfig: ApplicationConfig = {
     provideNgxMask(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
+    { provide: TitleStrategy, useExisting: BrandTitleStrategy },
     provideClientHydration(withEventReplay()),
     provideHttpClient(
       withInterceptors([

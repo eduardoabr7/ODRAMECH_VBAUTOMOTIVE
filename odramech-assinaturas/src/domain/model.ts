@@ -15,6 +15,25 @@ export interface Plan {
   description: string | null;
   active: boolean;
   sortOrder: number;
+  /** nível do plano (1 = Basic … 4 = Ultra) */
+  tier: number;
+  /** limite de estabelecimentos; null = ilimitado */
+  maxEstablishments: number | null;
+  /** recursos liberados pelo plano */
+  features: string[];
+}
+
+/** Resumo do plano que o backend da oficina usa para liberar recursos e limites. */
+export interface PlanEntitlements {
+  code: string;
+  name: string;
+  tier: number;
+  maxEstablishments: number | null;
+  features: string[];
+}
+
+export function entitlementsOf(plan: Plan): PlanEntitlements {
+  return { code: plan.code, name: plan.name, tier: plan.tier, maxEstablishments: plan.maxEstablishments, features: plan.features ?? [] };
 }
 
 export interface Subscription {

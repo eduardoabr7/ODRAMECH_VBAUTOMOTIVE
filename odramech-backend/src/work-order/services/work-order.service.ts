@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { sanitizeHtml } from 'src/shared/utils/html.util';
 import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
 import { DomainEventBus } from 'src/core/events/domain-event-bus';
 import { isStaff } from 'src/shared/utils/role.util';
@@ -22,6 +23,13 @@ export class WorkOrderService {
   ) {}
 
   async open(auth: AuthPayload, dto: WoCreateFrontDTO) {
+    // ids vêm da requisição: confere que tudo pertence a este estabelecimento
+    const owns = await this.repo.clientOwnsVehicleHere(dto.clientId, dto.vehicleId, auth.establishmentId);
+    if (!owns.client) throw new BadRequestException('Cliente não pertence a este estabelecimento.');
+    if (!owns.vehicle) throw new BadRequestException('O veículo não está vinculado a este cliente.');
+    if (dto.userResponsibleId && !(await this.repo.isStaffOf(dto.userResponsibleId, auth.establishmentId))) {
+      throw new BadRequestException('O responsável precisa ser um colaborador deste estabelecimento.');
+    }
     const ref = await this.repo.open({
       establishmentId: auth.establishmentId,
       userCreationId: auth.sub,
@@ -30,7 +38,7 @@ export class WorkOrderService {
       status: dto.status,
       userResponsibleId: dto.userResponsibleId ?? null,
       firstAppointment: dto.appointment
-        ? { contentHtml: dto.appointment.contentHtml, appointmentType: dto.appointment.appointmentType }
+        ? { contentHtml: sanitizeHtml(dto.appointment.contentHtml) ?? '', appointmentType: dto.appointment.appointmentType }
         : null,
     });
     await this.events.publish(new WorkOrderOpened(ref.id, ref.numberOs, auth.establishmentId, auth.sub));

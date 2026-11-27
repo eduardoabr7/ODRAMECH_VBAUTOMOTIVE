@@ -1,6 +1,6 @@
 import { Gender } from "@prisma/client";
 import { Type } from "class-transformer";
-import { IsEmail, IsEnum, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, ValidateNested } from "class-validator";
 import { AddressDTO } from "src/address/dto/address.dto";
 
 export class UpdateUserDTO {
@@ -28,4 +28,9 @@ export class UpdateUserDTO {
     @ValidateNested()
     @Type(() => AddressDTO)
     address?: AddressDTO | null;
+
+    /** ativo neste estabelecimento (desativado = não consegue mais entrar) */
+    @IsOptional()
+    @IsBoolean()
+    active?: boolean;
 }

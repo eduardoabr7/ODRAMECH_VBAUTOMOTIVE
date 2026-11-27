@@ -1,7 +1,10 @@
 import {
-  BadRequestException, Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, Res,
+  BadRequestException, Body, Controller, Delete, Get, Header, HttpCode, Param, ParseIntPipe, Post, Put, Query, Res,
   UploadedFiles, UseInterceptors,
 } from '@nestjs/common';
+import { Public } from 'src/shared/decorators/public-routes.decorator';
+import { QuoteMailService } from '../services/quote-mail.service';
+import { PublicQuoteService } from '../services/public-quote.service';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import type { Response } from 'express';
@@ -22,7 +25,19 @@ import {
 
 @Controller('quote')
 export class QuoteController {
-  constructor(private readonly quotes: QuoteService) {}
+  constructor(private readonly quotes: QuoteService, private readonly mail: QuoteMailService) {}
+
+  /** documento (HTML) para imprimir / salvar PDF — mesmo modelo do PDF do e-mail */
+  @Get(':id/document')
+  @Header('Content-Type', 'text/html; charset=utf-8')
+  document(@Param('id', ParseIntPipe) id: number, @CurrentAuth() auth: AuthPayload) { return this.quotes.documentHtml(auth, id); }
+
+  /** envio manual por e-mail (primeiro envio ou atualização; a mesma versão nunca é reenviada) */
+  @Post(':id/email')
+  async email(@Param('id', ParseIntPipe) id: number, @CurrentAuth() auth: AuthPayload) {
+    const result = await this.mail.sendManually(auth, id);
+    return { result, quote: await this.quotes.get(auth, id) };
+  }
 
   @Get()
   list(@Query() q: QuoteListQueryDTO, @CurrentAuth() auth: AuthPayload) { return this.quotes.list(auth, q); }
@@ -42,6 +57,10 @@ export class QuoteController {
   addItem(@Param('id', ParseIntPipe) id: number, @Body() dto: ServiceItemDTO, @CurrentAuth() auth: AuthPayload) {
     return this.quotes.addItem(auth, id, dto);
   }
+
+  /** chamado depois da impressão: marca como ENVIADO se o estabelecimento configurou isso */
+  @Post(':id/printed')
+  printed(@Param('id', ParseIntPipe) id: number, @CurrentAuth() auth: AuthPayload) { return this.quotes.markPrinted(auth, id); }
 
   @Post(':id/convert')
   convert(@Param('id', ParseIntPipe) id: number, @CurrentAuth() auth: AuthPayload) { return this.quotes.convert(auth, id); }
@@ -103,6 +122,7 @@ export class WorkOrderMoneyController {
     res.setHeader('Content-Type', archive.mimeType);
     res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(archive.originalName)}`);
     res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     res.sendFile(path);
   }
 
@@ -110,6 +130,31 @@ export class WorkOrderMoneyController {
   removeFile(@Param('id', ParseIntPipe) id: number, @CurrentAuth() auth: AuthPayload) {
     return this.attachments.remove(auth, id);
   }
+}
+
+/** Link do e-mail do cliente (sem login). */
+@Controller('public/quotes')
+export class PublicQuoteController {
+  constructor(private readonly quotes: PublicQuoteService) {}
+
+  @Public()
+  @Get(':token')
+  view(@Param('token') token: string) { return this.quotes.view(token); }
+
+  @Public()
+  @Get(':token/document')
+  @Header('Content-Type', 'text/html; charset=utf-8')
+  document(@Param('token') token: string) { return this.quotes.document(token); }
+
+  @Public()
+  @Post(':token/approve')
+  @HttpCode(200)
+  approve(@Param('token') token: string) { return this.quotes.respond(token, true); }
+
+  @Public()
+  @Post(':token/decline')
+  @HttpCode(200)
+  decline(@Param('token') token: string) { return this.quotes.respond(token, false); }
 }
 
 @Controller('notes')

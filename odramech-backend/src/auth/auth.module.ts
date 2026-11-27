@@ -8,6 +8,7 @@ import { JWTService } from "./services/jwt.service";
 import { CustomLogger } from "src/shared/services/custom-logger.service";
 import { EmailMaskService } from "src/shared/services/mask-email.service";
 import { UserCorporationService } from "src/user-corporations/services/user-corporation.service";
+import { LoginAttemptsService } from "./services/login-attempts.service";
 
 @Module({
     imports: [
@@ -26,7 +27,8 @@ import { UserCorporationService } from "src/user-corporations/services/user-corp
         BcryptService,
         CustomLogger,
         EmailMaskService,
-        UserCorporationService
+        UserCorporationService,
+        LoginAttemptsService,
     ],
     exports: [
         JWTService

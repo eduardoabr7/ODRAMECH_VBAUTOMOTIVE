@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { Role } from "@prisma/client";
 import { PrismaService } from "src/prisma/prisma-service";
 import { EnterpriseWithEstablishmentDTO } from "../dto/enterprise-with-establishment.dto";
 import { EstablishmentListCommonDTO } from "src/establishment/dto/establishment-list-common.dto";
@@ -9,6 +10,14 @@ export class EnterpriseService {
     constructor(
         private readonly _prisma : PrismaService
     ){}
+
+    async userBelongsTo(userId: number, enterpriseId: number): Promise<boolean> {
+        const link = await this._prisma.userCorporation.findFirst({
+            where: { idUser: userId, idEnterprise: enterpriseId, active: true },
+            select: { idUser: true },
+        });
+        return !!link;
+    }
 
     async getAll(){
         return await this._prisma.enterprise.findMany();
@@ -30,10 +39,13 @@ export class EnterpriseService {
         return establishments;
     }
 
-    async createEnterpriseWithEstablishment(dataReceived: EnterpriseWithEstablishmentDTO) {
+    async createEnterpriseWithEstablishment(dataReceived: EnterpriseWithEstablishmentDTO, creatorUserId: number) {
       const { enterprise, establishment } = dataReceived;
 
-      const enterpriseCreated = await this._prisma.enterprise.create({
+      // tudo numa transação: empresa, estabelecimento e o criador como ADMIN (antes o front fazia
+      // o vínculo numa segunda chamada aberta — POST /usercorp — que aceitava qualquer papel/id)
+      return this._prisma.$transaction(async (tx) => {
+      const enterpriseCreated = await tx.enterprise.create({
         data: {
             name: enterprise.name,
             email: enterprise.email,
@@ -54,7 +66,7 @@ export class EnterpriseService {
         }
       })
 
-      const establishmentCreated = await this._prisma.establishment.create({
+      const establishmentCreated = await tx.establishment.create({
         data: {
           name: establishment.name,
           email: establishment.email,
@@ -79,6 +91,11 @@ export class EnterpriseService {
         },
       });
 
+      await tx.userCorporation.create({
+        data: { idUser: creatorUserId, idEnterprise: enterpriseCreated.id, idEstablishment: establishmentCreated.id, role: Role.ADMIN },
+      });
+
       return { idEtp: enterpriseCreated.id, idEst: establishmentCreated.id }
+      });
     }
 }

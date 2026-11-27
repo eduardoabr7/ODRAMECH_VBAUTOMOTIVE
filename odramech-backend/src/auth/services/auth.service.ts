@@ -9,6 +9,8 @@ import { PreLoginDTO } from "../dto/pre-login.dto";
 import { UserCorporationService } from "src/user-corporations/services/user-corporation.service";
 import { AuthContext } from "../enums/auth-context.enum";
 import { AuthPayload } from "../interfaces/auth-payload.interface";
+import { AppConfig } from "src/core/config/app-config";
+import { LoginAttemptsService } from "./login-attempts.service";
 
 @Injectable()
 export class AuthService {
@@ -17,20 +19,21 @@ export class AuthService {
       private readonly _prisma : PrismaService,
       private readonly _bcryptService : BcryptService,
       private readonly _jwtService: JWTService,
-      private readonly _userCorpService: UserCorporationService
+      private readonly _userCorpService: UserCorporationService,
+      private readonly _attempts: LoginAttemptsService,
     ) {};
 
-    async login(data: LoginDTO) {
+    async login(data: LoginDTO, ip = 'unknown') {
       const dataToValidateLogin = {
         email: data.email,
         password: data.password
       }
 
-      const user = await this.validateCredentials(dataToValidateLogin)
+      const user = await this.validateCredentials(dataToValidateLogin, ip)
 
       const relation = await this._userCorpService.validateRelationUserToEstablishment(user.id, data.tenantId)
 
-      if (!relation) throw new UnauthorizedException('Vínculo usuário - estabelecimento não encontrado')
+      if (!relation) throw new UnauthorizedException('Seu acesso a este estabelecimento não foi encontrado ou está desativado.')
 
       const token = await this._jwtService.generateToken(
         {
@@ -41,14 +44,17 @@ export class AuthService {
           context: 'AUTH',
         },
         {
-          expiresIn: '15m',
+          expiresIn: `${AppConfig.get().values.sessionHours}h`,
         }
-      ); 
+      );
 
       return { user, token }
     }
 
-    async validateCredentials(data: PreLoginDTO): Promise<LoggedUser> {
+    async validateCredentials(data: PreLoginDTO, ip = 'unknown'): Promise<LoggedUser> {
+      const email = String(data.email ?? '');
+      this._attempts.assertAllowed(email, ip);
+
       const userFound = await this._prisma.user.findFirst({
         where: {
            email: data.email 
@@ -63,15 +69,22 @@ export class AuthService {
         }
       });
 
-      if(!userFound || !userFound.password || !(await this._bcryptService.hashPasswordCompare(data.password, userFound.password))) 
+      if(!userFound || !userFound.password || !(await this._bcryptService.hashPasswordCompare(data.password, userFound.password))) {
+        this._attempts.fail(email, ip)
         throw new UnauthorizedException('Invalid credentials')
+      }
+      this._attempts.success(email, ip)
 
       const { password, ...userWithoutPassword } = userFound;
       return userWithoutPassword as LoggedUser;
     }
 
-    async preLogin(data: PreLoginDTO) {
-      const user = await this.validateCredentials(data)
+    async preLogin(data: PreLoginDTO, ip = 'unknown') {
+      const user = await this.validateCredentials(data, ip)
+
+      // sem nenhum vínculo ativo, a pessoa não tem onde entrar
+      const activeLinks = await this._prisma.userCorporation.count({ where: { idUser: user.id, active: true } })
+      if (!activeLinks) throw new UnauthorizedException('Usuário desativado. Fale com o responsável pela sua oficina.')
 
       const temporaryToken = await this._jwtService.generateToken(
         {

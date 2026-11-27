@@ -334,6 +334,12 @@
   gap: 1px;
 }
 
+.employee-row.inactive { opacity: .6; }
+.inactive-tag {
+  display: inline-block; margin-left: 6px; font-size: 10.5px; font-weight: 600; padding: 1px 6px; border-radius: 6px;
+  background: var(--danger-soft, #f9e3e0); color: var(--danger, #c0352b); vertical-align: middle;
+}
+
 .emp-name {
   font-size: 0.875rem;
   font-weight: 500;

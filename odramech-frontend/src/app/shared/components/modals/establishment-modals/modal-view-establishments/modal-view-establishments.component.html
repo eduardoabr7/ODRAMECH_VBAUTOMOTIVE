@@ -112,6 +112,7 @@
             <div class="col-auto">
               <div class="d-flex gap-2">
                 <button
+                  *ngIf="canEdit(est)"
                   class="btn btn-sm btn-outline-secondary"
                   type="button"
                   title="Editar"

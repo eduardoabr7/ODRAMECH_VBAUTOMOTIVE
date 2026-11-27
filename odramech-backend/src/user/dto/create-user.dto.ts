@@ -1,4 +1,4 @@
-import { IsEmail, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsEmail, IsNumber, IsOptional, IsString } from "class-validator";
 import { AddressDTO } from "src/address/dto/address.dto";
 import { Gender } from '@prisma/client';
 export class CreateUserDto {
@@ -61,5 +61,10 @@ export class FrontEndCreateUser {
 
     @IsOptional()
     address?: AddressDTO | null
+
+    /** desmarcado = cadastrado, mas sem acesso a este estabelecimento */
+    @IsOptional()
+    @IsBoolean()
+    active?: boolean
 
 }

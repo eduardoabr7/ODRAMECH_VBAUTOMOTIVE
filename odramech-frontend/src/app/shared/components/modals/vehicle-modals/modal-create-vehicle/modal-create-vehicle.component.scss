@@ -146,6 +146,8 @@
   &::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 99px; }
 }
 
+.autocomplete-item.kb-active { background: var(--surface-3); }
+
 .autocomplete-item {
   display: block;
   width: 100%;

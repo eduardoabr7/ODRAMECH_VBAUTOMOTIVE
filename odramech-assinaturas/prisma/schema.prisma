@@ -12,7 +12,7 @@ datasource db {
 
 model Plan {
   id          Int             @id @default(autoincrement())
-  code        String          @unique // MENSAL | ANUAL
+  code        String          @unique // BASIC | INTERMEDIARIO | PRO | ULTRA
   name        String
   interval    BillingInterval
   priceCents  Int             @map("price_cents")
@@ -20,6 +20,12 @@ model Plan {
   description String?
   active      Boolean         @default(true)
   sortOrder   Int             @default(0) @map("sort_order")
+  /// nível do plano (1 = Basic … 4 = Ultra) — usado para comparar upgrade/downgrade
+  tier              Int       @default(1)
+  /// limite de estabelecimentos da empresa; null = ilimitado
+  maxEstablishments Int?      @map("max_establishments")
+  /// recursos liberados (ex.: QUOTE_DOCUMENT_EDITOR, LOGIN_CUSTOMIZATION)
+  features          String[]  @default([])
   createdAt   DateTime        @default(now()) @map("created_at")
 
   subscriptions Subscription[]

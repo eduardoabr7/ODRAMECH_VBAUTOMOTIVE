@@ -8,6 +8,7 @@ import { UserLogged } from '@shared/models/UserLogged';
 import { NestAPI } from '@shared/services/nest-api.service';
 import { ToastrService } from 'ngx-toastr';
 import { BehaviorSubject, catchError, firstValueFrom, Observable, of, switchMap, tap, throwError } from 'rxjs';
+import { Injector, inject } from '@angular/core';
 
 export type StatusLogin = 'off' | 'on' | 'expired'
 
@@ -30,7 +31,8 @@ export class AuthService {
 
     login(data: LoginData): Observable<AuthContext> {
       return this._nestApi.post('auth/login', data).pipe(
-        switchMap(() => this.getAuthContext()),
+        // sempre busca de novo: o cache pode ser do pré-login (sem estabelecimento)
+        switchMap(() => this.refreshAuthContext()),
         tap((user: AuthContext) => {
           this.setUserLogged(user);
           this._router.navigateByUrl('/home');
@@ -38,11 +40,19 @@ export class AuthService {
       );
     }
 
+    /** BrandingService é resolvido sob demanda (ele depende de serviços que dependem deste) */
+    private readonly _injector = inject(Injector);
+    private async resetBranding() {
+      const { BrandingService } = await import('../../features/branding/branding.service');
+      this._injector.get(BrandingService).reset();
+    }
+
     logout(): Observable<any> {
       return this._nestApi.post('auth/logout', {}).pipe(
         tap(() => {
           this._isLoggedIn.next(false);
           this.setUserLogged(null);
+          void this.resetBranding();
           this._router.navigateByUrl('/login');
           this._toast.info('Sessão encerrada');
         }),
@@ -50,6 +60,8 @@ export class AuthService {
     }
 
     forceLogout() {
+      this.setUserLogged(null);
+      void this.resetBranding();
       this._router.navigateByUrl('/login');
       this._toast.info('Sessão expirada, faça o login novamente');
     }

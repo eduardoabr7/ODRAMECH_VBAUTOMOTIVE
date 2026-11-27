@@ -1,10 +1,15 @@
 import { Module } from '@nestjs/common';
 import { WorkOrderModule } from 'src/work-order/work-order.module';
-import { NotesController, QuoteController, WorkOrderMoneyController } from './controllers/billing.controller';
+import { SettingsModule } from 'src/settings/settings.module';
+import { NotesController, PublicQuoteController, QuoteController, WorkOrderMoneyController } from './controllers/billing.controller';
 import { QuoteService } from './services/quote.service';
 import { WorkOrderMoneyService } from './services/work-order-money.service';
 import { NoteService } from './services/note.service';
 import { AttachmentService } from './services/attachment.service';
+import { QuoteMailService } from './services/quote-mail.service';
+import { PublicQuoteService } from './services/public-quote.service';
+import { PdfService } from './document/pdf.service';
+import { MailModule } from 'src/mail/mail.module';
 import {
   NoteRepository, PaymentRepository, QuoteRepository, ReviewRepository, ServiceItemRepository,
 } from './repositories/billing.repositories';
@@ -18,13 +23,16 @@ import {
  * aqui — trocar de banco/ORM é mudar estas linhas, não os serviços (Dependency Inversion).
  */
 @Module({
-  imports: [WorkOrderModule],
-  controllers: [QuoteController, WorkOrderMoneyController, NotesController],
+  imports: [WorkOrderModule, SettingsModule, MailModule],
+  controllers: [QuoteController, WorkOrderMoneyController, NotesController, PublicQuoteController],
   providers: [
     QuoteService,
     WorkOrderMoneyService,
     NoteService,
     AttachmentService,
+    QuoteMailService,
+    PublicQuoteService,
+    PdfService,
     { provide: QuoteRepository, useClass: PrismaQuoteRepository },
     { provide: ServiceItemRepository, useClass: PrismaServiceItemRepository },
     { provide: PaymentRepository, useClass: PrismaPaymentRepository },
