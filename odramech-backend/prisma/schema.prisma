@@ -472,3 +472,13 @@ model EnterpriseMailSettings {
 
   @@map("enterprise_mail_settings")
 }
+
+/// Última decisão de acesso conhecida de cada empresa (vinda do serviço de assinaturas).
+/// Se o serviço cair, quem estava bloqueado continua bloqueado — a "falha aberta" vale só para quem nunca foi visto.
+model SubscriptionAccessSnapshot {
+  enterpriseId Int      @id @map("enterprise_id")
+  decision     Json
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("subscription_access_snapshot")
+}

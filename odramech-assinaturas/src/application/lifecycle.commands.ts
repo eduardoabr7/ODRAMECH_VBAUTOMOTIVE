@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { DAY_MS, Invoice, Plan, Subscription } from '../domain/model';
+import { complimentaryActive, DAY_MS, Invoice, Plan, Subscription } from '../domain/model';
 import { InvoiceBuilder } from '../domain/invoice.builder';
 import { InvoiceRepository, PlanRepository, SubscriptionRepository } from '../repositories/repositories';
 import { SubscriptionEventPublisher } from '../events/subscription-events';
@@ -78,15 +78,15 @@ export class MarkPastDueCommand implements LifecycleCommand {
   }
 }
 
-/** Tolerância esgotada → expira. */
+/** Tolerância esgotada, teste grátis encerrado ou cortesia vencida → expira. */
 export class ExpireCommand implements LifecycleCommand {
   readonly label: string;
-  constructor(private readonly d: LifecycleDeps, private readonly sub: Subscription) {
+  constructor(private readonly d: LifecycleDeps, private readonly sub: Subscription, private readonly why: 'grace_over' | 'trial_over' | 'complimentary_over' = 'grace_over') {
     this.label = `expiração ${sub.enterpriseId}`;
   }
   async execute() {
     const updated = await this.d.subs.update(this.sub.id, { status: 'EXPIRED' });
-    await this.d.events.publish({ type: 'subscription.expired', subscriptionId: updated.id, enterpriseId: updated.enterpriseId, status: 'EXPIRED' });
+    await this.d.events.publish({ type: 'subscription.expired', subscriptionId: updated.id, enterpriseId: updated.enterpriseId, status: 'EXPIRED', data: { why: this.why } });
   }
 }
 
@@ -111,6 +111,10 @@ export class FinalizeCancellationCommand implements LifecycleCommand {
 export async function planNextCommand(d: LifecycleDeps, sub: Subscription, now: Date, renewalLeadDays: number): Promise<LifecycleCommand | null> {
   if (sub.status === 'EXPIRED') return null;
   if (sub.status === 'CANCELED') return null;
+  // suspensa: congelada até o administrador liberar
+  if (sub.suspended) return null;
+  // cortesia não gera cobrança; quando vence, expira direto (sem tolerância)
+  if (sub.complimentary) return complimentaryActive(sub, now) ? null : new ExpireCommand(d, sub, 'complimentary_over');
 
   const plan = await d.plans.findById(sub.planId);
   if (!plan) return null;
@@ -124,6 +128,8 @@ export async function planNextCommand(d: LifecycleDeps, sub: Subscription, now: 
 
   if (periodOver) {
     if (nextPaid) return new RollPeriodCommand(d, sub, nextPaid);
+    // teste grátis não tem tolerância
+    if (sub.status === 'TRIALING') return new ExpireCommand(d, sub, 'trial_over');
     if (sub.status === 'PAST_DUE') {
       const graceEnd = new Date(sub.currentPeriodEnd.getTime() + d.graceDays * DAY_MS);
       return now >= graceEnd ? new ExpireCommand(d, sub) : null;
@@ -133,8 +139,8 @@ export async function planNextCommand(d: LifecycleDeps, sub: Subscription, now: 
 
   const renewalWindow = sub.currentPeriodEnd.getTime() - renewalLeadDays * DAY_MS;
   const needsInvoice = !sub.cancelAtPeriodEnd && !nextPaid && !nextOpen && now.getTime() >= renewalWindow;
-  // durante o teste só cobramos se a empresa já escolheu a forma de pagamento
-  if (needsInvoice && (sub.status !== 'TRIALING' || sub.paymentMethod)) return new CreateRenewalInvoiceCommand(d, sub, plan);
+  // teste grátis nunca gera fatura sozinho: a cobrança só nasce quando a empresa escolhe um plano
+  if (needsInvoice && sub.status !== 'TRIALING') return new CreateRenewalInvoiceCommand(d, sub, plan);
 
   return null;
 }

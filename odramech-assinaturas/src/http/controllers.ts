@@ -1,4 +1,5 @@
-import { Body, Controller, ForbiddenException, Get, Headers, HttpCode, Inject, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Headers, HttpCode, Inject, Param, ParseIntPipe, Post, Query, RawBodyRequest, Req } from '@nestjs/common';
+import type { Request } from 'express';
 import { SubscriptionsConfig } from '../config/subscriptions-config';
 import { SubscriptionService } from '../application/subscription.service';
 import { PrismaService } from '../repositories/prisma.repositories';
@@ -78,19 +79,8 @@ export class GatewayController {
   @PublicRoute()
   @Post('webhooks/payments')
   @HttpCode(200)
-  webhook(@Headers() headers: Record<string, unknown>, @Body() body: unknown) {
-    return this.service.handleWebhook(headers, body);
+  webhook(@Headers() headers: Record<string, unknown>, @Body() body: unknown, @Req() req: RawBodyRequest<Request>) {
+    // corpo CRU: a assinatura do provedor é calculada sobre os bytes exatos recebidos
+    return this.service.handleWebhook(headers, body, req.rawBody);
   }
-}
-
-@Controller('admin')
-export class AdminController {
-  constructor(@Inject(SUBSCRIPTION_SERVICE) private readonly service: SubscriptionService) {}
-
-  @Get('overview')
-  overview() { return this.service.adminOverview(); }
-
-  /** força uma rodada do agendador (útil para testar renovação/expiração) */
-  @Post('run-lifecycle')
-  run() { return this.service.processLifecycle(); }
 }

@@ -1,10 +1,12 @@
-import { BadRequestException, ConflictException, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException, ConflictException, ForbiddenException, Logger, NotFoundException, ServiceUnavailableException, UnauthorizedException,
+} from '@nestjs/common';
 import { cycleFor } from '../domain/billing-cycle.strategy';
 import { decideAccess } from '../domain/access-policy';
 import { InvoiceBuilder } from '../domain/invoice.builder';
-import { entitlementsOf, Invoice, PaymentMethod, Plan, Subscription } from '../domain/model';
+import { complimentaryActive, entitlementsOf, Invoice, PaymentMethod, Plan, Subscription } from '../domain/model';
 import { SubscriptionFactory } from '../domain/subscription.factory';
-import { PaymentGateway, WebhookParser } from '../payments/payment-provider';
+import { InvalidWebhookSignature, PaymentGateway, WebhookParser } from '../payments/payment-provider';
 import { paymentStrategyFor, PAYMENT_METHODS, PayRequest } from '../payments/payment-method.strategy';
 import { InvoiceRepository, PlanRepository, SubscriptionRepository } from '../repositories/repositories';
 import { SubscriptionEventPublisher } from '../events/subscription-events';
@@ -16,6 +18,8 @@ export interface SubscriptionSettings {
   graceDays: number;
   renewalLeadDays: number;
   defaultPlanCode: string;
+  /** falso = nenhum pagamento é processado (sandbox em produção) */
+  paymentsEnabled: boolean;
 }
 
 /**
@@ -61,7 +65,8 @@ export class SubscriptionService {
       this.listPlans(),
     ]);
     return {
-      subscription: sub,
+      // a anotação interna do administrador nunca vai para a oficina
+      subscription: { ...sub, adminNote: undefined },
       plan,
       access: decideAccess(sub, this.settings.graceDays, this.clock.now()),
       openInvoice: invoices.find(i => i.status === 'OPEN') ?? null,
@@ -83,39 +88,34 @@ export class SubscriptionService {
   }
 
   // ═══ Comandos do cliente ════════════════════════════════
-  // Troca de plano:
-  //  - no teste grátis muda na hora e a cobrança começa quando o teste acaba
+  // Troca de plano — o plano novo SÓ vale depois que a fatura é paga (inclusive no teste grátis;
+  // antes, escolher um plano no teste liberava ele na hora, sem pagar):
+  //  - no teste grátis a fatura começa agora: pagou, vira ATIVA no plano escolhido
   //  - upgrade começa agora, com desconto proporcional do que sobrou do período
   //  - downgrade (ou mesmo nível) só na renovação
   //  - inadimplente, expirada ou cancelada começa agora
-  // Fora do teste o plano novo só vale depois que a fatura é paga.
   async selectPlan(enterpriseId: number, planCode: string, method: PaymentMethod) {
     const plan = await this.plans.findByCode(planCode);
     if (!plan || !plan.active) throw new NotFoundException('Plano não encontrado.');
     paymentStrategyFor(method); // valida a forma de pagamento
 
     let sub = await this.getOrStartTrial(enterpriseId, null);
-    const current = await this.plans.findById(sub.planId);
     const now = this.clock.now();
+    this.assertSelfServiceAllowed(sub, now);
+    const current = await this.plans.findById(sub.planId);
 
     // fatura em aberto de outro plano/forma é anulada para gerar a correta
     const open = await this.invoices.findOpen(sub.id);
     if (open) await this.invoices.update(open.id, { status: 'VOID' });
 
-    const trialing = sub.status === 'TRIALING' && sub.currentPeriodEnd > now;
     const paidAndCurrent = sub.status === 'ACTIVE' && sub.currentPeriodEnd > now;
     const isUpgrade = !!current && plan.tier > current.tier;
 
-    sub = await this.subs.update(sub.id, {
-      ...(trialing && { planId: plan.id }),
-      paymentMethod: method,
-      cancelAtPeriodEnd: false,
-    });
+    sub = await this.subs.update(sub.id, { paymentMethod: method, cancelAtPeriodEnd: false });
 
     let start = now;
     let creditCents = 0;
-    if (trialing) start = sub.currentPeriodEnd;
-    else if (paidAndCurrent && !isUpgrade) start = sub.currentPeriodEnd;
+    if (paidAndCurrent && !isUpgrade) start = sub.currentPeriodEnd;
     else if (paidAndCurrent && isUpgrade && current) creditCents = this.unusedCredit(sub, current, now);
 
     const invoice = await this.invoices.create(
@@ -139,7 +139,9 @@ export class SubscriptionService {
   }
 
   async payInvoice(enterpriseId: number, invoiceId: string, method: PaymentMethod, req: PayRequest) {
+    this.assertPaymentsEnabled();
     const { sub, invoice } = await this.ownedInvoice(enterpriseId, invoiceId);
+    this.assertSelfServiceAllowed(sub, this.clock.now());
     if (invoice.status !== 'OPEN') throw new ConflictException('Esta fatura não está em aberto.');
 
     const result = await paymentStrategyFor(method).pay(invoice, this.gateway, req);
@@ -149,7 +151,11 @@ export class SubscriptionService {
       await this.events.publish({ type: 'invoice.payment_failed', subscriptionId: sub.id, enterpriseId, status: sub.status, data: { reason: result.failureReason } });
       throw new BadRequestException(result.failureReason ?? 'Pagamento recusado.');
     }
-    if (result.status === 'paid') updated = await this.markInvoicePaid(updated);
+    // mesmo com "aprovado" na resposta, quem libera é a consulta ao provedor (valor e moeda conferidos)
+    if (result.status === 'paid') {
+      const outcome = await this.confirmWithProvider(updated);
+      if (outcome.paid) updated = outcome.invoice;
+    }
 
     return { invoice: updated, ...(await this.overview(enterpriseId)) };
   }
@@ -173,29 +179,80 @@ export class SubscriptionService {
   }
 
   // ═══ Gateway ════════════════════════════════════════════
-  async handleWebhook(headers: Record<string, unknown>, body: unknown) {
-    const event = this.webhookParser.parse(headers, body);
+  /**
+   * Webhook do provedor. Três barreiras antes de liberar qualquer coisa:
+   *  1. assinatura do provedor sobre o corpo cru (senão 401);
+   *  2. a cobrança precisa ser nossa (gatewayRef de uma fatura existente);
+   *  3. a situação é CONSULTADA no provedor — o corpo do webhook nunca é a fonte da verdade —
+   *     e valor + moeda têm que bater com a fatura.
+   */
+  async handleWebhook(headers: Record<string, unknown>, body: unknown, rawBody?: Buffer) {
+    if (!this.settings.paymentsEnabled) throw new ForbiddenException('Pagamentos desativados neste ambiente.');
+
+    let event;
+    try {
+      event = this.webhookParser.parse(headers, body, rawBody);
+    } catch (err) {
+      if (err instanceof InvalidWebhookSignature) {
+        this.logger.warn('Webhook com assinatura inválida recusado.');
+        throw new UnauthorizedException('Assinatura inválida.');
+      }
+      throw err;
+    }
     if (!event) return { ignored: true };
 
     const invoice = await this.invoices.findByGatewayRef(event.gatewayRef);
     if (!invoice) throw new NotFoundException('Cobrança desconhecida.');
     if (invoice.status === 'PAID') return { alreadyPaid: true }; // idempotente
+    if (invoice.status === 'VOID') return { ignored: true };
 
     if (event.type === 'payment.confirmed') {
-      await this.markInvoicePaid(invoice);
-      return { paid: true };
+      const outcome = await this.confirmWithProvider(invoice);
+      return outcome.paid ? { paid: true } : { ignored: true, reason: outcome.reason };
     }
     const sub = await this.subs.findById(invoice.subscriptionId);
     if (sub) await this.events.publish({ type: 'invoice.payment_failed', subscriptionId: sub.id, enterpriseId: sub.enterpriseId, status: sub.status });
     return { failed: true };
   }
 
-  /** Sandbox: confirma o pagamento como se o provedor tivesse chamado o webhook. */
+  /** Sandbox (só fora de produção): confirma a fatura como se o provedor tivesse recebido. */
   async simulatePayment(enterpriseId: number, invoiceId: string) {
     const { invoice } = await this.ownedInvoice(enterpriseId, invoiceId);
     if (!invoice.gatewayRef) throw new ConflictException('Gere a cobrança (Pix/Boleto) antes de simular o pagamento.');
-    await this.handleWebhook({}, { event: 'PAYMENT_CONFIRMED', reference: invoice.gatewayRef });
+    if (invoice.status === 'OPEN') await this.confirmWithProvider(invoice);
     return this.overview(enterpriseId);
+  }
+
+  /** consulta o provedor e só marca como paga se ele confirmar o valor exato da fatura */
+  private async confirmWithProvider(invoice: Invoice): Promise<{ paid: true; invoice: Invoice } | { paid: false; reason: string }> {
+    if (!invoice.gatewayRef) return { paid: false, reason: 'sem cobrança' };
+    const charge = await this.gateway.fetchCharge(invoice.gatewayRef);
+    if (!charge || charge.status !== 'paid') return { paid: false, reason: 'provedor não confirma o pagamento' };
+
+    if (charge.amountCents !== invoice.amountCents || charge.currency !== 'BRL') {
+      const sub = await this.subs.findById(invoice.subscriptionId);
+      this.logger.error(`Valor divergente na fatura ${invoice.id}: pago ${charge.amountCents} ${charge.currency}, esperado ${invoice.amountCents} BRL`);
+      if (sub) {
+        await this.events.publish({
+          type: 'invoice.amount_mismatch', subscriptionId: sub.id, enterpriseId: sub.enterpriseId, status: sub.status,
+          data: { invoiceId: invoice.id, expectedCents: invoice.amountCents, paidCents: charge.amountCents, currency: charge.currency },
+        });
+      }
+      return { paid: false, reason: 'valor divergente — fatura enviada para revisão' };
+    }
+    return { paid: true, invoice: await this.markInvoicePaid(invoice) };
+  }
+
+  private assertPaymentsEnabled() {
+    if (!this.settings.paymentsEnabled) {
+      throw new ServiceUnavailableException('Pagamento online ainda não disponível. Fale com o suporte para ativar sua assinatura.');
+    }
+  }
+
+  /** licença cortesia ou suspensa é gerenciada só pelo administrador */
+  private assertSelfServiceAllowed(sub: Subscription, now: Date) {
+    if (sub.suspended) throw new ForbiddenException('Licença suspensa. Fale com o suporte.');
+    if (complimentaryActive(sub, now)) throw new ConflictException('Sua licença é cortesia e é gerenciada pelo suporte.');
   }
 
   // ═══ Agendador ══════════════════════════════════════════
@@ -264,30 +321,50 @@ export class SubscriptionService {
     return { sub, invoice };
   }
 
-  /** Fatura paga → ativa/reativa a assinatura quando o período pago já começou. */
-  private async markInvoicePaid(invoice: Invoice): Promise<Invoice> {
+  /**
+   * Fatura paga → ativa/reativa a assinatura quando o período pago já começou.
+   * Público só para o painel administrativo ("marcar como paga" — ex.: recebeu por transferência).
+   */
+  async markInvoicePaid(invoice: Invoice, actor?: string): Promise<Invoice> {
     const now = this.clock.now();
-    const paid = await this.invoices.update(invoice.id, { status: 'PAID', paidAt: now });
     const sub = await this.subs.findById(invoice.subscriptionId);
+    const blocked = !!sub && (sub.status === 'EXPIRED' || sub.status === 'CANCELED');
+
+    // estava bloqueada: o período comprado começa AGORA (não paga pelos dias em que ficou sem acesso)
+    let periodStart = invoice.periodStart;
+    let periodEnd = invoice.periodEnd;
+    if (blocked && periodStart < now) {
+      const plan = await this.plans.findByCode(invoice.planCode);
+      periodStart = now;
+      periodEnd = plan ? cycleFor(plan.interval).periodEnd(now) : new Date(now.getTime() + (invoice.periodEnd.getTime() - invoice.periodStart.getTime()));
+    }
+
+    const paid = await this.invoices.update(invoice.id, { status: 'PAID', paidAt: now, periodStart, periodEnd });
     if (!sub) return paid;
 
-    await this.events.publish({ type: 'invoice.paid', subscriptionId: sub.id, enterpriseId: sub.enterpriseId, status: sub.status, data: { invoiceId: paid.id, amountCents: paid.amountCents } });
+    await this.events.publish({
+      type: actor ? 'license.invoice_marked_paid' : 'invoice.paid', actor,
+      subscriptionId: sub.id, enterpriseId: sub.enterpriseId, status: sub.status, data: { invoiceId: paid.id, amountCents: paid.amountCents },
+    });
 
     const startsNow = paid.periodStart <= now;
-    const recovering = sub.status === 'PAST_DUE' || sub.status === 'EXPIRED' || sub.status === 'CANCELED';
+    const recovering = sub.status === 'PAST_DUE' || blocked;
     if (startsNow || recovering) {
       const plan = await this.plans.findByCode(paid.planCode);
       const updated = await this.subs.update(sub.id, {
         status: 'ACTIVE',
         ...(plan && { planId: plan.id }),
-        currentPeriodStart: startsNow ? paid.periodStart : now,
-        currentPeriodEnd: startsNow ? paid.periodEnd : paid.periodEnd,
+        currentPeriodStart: paid.periodStart,
+        currentPeriodEnd: paid.periodEnd,
         cancelAtPeriodEnd: false,
         canceledAt: null,
+        // passou a pagar: deixa de ser cortesia
+        complimentary: false,
+        complimentaryUntil: null,
       });
       await this.events.publish({ type: 'subscription.activated', subscriptionId: updated.id, enterpriseId: updated.enterpriseId, status: 'ACTIVE', data: { periodEnd: updated.currentPeriodEnd } });
     }
-    // se o período pago ainda não começou (pagou adiantado no teste), o agendador avança na virada
+    // se o período pago ainda não começou (downgrade/renovação adiantada), o agendador avança na virada
     return paid;
   }
 }

@@ -64,11 +64,15 @@ const LEGACY_TO_NEW: Record<string, string> = { MENSAL: 'BASIC', ANUAL: 'BASIC' 
 const TRIAL_PLAN = process.env.DEFAULT_PLAN_CODE || 'INTERMEDIARIO';
 
 async function main() {
+  // só CRIA os planos que faltam: depois de criados, preço/recursos são editados no painel
+  // administrativo (odramech-admin) e rodar o seed de novo não desfaz essas edições.
+  // Para forçar os valores deste arquivo: SEED_OVERWRITE_PLANS=true
+  const overwrite = process.env.SEED_OVERWRITE_PLANS === 'true';
   for (const plan of PLANS) {
     const { code, ...data } = plan;
     await prisma.plan.upsert({
       where: { code },
-      update: { ...data, active: true },
+      update: overwrite ? { ...data, active: true } : {},
       create: plan,
     });
   }

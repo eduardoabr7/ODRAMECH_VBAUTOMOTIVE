@@ -64,6 +64,10 @@ export interface Subscription {
   currentPeriodStart: string;
   currentPeriodEnd: string;
   cancelAtPeriodEnd: boolean;
+  /** licença cortesia (gerenciada pelo suporte) */
+  complimentary?: boolean;
+  complimentaryUntil?: string | null;
+  suspended?: boolean;
 }
 
 export interface AccessDecision {

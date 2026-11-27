@@ -2,10 +2,16 @@ import { Invoice, NewInvoice, NewSubscription, Plan, Subscription } from '../dom
 
 /** REPOSITORIES (portas) — o domínio fala com estas abstrações, nunca com o Prisma. */
 
+export type PlanChanges = Partial<Omit<Plan, 'id' | 'code'>>;
+
 export abstract class PlanRepository {
   abstract listActive(): Promise<Plan[]>;
+  /** inclusive os desativados (painel administrativo) */
+  abstract listAll(): Promise<Plan[]>;
   abstract findByCode(code: string): Promise<Plan | null>;
   abstract findById(id: number): Promise<Plan | null>;
+  abstract create(data: Omit<Plan, 'id'>): Promise<Plan>;
+  abstract update(id: number, data: PlanChanges): Promise<Plan>;
 }
 
 export abstract class SubscriptionRepository {
@@ -27,6 +33,16 @@ export abstract class InvoiceRepository {
   abstract findOpen(subscriptionId: string): Promise<Invoice | null>;
 }
 
+export interface LoggedEvent {
+  id: number;
+  subscriptionId: string;
+  type: string;
+  payload: unknown;
+  createdAt: Date;
+}
+
 export abstract class EventLogRepository {
   abstract append(subscriptionId: string, type: string, payload: unknown): Promise<void>;
+  abstract listBySubscription(subscriptionId: string, take: number): Promise<LoggedEvent[]>;
+  abstract listRecent(take: number): Promise<LoggedEvent[]>;
 }

@@ -7,6 +7,7 @@ import { BrandingDTO, QuoteDocumentPreviewDTO, QuoteDocumentSettingsDTO, WorkOrd
 import { SettingsService } from '../services/settings.service';
 import { MailSettingsService } from '../services/mail-settings.service';
 import { MailSettingsDTO, MailTestDTO } from '../dto/mail-settings.dto';
+import { AllowWhenBlocked } from 'src/subscription/allow-when-blocked.decorator';
 
 /** configurações exigem sessão completa (com empresa/estabelecimento escolhidos) */
 function full(auth: AuthPayload): AuthPayload {
@@ -19,6 +20,7 @@ export class SettingsController {
   constructor(private readonly settings: SettingsService, private readonly mailSettings: MailSettingsService) {}
 
   // SMTP próprio da empresa
+  @AllowWhenBlocked()
   @Get('mail')
   mail(@CurrentAuth() auth: AuthPayload) { return this.mailSettings.get(full(auth)); }
 
@@ -30,6 +32,7 @@ export class SettingsController {
   testMail(@Body() dto: MailTestDTO, @CurrentAuth() auth: AuthPayload) { return this.mailSettings.test(full(auth), dto); }
 
   /** configuração do documento de orçamento + dados do estabelecimento para a impressão */
+  @AllowWhenBlocked()
   @Get('quote-document')
   quoteDocument(@CurrentAuth() auth: AuthPayload) {
     assertStaff(full(auth).role);
@@ -50,6 +53,7 @@ export class SettingsController {
   }
 
   /** participação do cliente na OS: todos leem, só admin altera (checado no serviço) */
+  @AllowWhenBlocked()
   @Get('work-order')
   workOrder(@CurrentAuth() auth: AuthPayload) { return this.settings.workOrderSettings(full(auth).establishmentId); }
 
@@ -58,6 +62,7 @@ export class SettingsController {
     return this.settings.saveWorkOrderSettings(full(auth), dto);
   }
 
+  @AllowWhenBlocked()
   @Get('branding')
   branding(@CurrentAuth() auth: AuthPayload) {
     return this.settings.branding(full(auth));

@@ -19,6 +19,11 @@ export class SubscriptionFactory {
       currentPeriodEnd: trialEndsAt,
       cancelAtPeriodEnd: false,
       canceledAt: null,
+      complimentary: false,
+      complimentaryUntil: null,
+      suspended: false,
+      suspendedReason: null,
+      adminNote: null,
     };
   }
 }
