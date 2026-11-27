@@ -1,32 +1,32 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
+import { EstablishmentScope } from 'src/core/auth/establishment-scope.service';
 import { ListUserDto } from '../dto/list-user.dto';
 import { UpdateUserDTO } from '../dto/update-user.dto';
 import { FrontEndCreateUser } from '../dto/create-user.dto';
 import { CreateWorkerDTO } from '../dto/create-worker-dto';
+import { assertStaff } from 'src/shared/utils/role.util';
 import { canManageRole, UserFactory } from '../factories/user.factory';
 import { UserRepository } from '../repositories/user.repository';
 
 /** Casos de uso de usuários. Criação via UserFactory, persistência via UserRepository. */
 @Injectable()
 export class UserService {
-  constructor(private readonly users: UserRepository, private readonly factory: UserFactory) {}
+  constructor(
+    private readonly users: UserRepository,
+    private readonly factory: UserFactory,
+    private readonly scope: EstablishmentScope,
+  ) {}
 
   private tenant(auth: AuthPayload) {
     return { enterpriseId: auth.enterpriseId, establishmentId: auth.establishmentId, requesterRole: auth.role };
   }
 
-  async createClient(auth: AuthPayload, { establishmentId, ...dto }: FrontEndCreateUser) {
-    return this.users.createOrLink(await this.factory.createClient(dto, await this.targetTenant(auth, establishmentId)));
-  }
-
   // cadastrar em outro estabelecimento exige ser da equipe de lá, e vale o papel que a pessoa tem lá
-  private async targetTenant(auth: AuthPayload, establishmentId?: number) {
-    if (!establishmentId || establishmentId === auth.establishmentId) return this.tenant(auth);
-    const m = await this.users.staffMembership(auth.sub, establishmentId);
-    if (!m) throw new ForbiddenException('Você não faz parte da equipe deste estabelecimento.');
-    return { enterpriseId: m.enterpriseId, establishmentId, requesterRole: m.role };
+  async createClient(auth: AuthPayload, { establishmentId, ...dto }: FrontEndCreateUser) {
+    const scoped = await this.scope.resolve(auth, establishmentId);
+    return this.users.createOrLink(await this.factory.createClient(dto, this.tenant(scoped)));
   }
 
   async createStaff(auth: AuthPayload, dto: CreateWorkerDTO) {
@@ -43,11 +43,25 @@ export class UserService {
     return user;
   }
 
-  async update(auth: AuthPayload, id: number, data: UpdateUserDTO) {
+  /** ficha de uma pessoa: ela mesma, ou a equipe do estabelecimento escolhido (com o papel de lá) */
+  async view(auth: AuthPayload, id: number, establishmentId?: number) {
+    const scoped = await this.scopeFor(auth, id, establishmentId);
+    return this.getById(id, scoped.establishmentId);
+  }
+
+  async update(sessionAuth: AuthPayload, id: number, data: UpdateUserDTO, establishmentId?: number) {
+    const auth = await this.scopeFor(sessionAuth, id, establishmentId);
     if (data.active !== undefined) await this.assertCanToggleActive(auth, id);
     const updated = await this.users.update(id, auth.establishmentId, data);
     if (!updated) throw new NotFoundException('Usuário não encontrado neste estabelecimento.');
     return this.getById(id, auth.establishmentId);
+  }
+
+  private async scopeFor(auth: AuthPayload, id: number, establishmentId?: number) {
+    if (auth.sub === id && !establishmentId) return auth;
+    const scoped = await this.scope.resolve(auth, establishmentId);
+    if (auth.sub !== id) assertStaff(scoped.role);
+    return scoped;
   }
 
   /** ativar/desativar segue a mesma política de quem pode cadastrar aquele papel */

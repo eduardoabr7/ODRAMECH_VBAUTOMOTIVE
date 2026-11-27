@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ExportButtonComponent, ExportOption } from '../../features/export/export-button.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -11,7 +12,7 @@ import { PlatePipe } from "@shared/ui/pipes";
 
 @Component({
   selector: 'app-vehicles',
-  imports: [CommonModule, FormsModule, RouterModule, StatusBadgeComponent, PlatePipe],
+  imports: [CommonModule, FormsModule, RouterModule, StatusBadgeComponent, PlatePipe, ExportButtonComponent],
   templateUrl: './vehicles.component.html',
   styleUrl: './vehicles.component.scss',
 })
@@ -21,6 +22,8 @@ export class VehiclesComponent implements OnInit, OnDestroy {
   loading = true;
   search = '';
   view: 'grid' | 'list' = 'grid';
+
+  readonly exportOptions: ExportOption[] = [{ kind: 'vehicles', label: 'Veículos', filters: () => ({ search: this.search }) }];
 
   private readonly search$ = new Subject<string>();
   private readonly subs = new Subscription();

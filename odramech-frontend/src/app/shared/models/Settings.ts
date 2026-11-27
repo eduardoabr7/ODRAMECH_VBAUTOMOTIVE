@@ -71,3 +71,8 @@ export interface PublicBranding {
   loginHeadline: string | null;
   loginSubtitle: string | null;
 }
+
+/** Configurações → Ordens de serviço (por estabelecimento) */
+export interface WorkOrderSettings {
+  clientAppointmentsEnabled: boolean;
+}

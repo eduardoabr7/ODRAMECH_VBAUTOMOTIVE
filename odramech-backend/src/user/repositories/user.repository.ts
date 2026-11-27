@@ -22,8 +22,6 @@ export abstract class UserRepository {
   abstract search(establishmentId: number, term: string, take: number): Promise<any[]>;
   abstract findInEstablishment(id: number, establishmentId: number): Promise<any | null>;
   abstract membership(id: number, establishmentId: number): Promise<{ role: Role; active: boolean } | null>;
-  /** vínculo ativo de equipe (admin/mecânico/super) da pessoa com o estabelecimento */
-  abstract staffMembership(id: number, establishmentId: number): Promise<{ role: Role; enterpriseId: number } | null>;
   abstract update(id: number, establishmentId: number, data: UpdateUserDTO): Promise<boolean>;
 }
 
@@ -130,14 +128,6 @@ export class PrismaUserRepository extends UserRepository {
       where: { idUser: id, idEstablishment: establishmentId },
       select: { role: true, active: true },
     });
-  }
-
-  async staffMembership(id: number, establishmentId: number) {
-    const m = await this.prisma.userCorporation.findFirst({
-      where: { idUser: id, idEstablishment: establishmentId, active: true, role: { in: [Role.ADMIN, Role.WORKER, Role.SUPERUSER] } },
-      select: { role: true, idEnterprise: true },
-    });
-    return m ? { role: m.role, enterpriseId: m.idEnterprise } : null;
   }
 
   async update(id: number, establishmentId: number, data: UpdateUserDTO): Promise<boolean> {

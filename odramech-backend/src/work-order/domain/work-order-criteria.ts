@@ -13,6 +13,7 @@ export interface WorkOrderCriteria {
   /** texto livre: nº da OS, placa, cliente, marca ou modelo */
   term?: string;
   createdFrom?: Date;
+  createdTo?: Date;
   finishedFrom?: Date;
 }
 
@@ -59,6 +60,13 @@ export class WorkOrderCriteriaBuilder {
 
   createdSince(date: Date): this {
     this.criteria.createdFrom = date;
+    return this;
+  }
+
+  /** período de abertura (exportação) */
+  createdBetween(from?: Date, to?: Date): this {
+    if (from) this.criteria.createdFrom = from;
+    if (to) this.criteria.createdTo = to;
     return this;
   }
 

@@ -20,6 +20,18 @@ import { BillingService } from '@shared/services/billing.service';
 import { PAYMENT_LABEL, PaymentMethod, ServiceItem, ServiceItemInput } from '@shared/models/Billing';
 import { ArchiveAppointment } from '@shared/models/WorkOrder';
 import { UndoService } from '../../../core/undo/undo.service';
+import { MediaPickerComponent } from '@shared/media/media-picker.component';
+import { ResizableImageComponent } from '@shared/media/resizable-image.component';
+import { ImageLightboxComponent, LightboxImage } from '@shared/media/image-lightbox.component';
+
+interface PickedFile {
+  file: File;
+  /** miniatura local (object URL) das imagens escolhidas */
+  preview: string | null;
+}
+
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const MAX_FILES = 10;
 
 type TimelineItem =
   | { kind: 'event'; at: string; icon: string; text: string; who?: string }
@@ -27,7 +39,10 @@ type TimelineItem =
 
 @Component({
   selector: 'app-order-detail',
-  imports: [CommonModule, FormsModule, RouterModule, StatusBadgeComponent, ItemsEditorComponent, InitialsPipe, PhonePipe, PlatePipe, RelativeTimePipe],
+  imports: [
+    CommonModule, FormsModule, RouterModule, StatusBadgeComponent, ItemsEditorComponent, InitialsPipe, PhonePipe, PlatePipe, RelativeTimePipe,
+    MediaPickerComponent, ResizableImageComponent, ImageLightboxComponent,
+  ],
   templateUrl: './order-detail.component.html',
   styleUrl: './order-detail.component.scss',
 })
@@ -44,6 +59,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   loading = true;
   notFound = false;
   isStaff = false;
+  myUserId: number | null = null;
 
   workers: UserList[] = [];
   savingStatus: StatusOS | null = null;
@@ -52,7 +68,10 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   noteHtml = '';
   noteType: AppointmentTypeEnum = AppointmentTypeEnum.PUBLICO;
   sendingNote = false;
-  noteFiles: File[] = [];
+  noteFiles: PickedFile[] = [];
+
+  /** imagem aberta em tela cheia */
+  lightbox: { images: LightboxImage[]; index: number } | null = null;
 
   // financeiro
   @ViewChild(ItemsEditorComponent) itemsEditor?: ItemsEditorComponent;
@@ -86,6 +105,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.subs.add(this.session.isStaff$.subscribe(v => this.isStaff = v));
+    this.subs.add(this._auth.user$.subscribe(ctx => this.myUserId = ctx?.user?.id ?? null));
 
     this.subs.add(this._route.paramMap.pipe(
       map(p => Number(p.get('id'))),
@@ -110,7 +130,10 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     }));
   }
 
-  ngOnDestroy(): void { this.subs.unsubscribe(); }
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
+    this.clearPicked();
+  }
 
   private reload(id: number): void {
     this._workOrders.getById(id).subscribe(wo => this.setWo(wo));
@@ -119,6 +142,7 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   private setWo(wo: WorkOrderDetail): void {
     this.wo = wo;
     this.loading = false;
+    if (!this.canWriteInternal) this.noteType = AppointmentTypeEnum.PUBLICO;
     this._title.setTitle(`OS #${wo.numberOs} · ${wo.client.name} · Odramech`);
   }
 
@@ -187,6 +211,19 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ── Permissões do histórico (vêm do backend) ─────────────
+  /** equipe sempre; cliente só se o estabelecimento liberou */
+  // sem `permissions` (backend antigo durante a atualização), vale a regra anterior: só a equipe escreve
+  get canWrite(): boolean { return this.wo?.permissions ? this.wo.permissions.canWrite : this.isStaff; }
+  get canAttach(): boolean { return this.wo?.permissions ? this.wo.permissions.canAttach : this.isStaff; }
+  get canWriteInternal(): boolean {
+    return this.wo?.permissions ? this.wo.permissions.types.includes(AppointmentTypeEnum.INTERNO) : this.isStaff;
+  }
+
+  canDeleteFile(appt: Appointment): boolean {
+    return this.isStaff || appt.userAppointment.id === this.myUserId;
+  }
+
   // ── Timeline ─────────────────────────────────────────────
   get timeline(): TimelineItem[] {
     if (!this.wo) return [];
@@ -207,13 +244,53 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     return items.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   }
 
+  // o getter `timeline` monta objetos novos a cada ciclo: sem trackBy o Angular recriaria
+  // todo o histórico (e as fotos perderiam o redimensionamento no meio do arraste)
+  trackTimeline(_: number, item: TimelineItem): string {
+    return item.kind === 'note' ? `n${item.appt.id}` : `e${item.icon}${item.at}`;
+  }
+
+  trackArchive(_: number, a: ArchiveAppointment): number { return a.id; }
+
   format(cmd: string): void {
     document.execCommand(cmd, false);
     this.editor?.nativeElement.focus();
   }
 
   onEditorInput(): void {
-    this.noteHtml = this.editor?.nativeElement.innerHTML ?? '';
+    const el = this.editor?.nativeElement;
+    el?.querySelectorAll('img').forEach((img: HTMLImageElement) => img.remove());
+    this.noteHtml = el?.innerHTML ?? '';
+  }
+
+  onEditorPaste(e: ClipboardEvent): void {
+    const data = e.clipboardData;
+    if (!data) return;
+    const files = Array.from(data.files ?? []);
+    if (files.length) {
+      e.preventDefault();
+      this.attachFromEditor(files);
+      return;
+    }
+    if (/<img\b/i.test(data.getData('text/html'))) {
+      e.preventDefault();
+      document.execCommand('insertText', false, data.getData('text/plain'));
+    }
+  }
+
+  onEditorDrop(e: DragEvent): void {
+    const files = Array.from(e.dataTransfer?.files ?? []);
+    if (!files.length) return;
+    e.preventDefault();
+    this.attachFromEditor(files);
+  }
+
+  private attachFromEditor(files: File[]): void {
+    if (!this.canAttach) {
+      this._toastr.info('Seu plano não inclui anexos nos apontamentos.');
+      return;
+    }
+    this.addFiles(files);
   }
 
   get noteIsEmpty(): boolean {
@@ -224,8 +301,11 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     if (!this.wo || (this.noteIsEmpty && !this.noteFiles.length) || this.sendingNote) return;
     this.sendingNote = true;
 
-    const files = [...this.noteFiles];
-    const html = this.noteIsEmpty ? `<p>${files.length} anexo(s)</p>` : this.noteHtml;
+    const files = this.noteFiles.map(p => p.file);
+    const images = files.filter(f => f.type.startsWith('image/')).length;
+    const html = this.noteIsEmpty
+      ? `<p>${images === files.length ? `${files.length} foto(s)` : `${files.length} anexo(s)`}</p>`
+      : this.noteHtml;
 
     this._workOrders.addAppointment(this.wo.id, html, this.noteType).pipe(
       switchMap(appt => files.length
@@ -235,10 +315,10 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
       next: appt => {
         this.wo = { ...this.wo!, appointments: [...this.wo!.appointments, appt] };
         this.noteHtml = '';
-        this.noteFiles = [];
+        this.clearPicked();
         if (this.editor) this.editor.nativeElement.innerHTML = '';
         this.sendingNote = false;
-        this._toastr.success(this.noteType === AppointmentTypeEnum.INTERNO ? 'Nota interna registrada.' : 'Apontamento registrado.');
+        this._toastr.success(this.noteType === AppointmentTypeEnum.INTERNO ? 'Nota interna registrada.' : (this.isStaff ? 'Apontamento registrado.' : 'Mensagem enviada para a oficina.'));
       },
       error: err => {
         this.sendingNote = false;
@@ -257,16 +337,52 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   back(): void { this._router.navigate(['/orders']); }
 
   // ── Anexos ───────────────────────────────────────────────
-  onPickFiles(e: Event): void {
-    const input = e.target as HTMLInputElement;
-    const picked = Array.from(input.files ?? []);
-    const tooBig = picked.filter(f => f.size > 10 * 1024 * 1024);
+  /** vem do app-media-picker (câmera, galeria ou arquivo), fotos já reduzidas */
+  addFiles(picked: File[]): void {
+    const tooBig = picked.filter(f => f.size > MAX_FILE_BYTES);
     if (tooBig.length) this._toastr.warning(`${tooBig.length} arquivo(s) acima de 10 MB foram ignorados.`);
-    this.noteFiles = [...this.noteFiles, ...picked.filter(f => f.size <= 10 * 1024 * 1024)].slice(0, 10);
-    input.value = '';
+
+    const room = MAX_FILES - this.noteFiles.length;
+    const accepted = picked.filter(f => f.size <= MAX_FILE_BYTES);
+    if (accepted.length > room) this._toastr.info(`Até ${MAX_FILES} arquivos por apontamento.`);
+
+    this.noteFiles = [
+      ...this.noteFiles,
+      ...accepted.slice(0, Math.max(0, room)).map(file => ({
+        file,
+        preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+      })),
+    ];
   }
 
-  removePicked(i: number): void { this.noteFiles = this.noteFiles.filter((_, idx) => idx !== i); }
+  removePicked(i: number): void {
+    const p = this.noteFiles[i];
+    if (p?.preview) URL.revokeObjectURL(p.preview);
+    this.noteFiles = this.noteFiles.filter((_, idx) => idx !== i);
+  }
+
+  private clearPicked(): void {
+    this.noteFiles.forEach(p => p.preview && URL.revokeObjectURL(p.preview));
+    this.noteFiles = [];
+  }
+
+  imagesOf(appt: Appointment): ArchiveAppointment[] {
+    return (appt.archives ?? []).filter(a => a.archiveType === 'IMAGEM');
+  }
+
+  othersOf(appt: Appointment): ArchiveAppointment[] {
+    return (appt.archives ?? []).filter(a => a.archiveType !== 'IMAGEM');
+  }
+
+  /** abre a foto inteira; as setas passam pelas outras fotos da OS inteira */
+  openImage(a: ArchiveAppointment): void {
+    if (!this.wo) return;
+    const all = this.wo.appointments.flatMap(ap => this.imagesOf(ap));
+    this.lightbox = {
+      images: all.map(x => ({ src: this.fileUrl(x), name: x.originalName })),
+      index: Math.max(0, all.findIndex(x => x.id === a.id)),
+    };
+  }
 
   fileUrl(a: ArchiveAppointment): string { return this._billing.fileUrl(a.id); }
 

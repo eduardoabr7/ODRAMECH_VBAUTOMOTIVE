@@ -8,11 +8,12 @@ import { SessionService } from '@shared/services/session.service';
 import { WorkOrder, WorkOrderPage } from '@shared/models/WorkOrder';
 import { STATUS_LABEL, STATUS_ORDER, StatusOS } from '@shared/enums/status-os.enum';
 import { StatusBadgeComponent } from '@shared/ui/status-badge.component';
+import { ExportButtonComponent, ExportOption } from '../../../features/export/export-button.component';
 import { InitialsPipe, PlatePipe, RelativeTimePipe } from '@shared/ui/pipes';
 
 @Component({
   selector: 'app-orders-list',
-  imports: [CommonModule, FormsModule, RouterModule, StatusBadgeComponent, InitialsPipe, PlatePipe, RelativeTimePipe],
+  imports: [CommonModule, FormsModule, RouterModule, StatusBadgeComponent, InitialsPipe, PlatePipe, RelativeTimePipe, ExportButtonComponent],
   templateUrl: './orders-list.component.html',
   styleUrl: './orders-list.component.scss',
 })
@@ -29,6 +30,13 @@ export class OrdersListComponent implements OnInit, OnDestroy {
 
   data: WorkOrderPage | null = null;
   loading = true;
+
+  /** planilha sai com os filtros da tela (status e busca) */
+  readonly exportOrders: ExportOption = {
+    kind: 'work-orders', label: 'Ordens de serviço', hint: 'Com os filtros atuais, peças e serviços',
+    filters: () => ({ status: this.status, search: this.search }),
+  };
+  readonly exportPayments: ExportOption = { kind: 'payments', label: 'Financeiro (pagamentos)', hint: 'Todos os pagamentos e resumo por forma' };
 
   private readonly reload$ = new Subject<void>();
   private readonly search$ = new Subject<string>();

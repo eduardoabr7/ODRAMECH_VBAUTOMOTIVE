@@ -34,6 +34,12 @@ export class QuoteDocumentSettingsDTO {
   autoEmailQuote?: boolean;
 }
 
+/** O que o cliente pode fazer na OS (por estabelecimento). */
+export class WorkOrderSettingsDTO {
+  @IsOptional() @IsBoolean()
+  clientAppointmentsEnabled?: boolean;
+}
+
 /** Pré-visualização do documento com o rascunho da configuração (ainda não salvo). */
 export class QuoteDocumentPreviewDTO {
   @IsEnum(QuoteTemplate)

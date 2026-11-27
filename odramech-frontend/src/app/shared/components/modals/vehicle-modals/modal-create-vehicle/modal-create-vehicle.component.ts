@@ -29,6 +29,8 @@ export class ModalCreateVehicleComponent extends BaseModalComponent implements O
 
   userId!: number;       // era clientId
   clientName?: string;
+  /** estabelecimento onde o cliente está (quando a ficha foi aberta em outro estabelecimento) */
+  establishmentId?: number | null;
 
   @Output() vehicleCreated = new EventEmitter<Vehicle>();
 
@@ -145,7 +147,7 @@ export class ModalCreateVehicleComponent extends BaseModalComponent implements O
       'Aguarde...',
     );
 
-    this.vehicleService.linkToUser(this.existingVehicle.id, this.userId).pipe(
+    this.vehicleService.linkToUser(this.existingVehicle.id, this.userId, this.establishmentId).pipe(
       finalize(() => {
         this.isSubmitting = false;
         loadingRef.hide();
@@ -230,7 +232,7 @@ export class ModalCreateVehicleComponent extends BaseModalComponent implements O
       'Aguarde...',
     );
 
-    this.vehicleService.create(payload).pipe(
+    this.vehicleService.create(payload, this.establishmentId).pipe(
       finalize(() => {
         this.isSubmitting = false;
         loadingRef.hide();

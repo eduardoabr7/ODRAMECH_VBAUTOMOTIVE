@@ -4,6 +4,7 @@ import { PrismaService } from './database/prisma.service';
 import { DomainEventBus } from './events/domain-event-bus';
 import { CommandBus } from './commands/command-bus';
 import { CustomLogger } from 'src/shared/services/custom-logger.service';
+import { EstablishmentScope } from './auth/establishment-scope.service';
 
 /**
  * Infraestrutura compartilhada, registrada UMA vez (@Global).
@@ -17,7 +18,8 @@ import { CustomLogger } from 'src/shared/services/custom-logger.service';
     DomainEventBus,
     CommandBus,
     CustomLogger,
+    EstablishmentScope,
   ],
-  exports: [AppConfig, PrismaService, DomainEventBus, CommandBus, CustomLogger],
+  exports: [AppConfig, PrismaService, DomainEventBus, CommandBus, CustomLogger, EstablishmentScope],
 })
 export class CoreModule {}

@@ -6,8 +6,9 @@
       <h1 class="page-title reveal" style="--i:1">Orçamentos</h1>
       <p class="page-sub reveal" style="--i:2">Monte o orçamento, envie ao cliente e transforme em OS com um clique.</p>
     </div>
-    <div class="page-actions reveal" style="--i:3" *ngIf="session.isStaff$ | async">
-      <a routerLink="/quotes/new" class="btn-x btn-solid"><i class="fa-solid fa-plus"></i>Novo orçamento</a>
+    <div class="page-actions reveal" style="--i:3">
+      <app-export-button [options]="exportOptions"></app-export-button>
+      <a *ngIf="session.isStaff$ | async" routerLink="/quotes/new" class="btn-x btn-solid"><i class="fa-solid fa-plus"></i>Novo orçamento</a>
     </div>
   </div>
 

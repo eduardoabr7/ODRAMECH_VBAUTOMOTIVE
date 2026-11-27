@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Quote } from '@shared/models/Billing';
-import { Branding, BrandingUpdate, PublicBranding, QuoteDocument, QuoteDocumentPreview, QuoteDocumentUpdate } from '@shared/models/Settings';
+import { Branding, BrandingUpdate, PublicBranding, QuoteDocument, QuoteDocumentPreview, QuoteDocumentUpdate, WorkOrderSettings } from '@shared/models/Settings';
 import { NestAPI } from './nest-api.service';
 
 /** Configurações do estabelecimento (documento de orçamento) e da empresa (tema). */
@@ -27,6 +27,10 @@ export class SettingsService {
   markQuotePrinted(quoteId: number): Observable<{ changed: boolean; quote: Quote }> {
     return this._api.post(`quote/${quoteId}/printed`, {});
   }
+
+  /** o que o cliente pode fazer na OS (todos leem; só admin altera) */
+  getWorkOrderSettings(): Observable<WorkOrderSettings> { return this._api.get('settings/work-order'); }
+  saveWorkOrderSettings(data: Partial<WorkOrderSettings>): Observable<WorkOrderSettings> { return this._api.put('settings/work-order', data); }
 
   getBranding(): Observable<Branding> { return this._api.get('settings/branding'); }
   saveBranding(data: BrandingUpdate): Observable<Branding> { return this._api.put('settings/branding', data); }

@@ -32,6 +32,13 @@ export class WoListQueryDTO {
   @IsInt()
   vehicleId?: number;
 
+  /** outro estabelecimento onde quem pede é da equipe (ficha do cliente aberta pela lista) */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  establishmentId?: number;
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()

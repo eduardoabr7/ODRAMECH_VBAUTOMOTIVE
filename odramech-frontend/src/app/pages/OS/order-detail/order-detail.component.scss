@@ -427,3 +427,24 @@
 
 .review-done-body { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 13px; }
 .review-comment { width: 100%; font-size: 14px; color: var(--ink-2); font-style: italic; }
+
+// Fotos do apontamento (redimensionáveis; clique abre inteira)
+.rich { overflow-wrap: anywhere; }
+.rich ::ng-deep img { max-width: min(100%, 360px); height: auto; border-radius: 8px; display: block; margin: 6px 0; }
+
+.photos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: flex-start; }
+.photo {
+  position: relative; max-width: 100%;
+  .file-del { opacity: 0; }
+  &:hover .file-del { opacity: 1; }
+  @media (hover: none) { .file-del { opacity: .9; } }
+}
+
+.composer-off { margin: 4px 0 0; padding: 12px 14px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); i { margin-right: 6px; } }
+
+// Miniaturas das fotos escolhidas antes de enviar
+.picked-files .thumb {
+  position: relative; width: 64px; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-3);
+  img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  button { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 6px; border: 0; background: rgba(17,17,17,.7); color: #fff; font-size: 10px; cursor: pointer; display: grid; place-items: center; }
+}

@@ -3,7 +3,7 @@ import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
 import { CurrentAuth } from 'src/core/auth/current-auth.decorator';
 import { Public } from 'src/shared/decorators/public-routes.decorator';
 import { assertStaff } from 'src/shared/utils/role.util';
-import { BrandingDTO, QuoteDocumentPreviewDTO, QuoteDocumentSettingsDTO } from '../dto/settings.dto';
+import { BrandingDTO, QuoteDocumentPreviewDTO, QuoteDocumentSettingsDTO, WorkOrderSettingsDTO } from '../dto/settings.dto';
 import { SettingsService } from '../services/settings.service';
 import { MailSettingsService } from '../services/mail-settings.service';
 import { MailSettingsDTO, MailTestDTO } from '../dto/mail-settings.dto';
@@ -47,6 +47,15 @@ export class SettingsController {
   @Put('quote-document')
   saveQuoteDocument(@Body() dto: QuoteDocumentSettingsDTO, @CurrentAuth() auth: AuthPayload) {
     return this.settings.saveQuoteSettings(full(auth), dto);
+  }
+
+  /** participação do cliente na OS: todos leem, só admin altera (checado no serviço) */
+  @Get('work-order')
+  workOrder(@CurrentAuth() auth: AuthPayload) { return this.settings.workOrderSettings(full(auth).establishmentId); }
+
+  @Put('work-order')
+  saveWorkOrder(@Body() dto: WorkOrderSettingsDTO, @CurrentAuth() auth: AuthPayload) {
+    return this.settings.saveWorkOrderSettings(full(auth), dto);
   }
 
   @Get('branding')

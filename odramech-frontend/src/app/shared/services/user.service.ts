@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { UserCreate } from "@shared/models/UserCreate";
 import { NestAPI } from "./nest-api.service";
+import { QueryParams } from "../../core/http/query-params.builder";
 import { UserDetail, UserList } from "@shared/models/UserList";
 import { WorkerCreate } from "@shared/models/WorkerCreate";
 
@@ -25,12 +26,13 @@ export class UserService {
       return this._nestApi.get(`user/search?term=${encodeURIComponent(term)}`);
     }
 
-    getById(id: number): Observable<UserDetail> {
-      return this._nestApi.get(`user/${id}`);
+    /** establishmentId: abre a ficha em outro estabelecimento onde quem pede é da equipe */
+    getById(id: number, establishmentId?: number | null): Observable<UserDetail> {
+      return this._nestApi.get(QueryParams.create().set('establishmentId', establishmentId).appendTo(`user/${id}`));
     }
 
-    update(id: number, data: Partial<UserCreate> & { active?: boolean }): Observable<UserDetail> {
-      return this._nestApi.put(`user/${id}`, data);
+    update(id: number, data: Partial<UserCreate> & { active?: boolean }, establishmentId?: number | null): Observable<UserDetail> {
+      return this._nestApi.put(QueryParams.create().set('establishmentId', establishmentId).appendTo(`user/${id}`), data);
     }
 
 }

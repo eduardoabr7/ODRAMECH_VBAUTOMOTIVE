@@ -54,7 +54,15 @@ export interface WorkOrder {
   _count?: { appointments: number }
 }
 
+/** o que a sessão pode fazer no histórico desta OS (calculado no backend) */
+export interface AppointmentPermissions {
+  canWrite: boolean
+  canAttach: boolean
+  types: AppointmentTypeEnum[]
+}
+
 export interface WorkOrderDetail extends WorkOrder {
+  permissions: AppointmentPermissions
   appointments: Appointment[]
   items: ServiceItem[]
   payments: Payment[]
@@ -87,6 +95,8 @@ export interface WorkOrderListQuery {
   search?: string
   clientId?: number
   vehicleId?: number
+  /** outro estabelecimento onde quem pede é da equipe */
+  establishmentId?: number | null
   page?: number
   pageSize?: number
 }

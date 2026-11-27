@@ -3,13 +3,14 @@ import { Component, OnInit, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '@shared/services/auth.service';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { ToastrService } from 'ngx-toastr';
 import { ModalCreateUserComponent } from '@shared/components/modals/user-modals/modal-create-user/modal-create-user.component';
 import { RoleEnum } from '@shared/enums/role.enum';
 import { UserCorporationService } from '@shared/services/user-corporation.service';
 import { InitialsPipe, PhonePipe } from '@shared/ui/pipes';
+import { ExportButtonComponent, ExportOption } from '../../features/export/export-button.component';
 
 interface ClientRow {
   id: number;
@@ -20,7 +21,7 @@ interface ClientRow {
 
 @Component({
   selector: 'app-clients',
-  imports: [CommonModule, FormsModule, RouterModule, InitialsPipe, PhonePipe],
+  imports: [CommonModule, FormsModule, RouterModule, InitialsPipe, PhonePipe, ExportButtonComponent],
   templateUrl: './clients.component.html',
   styleUrl: './clients.component.scss'
 })
@@ -35,7 +36,16 @@ export class ClientsComponent implements OnInit {
     private readonly _userCorporationService: UserCorporationService,
     private readonly _toastr: ToastrService,
     private readonly _router: Router,
+    private readonly _route: ActivatedRoute,
   ) {}
+
+  readonly exportOptions: ExportOption[] = [{
+    kind: 'clients', label: 'Clientes',
+    filters: () => ({
+      search: this.searchQuery,
+      establishmentId: this.selectedEstablishmentId !== this._authService_currentEstablishmentId() ? this.selectedEstablishmentId : null,
+    }),
+  }];
 
   establishments: any[] = [];
   selectedEstablishmentId: number | null = null;
@@ -61,8 +71,12 @@ export class ClientsComponent implements OnInit {
       next: (value) => {
         this.establishments = value ?? [];
         // abre no estabelecimento da sessão (antes abria no primeiro da lista)
+        // ?estab= vem da ficha do cliente (botão voltar) e mantém o estabelecimento escolhido
+        const fromUrl = Number(this._route.snapshot.queryParamMap.get('estab')) || null;
         const current = this._authService_currentEstablishmentId();
-        this.selectedEstablishmentId = this.establishments.find(e => e.id === current)?.id ?? this.establishments[0]?.id ?? null;
+        this.selectedEstablishmentId = this.establishments.find(e => e.id === fromUrl)?.id
+          ?? this.establishments.find(e => e.id === current)?.id
+          ?? this.establishments[0]?.id ?? null;
         if (this.selectedEstablishmentId) this.loadUsersByEstablishment(this.selectedEstablishmentId);
         else this.loading = false;
       },
@@ -92,8 +106,12 @@ export class ClientsComponent implements OnInit {
     });
   }
 
+  /** a ficha abre no estabelecimento selecionado na lista (pode não ser o da sessão) */
   open(user: ClientRow): void {
-    this._router.navigate(['/clients', user.id]);
+    const estab = this.selectedEstablishmentId && this.selectedEstablishmentId !== this._authService_currentEstablishmentId()
+      ? this.selectedEstablishmentId
+      : null;
+    this._router.navigate(['/clients', user.id], { queryParams: estab ? { estab } : {} });
   }
 
   get selectedEstablishmentName(): string | null {

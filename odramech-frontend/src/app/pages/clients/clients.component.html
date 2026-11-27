@@ -15,6 +15,7 @@
           <option *ngFor="let e of establishments" [ngValue]="e.id">{{ e.name }}</option>
         </select>
       </div>
+      <app-export-button [options]="exportOptions"></app-export-button>
       <button class="btn-x btn-solid" (click)="openModalCreateUser()">
         <i class="fa-solid fa-plus"></i>Novo cliente
       </button>

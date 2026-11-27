@@ -3,11 +3,12 @@ import { OrderStatus, TypeAppointment } from '@prisma/client';
 import { Command } from 'src/core/commands/command-bus';
 import { DomainEventBus } from 'src/core/events/domain-event-bus';
 import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
-import { assertStaff } from 'src/shared/utils/role.util';
-import { sanitizeHtml } from 'src/shared/utils/html.util';
+import { assertStaff, isStaff } from 'src/shared/utils/role.util';
+import { sanitizeNoteHtml } from 'src/shared/utils/html.util';
 import { WorkOrderRepository } from '../repositories/work-order.repository';
 import { WorkOrderResponsibleChanged, WorkOrderStatusChanged } from '../domain/work-order.events';
 import { STATUS_LABEL } from '../domain/work-order-status';
+import { AppointmentAccess } from '../domain/appointment-access';
 
 // ═════════════════════════════════════════════════════════
 // COMMANDS — cada operação de escrita sobre a OS é um objeto.
@@ -84,6 +85,7 @@ export class AddAppointmentCommand implements Command<any> {
 
   constructor(
     private readonly repo: WorkOrderRepository,
+    private readonly access: AppointmentAccess,
     private readonly auth: AuthPayload,
     private readonly workOrderId: number,
     private readonly contentHtml: string,
@@ -94,9 +96,11 @@ export class AddAppointmentCommand implements Command<any> {
 
   async execute() {
     const ref = await this.repo.findRef(this.workOrderId, this.auth.establishmentId);
-    if (!ref) throw new NotFoundException('Ordem de serviço não encontrada');
+    // cliente que não é dono da OS recebe 404, igual a uma OS inexistente
+    if (!ref || (!isStaff(this.auth.role) && ref.clientId !== this.auth.sub)) throw new NotFoundException('Ordem de serviço não encontrada');
+    await this.access.assertCanWrite(this.auth, ref, this.type);
     // HTML do apontamento aparece para o cliente: remove scripts/eventos antes de gravar
-    return this.repo.addAppointment(this.workOrderId, this.auth.sub, sanitizeHtml(this.contentHtml) ?? '', this.type);
+    return this.repo.addAppointment(this.workOrderId, this.auth.sub, sanitizeNoteHtml(this.contentHtml) ?? '', this.type);
   }
 }
 
@@ -106,7 +110,11 @@ export class AddAppointmentCommand implements Command<any> {
  */
 @Injectable()
 export class WorkOrderCommandFactory {
-  constructor(private readonly repo: WorkOrderRepository, private readonly events: DomainEventBus) {}
+  constructor(
+    private readonly repo: WorkOrderRepository,
+    private readonly events: DomainEventBus,
+    private readonly access: AppointmentAccess,
+  ) {}
 
   changeStatus(auth: AuthPayload, id: number, status: OrderStatus) {
     assertStaff(auth.role);
@@ -118,8 +126,8 @@ export class WorkOrderCommandFactory {
     return new AssignResponsibleCommand(this.repo, this.events, auth, id, responsibleId);
   }
 
+  /** equipe ou cliente: quem pode o quê é decidido pelo AppointmentAccess na execução */
   addAppointment(auth: AuthPayload, id: number, contentHtml: string, type: TypeAppointment) {
-    assertStaff(auth.role);
-    return new AddAppointmentCommand(this.repo, auth, id, contentHtml, type);
+    return new AddAppointmentCommand(this.repo, this.access, auth, id, contentHtml, type);
   }
 }
