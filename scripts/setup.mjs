@@ -1,4 +1,4 @@
-// Prepara o projeto do zero numa máquina Windows (ou qualquer outra):
+// Prepara o projeto do zero (Windows: setup.bat · Ubuntu: bash setup.sh, que antes instala/configura o PostgreSQL):
 //   1. confere o Node
 //   2. cria os .env a partir dos exemplos, se não existirem
 //   3. instala dependências (raiz, backend, frontend)
@@ -75,7 +75,7 @@ try {
 console.log(`
 ${color.green}${color.bold}  Tudo pronto!${color.reset}
 
-  Para iniciar:   ${color.bold}iniciar.bat${color.reset}   (ou: npm run dev)
+  Para iniciar:   ${color.bold}${process.platform === 'win32' ? 'iniciarWin.bat' : 'bash iniciar.sh'}${color.reset}   (ou: npm run dev)
   Abrir:          http://localhost:4200
   Assinaturas:    http://localhost:3010/health
   Login inicial:  odramechenterprise@gmail.com  /  odramin
