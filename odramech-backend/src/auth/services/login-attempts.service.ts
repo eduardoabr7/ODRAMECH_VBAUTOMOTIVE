@@ -3,16 +3,14 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 interface Bucket { failures: number[]; lockedUntil: number }
 
 const WINDOW_MS = 15 * 60_000;
-/** erros de senha seguidos para o mesmo e-mail (vindo do mesmo IP) antes de travar */
+// erros seguidos no mesmo e-mail + IP antes de bloquear
 const MAX_PER_ACCOUNT = 5;
-/** erros vindos de um IP, somando todos os e-mails (tentativa de "varrer" contas) */
+// erros de um mesmo IP somando todos os e-mails
 const MAX_PER_IP = 30;
 const LOCK_MS = 15 * 60_000;
 
-/**
- * Limite de tentativas de login (força bruta com Burp Intruder, hydra etc.).
- * Em memória: suficiente para uma instância; com várias instâncias, trocar por Redis.
- */
+// Limite de tentativas de login (força bruta). Fica em memória; se um dia rodar mais de uma
+// instância, tem que ir pro Redis.
 @Injectable()
 export class LoginAttemptsService {
   private readonly buckets = new Map<string, Bucket>();
@@ -29,7 +27,7 @@ export class LoginAttemptsService {
     return b;
   }
 
-  /** chamado ANTES de conferir a senha */
+  // chamar antes de conferir a senha
   assertAllowed(email: string, ip: string): void {
     const now = Date.now();
     for (const key of this.keys(email, ip)) {
@@ -55,7 +53,7 @@ export class LoginAttemptsService {
     if (this.buckets.size > 50_000) this.prune();
   }
 
-  /** login certo: zera o contador da conta (o do IP continua) */
+  // acertou a senha: zera o contador da conta (o do IP continua)
   success(email: string, ip: string): void {
     this.buckets.delete(this.keys(email, ip)[0]);
   }

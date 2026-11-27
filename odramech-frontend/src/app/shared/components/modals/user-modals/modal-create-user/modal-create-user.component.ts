@@ -33,6 +33,9 @@ export class ModalCreateUserComponent extends BaseModalComponent {
     }
 
     isSubmitting: boolean = false;
+    /** vem da tela de clientes (estabelecimento escolhido no seletor) */
+    establishmentId?: number;
+    establishmentName?: string;
     GenderEnum = GenderEnum;
 
     form: UserCreate = {
@@ -133,7 +136,7 @@ export class ModalCreateUserComponent extends BaseModalComponent {
       const loadingRef = ModalLoadingComponent.open(
         this._modalService, 'Cadastrando usuário', 'Aguarde...');
     
-      this._userService.create(user).pipe(
+      this._userService.create({ ...user, ...(this.establishmentId && { establishmentId: this.establishmentId }) }).pipe(
         finalize(() => {
           this.isSubmitting = false;
           loadingRef.hide();

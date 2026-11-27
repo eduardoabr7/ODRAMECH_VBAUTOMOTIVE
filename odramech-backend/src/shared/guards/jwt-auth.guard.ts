@@ -39,14 +39,13 @@ export class JwtAuthGuard implements CanActivate {
 
     const tokenDecodified: AuthPayload = await this._jwtService.decoderToken(token);
 
-    // token de PRÉ-LOGIN (senha conferida, estabelecimento ainda não escolhido): não tem empresa
-    // nem perfil, então só serve para terminar o login — nunca para usar o sistema
+    // token de pré-login só serve pra terminar o login (ainda não tem empresa nem perfil)
     if (tokenDecodified?.context !== 'AUTH') {
       const path: string = (request.path ?? request.url ?? '').split('?')[0];
       if (!PRE_AUTH_ROUTES.some(r => r.test(path))) throw new UnauthorizedException('Escolha o estabelecimento para continuar.');
     }
 
-    // usuário desativado perde o acesso na hora (não espera a sessão de 4h expirar)
+    // desativado perde o acesso na hora, sem esperar a sessão expirar
     if (tokenDecodified?.context === 'AUTH') {
       const membership = await this._prisma.userCorporation.findUnique({
         where: {

@@ -17,8 +17,16 @@ export class UserService {
     return { enterpriseId: auth.enterpriseId, establishmentId: auth.establishmentId, requesterRole: auth.role };
   }
 
-  async createClient(auth: AuthPayload, dto: FrontEndCreateUser) {
-    return this.users.createOrLink(await this.factory.createClient(dto, this.tenant(auth)));
+  async createClient(auth: AuthPayload, { establishmentId, ...dto }: FrontEndCreateUser) {
+    return this.users.createOrLink(await this.factory.createClient(dto, await this.targetTenant(auth, establishmentId)));
+  }
+
+  // cadastrar em outro estabelecimento exige ser da equipe de lá, e vale o papel que a pessoa tem lá
+  private async targetTenant(auth: AuthPayload, establishmentId?: number) {
+    if (!establishmentId || establishmentId === auth.establishmentId) return this.tenant(auth);
+    const m = await this.users.staffMembership(auth.sub, establishmentId);
+    if (!m) throw new ForbiddenException('Você não faz parte da equipe deste estabelecimento.');
+    return { enterpriseId: m.enterpriseId, establishmentId, requesterRole: m.role };
   }
 
   async createStaff(auth: AuthPayload, dto: CreateWorkerDTO) {

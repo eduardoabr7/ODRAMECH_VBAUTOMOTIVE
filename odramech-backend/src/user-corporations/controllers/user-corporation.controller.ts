@@ -10,14 +10,8 @@ class EstablishmentIdDTO {
   idEstab: number;
 }
 
-/**
- * Vínculos usuário ↔ empresa/estabelecimento.
- *
- * Segurança: tudo é resolvido a partir da SESSÃO (token assinado), nunca do corpo da requisição.
- * A antiga rota `POST /usercorp` (criava vínculo com qualquer papel, em qualquer estabelecimento,
- * com o que viesse no corpo) foi removida: vínculos agora só nascem pelos cadastros de usuário
- * (UserFactory, com política de quem cria quem) e pela criação de empresa/estabelecimento.
- */
+// Vínculos usuário x empresa/estabelecimento. Tudo sai da sessão, nunca do body.
+// O POST /usercorp antigo foi removido (deixava criar vínculo com qualquer papel).
 @Controller('usercorp')
 export class UserCorporationController {
 
@@ -40,10 +34,7 @@ export class UserCorporationController {
       return this._userCorporationService.getEstablishments(auth.enterpriseId, auth.sub)
     }
 
-    /**
-     * Pessoas de um estabelecimento — só para quem é da EQUIPE (ativo) daquele estabelecimento.
-     * Um admin com várias unidades vê cada uma em que trabalha; nunca as de quem não tem vínculo.
-     */
+    // pessoas do estabelecimento, só pra quem é da equipe ativa dele
     @Post('establishment-users')
     async getUsersByIdEstab(@Body() data: EstablishmentIdDTO, @CurrentAuth() auth: AuthPayload) {
       await this.assertStaffOf(auth, data.idEstab);

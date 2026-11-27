@@ -7,10 +7,7 @@ import { isPlatformBrowser } from '@angular/common';
 type JQ = any;
 let loader: Promise<JQ> | null = null;
 
-/**
- * Carrega jQuery + Summernote (versão "lite", sem depender do JS do Bootstrap) só no navegador
- * e só quando a tela do editor é aberta — não pesa no restante do sistema nem quebra o SSR.
- */
+// jQuery + Summernote lite carregados só no navegador e só quando o editor abre (SSR)
 function loadSummernote(): Promise<JQ> {
   if (!loader) {
     loader = (async () => {
@@ -34,10 +31,7 @@ function loadSummernote(): Promise<JQ> {
   return loader;
 }
 
-/**
- * Editor WYSIWYG (Summernote) que também aceita HTML direto (botão "código").
- * Uso: <app-summernote-editor [value]="html" (valueChange)="html = $event" [height]="180" />
- */
+// editor WYSIWYG que também aceita HTML direto (botão de código)
 @Component({
   selector: 'app-summernote-editor',
   standalone: true,

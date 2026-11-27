@@ -1,14 +1,7 @@
 import { Directive, ElementRef, EventEmitter, HostListener, Input, Output } from '@angular/core';
 
-/**
- * Navegação por teclado em listas de sugestões (autocomplete).
- * Coloque no elemento que envolve o input e a lista:
- *
- *   <div class="autocomplete-wrap" keyboardList (escape)="show = false"> <input …> <div …><button class="autocomplete-item">…
- *
- * ↓/↑ destacam a opção, Enter escolhe (dispara o click dela), Esc fecha.
- * Ao digitar, o destaque volta para o início.
- */
+// Setas, Enter e Esc em listas de autocomplete. Vai no elemento que envolve o input e a lista:
+// <div keyboardList (escape)="show = false"> <input> <div> <button class="autocomplete-item">
 @Directive({ selector: '[keyboardList]', standalone: true })
 export class KeyboardListDirective {
   /** seletor das opções dentro do elemento */

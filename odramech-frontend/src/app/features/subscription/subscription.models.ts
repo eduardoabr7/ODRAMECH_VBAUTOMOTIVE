@@ -85,7 +85,7 @@ export interface SubscriptionOverview {
   paymentMethods: { method: PaymentMethod; label: string }[];
   enforcement: 'off' | 'warn' | 'block';
   canManage: boolean;
-  /** "Simular pagamento" (sandbox) — falso em produção */
+  /** "Simular pagamento" (sandbox), falso em produção */
   canSimulate: boolean;
   /** estabelecimentos que a empresa já tem (limita a escolha de plano) */
   establishmentCount: number;

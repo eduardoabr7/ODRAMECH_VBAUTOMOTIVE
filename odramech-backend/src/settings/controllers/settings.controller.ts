@@ -18,7 +18,7 @@ function full(auth: AuthPayload): AuthPayload {
 export class SettingsController {
   constructor(private readonly settings: SettingsService, private readonly mailSettings: MailSettingsService) {}
 
-  // ── E-mail de envio (SMTP próprio da empresa) ──
+  // SMTP próprio da empresa
   @Get('mail')
   mail(@CurrentAuth() auth: AuthPayload) { return this.mailSettings.get(full(auth)); }
 

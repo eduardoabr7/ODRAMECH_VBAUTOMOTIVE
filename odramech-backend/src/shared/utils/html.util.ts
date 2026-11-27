@@ -4,11 +4,8 @@ export function escapeHtml(s: string): string {
 
 const BLOCKED_TAGS = ['script', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'link', 'meta', 'base', 'form', 'input', 'button', 'textarea', 'select', 'noscript', 'template'];
 
-/**
- * Limpa HTML escrito pelo usuário (editor de documento do orçamento).
- * Remove tags executáveis/embutidas, atributos de evento (onclick…) e URLs javascript:/vbscript:.
- * O frontend ainda renderiza o documento num iframe sandbox sem scripts (defesa em profundidade).
- */
+// Limpa o HTML do editor: tira scripts, iframes, on*= e javascript:.
+// O front ainda imprime num iframe sem scripts.
 export function sanitizeHtml(html: string | null | undefined): string | null {
   if (!html) return null;
   let s = String(html);

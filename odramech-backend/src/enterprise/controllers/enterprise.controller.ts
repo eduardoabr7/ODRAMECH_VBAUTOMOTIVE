@@ -13,14 +13,14 @@ export class EnterpriseController {
         private readonly _enterpriseService: EnterpriseService
     ){}
 
-    /** lista TODAS as empresas do sistema — só para o super usuário (suporte Odramech) */
+    /** todas as empresas, só pro super usuário (suporte) */
     @Get()
     getAllEnterprises(@CurrentAuth() auth: AuthPayload) {
         if (auth.role !== Role.SUPERUSER) throw new ForbiddenException('Sem permissão.');
         return this._enterpriseService.getAll();
     }
 
-    /** estabelecimentos de uma empresa — só se o usuário tem vínculo ativo com ela */
+    /** estabelecimentos da empresa, só se o usuário tem vínculo ativo com ela */
     @Get('establishments/:idEnterprise')
     async getAllEstablishmentsFromEnterprise(@Param('idEnterprise', ParseIntPipe) idEnterprise: number, @CurrentAuth() auth: AuthPayload) {
         if (!(await this._enterpriseService.userBelongsTo(auth.sub, idEnterprise))) {

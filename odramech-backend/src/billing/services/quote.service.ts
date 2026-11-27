@@ -101,10 +101,7 @@ export class QuoteService {
     return this.get(auth, id);
   }
 
-  /**
-   * Impressão concluída. Se o estabelecimento ativou "marcar como enviado ao imprimir",
-   * um RASCUNHO passa a ENVIADO. Outros status não mudam (não desfaz aprovação/recusa).
-   */
+  // depois de imprimir: se o estabelecimento configurou, rascunho vira Enviado (outros status ficam)
   async markPrinted(auth: AuthPayload, id: number) {
     assertStaff(auth.role);
     const quote = await this.quotes.findOne({ establishmentId: auth.establishmentId }, id);

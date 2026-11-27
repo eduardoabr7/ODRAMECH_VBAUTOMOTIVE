@@ -7,10 +7,8 @@ import { DocQuote, renderQuoteDocument } from '../document/quote-document.render
 
 const TOKEN = /^[A-Za-z0-9_-]{20,64}$/;
 
-/**
- * O que o cliente vê pelo link do e-mail (sem login): o orçamento e os botões aprovar/recusar.
- * O link nunca muda dados do orçamento além do status — e só enquanto ele está válido e não virou OS.
- */
+// O que o cliente vê pelo link do e-mail (sem login). Só muda o status, e só enquanto o
+// orçamento está válido e não virou OS.
 @Injectable()
 export class PublicQuoteService {
   constructor(private readonly prisma: PrismaService, private readonly settings: SettingsService) {}

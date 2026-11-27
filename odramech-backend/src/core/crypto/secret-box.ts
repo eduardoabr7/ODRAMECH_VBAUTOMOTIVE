@@ -1,9 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 
-/**
- * Criptografia simétrica para segredos guardados no banco (AES-256-GCM).
- * Formato: v1.<iv>.<tag>.<dados>, tudo em base64url.
- */
+// AES-256-GCM pros segredos guardados no banco. Formato: v1.<iv>.<tag>.<dados> (base64url)
 export class SecretBox {
   private readonly key: Buffer;
 

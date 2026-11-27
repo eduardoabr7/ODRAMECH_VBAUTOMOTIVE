@@ -68,7 +68,7 @@ export interface Quote {
   total: number;
   /** sobe a cada alteração de conteúdo */
   version: number;
-  /** link do cliente (ver/aprovar/recusar) — existe depois do primeiro envio */
+  /** link do cliente (ver/aprovar/recusar), existe depois do primeiro envio */
   publicToken: string | null;
   emailSentAt: string | null;
   /** versão que foi enviada; igual a `version` = nada novo para enviar */

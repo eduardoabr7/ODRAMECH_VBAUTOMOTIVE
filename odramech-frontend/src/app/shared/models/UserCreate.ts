@@ -11,4 +11,6 @@ export interface UserCreate {
   address?: AddressCreate
   /** desmarcado = cadastrado, mas sem acesso ao estabelecimento */
   active?: boolean
+  /** estabelecimento onde cadastrar (padrão: o da sessão) */
+  establishmentId?: number
 }

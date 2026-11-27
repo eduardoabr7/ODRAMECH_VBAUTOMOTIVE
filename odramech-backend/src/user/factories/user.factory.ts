@@ -56,8 +56,8 @@ export function canManageRole(target: Role, requester: Role): boolean {
  *   - normalização (e-mail minúsculo, telefones só com dígitos);
  *   - o vínculo com empresa/estabelecimento no papel correto.
  *
- * A pessoa (cad_user) é global — o mesmo e-mail pode ser cliente de vários estabelecimentos,
- * inclusive de empresas diferentes. Por isso a fábrica separa os dados da pessoa do vínculo.
+ * A pessoa (cad_user) é global: o mesmo e-mail pode ser cliente de várias oficinas, por isso
+ * os dados dela ficam separados do vínculo.
  */
 @Injectable()
 export class UserFactory {

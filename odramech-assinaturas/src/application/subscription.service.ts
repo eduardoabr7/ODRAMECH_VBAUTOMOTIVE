@@ -83,17 +83,12 @@ export class SubscriptionService {
   }
 
   // ═══ Comandos do cliente ════════════════════════════════
-  /**
-   * Escolhe/troca o plano.
-   *  - Em teste grátis: o plano muda na hora (a empresa experimenta o que vai assinar) e a
-   *    cobrança começa no fim do teste.
-   *  - Assinatura paga, UPGRADE (plano de nível maior): começa agora; o que sobrou do período
-   *    atual vira crédito (desconto proporcional) e o plano novo vale quando a fatura for paga.
-   *  - Assinatura paga, DOWNGRADE ou mesmo nível: vale a partir da próxima renovação.
-   *  - Inadimplente/expirada/cancelada: começa agora.
-   * Fora do teste o plano só muda quando a fatura é paga — escolher um plano maior não libera
-   * os recursos dele sem pagamento.
-   */
+  // Troca de plano:
+  //  - no teste grátis muda na hora e a cobrança começa quando o teste acaba
+  //  - upgrade começa agora, com desconto proporcional do que sobrou do período
+  //  - downgrade (ou mesmo nível) só na renovação
+  //  - inadimplente, expirada ou cancelada começa agora
+  // Fora do teste o plano novo só vale depois que a fatura é paga.
   async selectPlan(enterpriseId: number, planCode: string, method: PaymentMethod) {
     const plan = await this.plans.findByCode(planCode);
     if (!plan || !plan.active) throw new NotFoundException('Plano não encontrado.');
@@ -135,7 +130,7 @@ export class SubscriptionService {
     return this.overview(enterpriseId);
   }
 
-  /** valor proporcional ao tempo que ainda resta do período pago (crédito no upgrade) */
+  // crédito do upgrade: proporcional ao que falta do período pago
   private unusedCredit(sub: Subscription, plan: Plan, now: Date): number {
     const total = sub.currentPeriodEnd.getTime() - sub.currentPeriodStart.getTime();
     const left = sub.currentPeriodEnd.getTime() - now.getTime();

@@ -12,10 +12,7 @@ export class EstablishmentService {
         private readonly _prisma : PrismaService
     ){}
 
-    /**
-     * Edita um estabelecimento. Só o ADMIN (ativo) DAQUELE estabelecimento, dentro da empresa da
-     * sessão — o id vem da URL, então tudo é conferido no banco.
-     */
+    // só o admin ativo desse estabelecimento, dentro da empresa da sessão (o id vem da URL)
     async updateEstablishment(auth: AuthPayload, id: number, { address, ...data }: EstablishmentUpdateDTO) {
       const est = await this._prisma.establishment.findFirst({
         where: { id, enterpriseId: auth.enterpriseId },

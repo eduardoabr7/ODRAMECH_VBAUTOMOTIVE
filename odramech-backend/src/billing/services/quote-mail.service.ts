@@ -30,19 +30,11 @@ export interface SendResult {
   kind: QuoteEmailKind;
 }
 
-/**
- * E-mail do orçamento para o cliente (PDF em anexo + link para aprovar/recusar).
- *
- * Regras:
- *  - "flag de enviado": o orçamento guarda qual VERSÃO foi enviada. A mesma versão nunca é
- *    reenviada — nem automática nem manualmente.
- *  - Toda alteração de conteúdo (itens, observações, validade) sobe a versão.
- *  - Envio automático (configuração do estabelecimento): ao criar, envia na hora; nas
- *    alterações, agenda o e-mail de "orçamento atualizado" para daqui a 10 min. Cada nova
- *    edição dentro desse prazo empurra o envio — várias edições seguidas viram UM e-mail.
- *  - Sem envio automático: nada sai sozinho. A tela mostra "alterado desde o último envio"
- *    e o botão de enviar (primeiro envio ou atualização).
- */
+// E-mail do orçamento pro cliente (PDF anexo + link pra aprovar/recusar).
+// Cada alteração de conteúdo sobe a versão, e a mesma versão nunca é enviada duas vezes.
+// Com envio automático: na criação manda na hora; nas alterações espera 10 min, e cada
+// edição nova reinicia a espera pra não mandar um e-mail por edição.
+// Sem envio automático só sai pelo botão.
 @Injectable()
 export class QuoteMailService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(QuoteMailService.name);
@@ -57,7 +49,7 @@ export class QuoteMailService implements OnModuleInit, OnModuleDestroy {
     private readonly config: AppConfig,
   ) {}
 
-  // ═══ Gatilhos ═══════════════════════════════════════════
+  // gatilhos
   /** orçamento criado: com envio automático, manda já */
   async onCreated(quoteId: number, establishmentId: number): Promise<void> {
     const { autoEmailQuote } = await this.settings.quoteSettings(establishmentId);
@@ -88,7 +80,7 @@ export class QuoteMailService implements OnModuleInit, OnModuleDestroy {
     return this.send(quoteId, QuoteEmailTrigger.MANUAL, auth.sub);
   }
 
-  // ═══ Fila (envios agendados) ═════════════════════════════
+  // fila de envios agendados
   onModuleInit() {
     if (process.env.NODE_ENV === 'test') return;
     this.timer = setInterval(() => void this.processDue(), WORKER_INTERVAL_MS);
@@ -124,7 +116,7 @@ export class QuoteMailService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // ═══ Envio ══════════════════════════════════════════════
+  // envio
   private async send(quoteId: number, trigger: QuoteEmailTrigger, userId: number | null): Promise<SendResult> {
     const quote = await this.prisma.quote.findUnique({ where: { id: quoteId }, include: QUOTE_FOR_MAIL });
     if (!quote) throw new NotFoundException('Orçamento não encontrado');
@@ -192,7 +184,7 @@ export class QuoteMailService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // ═══ Conteúdo do e-mail ═════════════════════════════════
+  // conteúdo do e-mail
   private compose(kind: QuoteEmailKind, q: DocQuote, doc: Awaited<ReturnType<SettingsService['quoteDocumentFor']>>, token: string) {
     const accent = /^#[0-9a-f]{6}$/i.test(doc.branding.accentColor ?? '') ? doc.branding.accentColor! : DEFAULT_ACCENT;
     const estab = doc.establishment;
@@ -203,7 +195,7 @@ export class QuoteMailService implements OnModuleInit, OnModuleDestroy {
     const validUntil = q.validUntil ? new Date(q.validUntil).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : null;
     const link = `${this.config.values.publicAppUrl}/orcamento/${token}`;
 
-    // logo embutida (cid) — data URL em <img> é bloqueada pela maioria dos clientes de e-mail
+    // logo vai como anexo (cid), a maioria dos clientes de e-mail bloqueia data URL em <img>
     const attachments: MailAttachment[] = [];
     let logoTag = '';
     const logo = doc.branding.logoUrl || estab.logoUrl;

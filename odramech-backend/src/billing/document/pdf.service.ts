@@ -17,11 +17,8 @@ const CANDIDATES = [
   '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
 ];
 
-/**
- * HTML → PDF com um navegador sem janela (puppeteer-core).
- * Usa o mesmo HTML da impressão, então o PDF do e-mail é idêntico ao que sai na impressora.
- * O navegador é aberto na primeira geração e reaproveitado.
- */
+// PDF a partir do mesmo HTML da impressão (puppeteer-core).
+// O navegador abre na primeira vez e fica aberto pros próximos.
 @Injectable()
 export class PdfService implements OnModuleDestroy {
   private readonly logger = new Logger(PdfService.name);
