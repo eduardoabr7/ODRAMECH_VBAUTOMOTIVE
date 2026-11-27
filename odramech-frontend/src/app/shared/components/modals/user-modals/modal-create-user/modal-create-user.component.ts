@@ -12,7 +12,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import { NgxMaskDirective } from "ngx-mask";
 import { UserService } from "@shared/services/user.service";
 import { ModalLoadingComponent } from "../../modal-loading/modal-loading.component";
-import { AddressReturnApi } from "@shared/models/AddressReturnApi";
+import { CepAddress } from "@shared/services/zipcode.service";
 
 @Component({
   selector: 'app-modal-create-user',
@@ -77,11 +77,11 @@ export class ModalCreateUserComponent extends BaseModalComponent {
     setAddressFromZipCode() {
       this.buscaCep().subscribe({
         next: (value) => {
-          this.form.address.street = value.logradouro
-          this.form.address.complement = value.complemento.trim() || undefined;
-          this.form.address.city = value.localidade
-          this.form.address.district = value.uf
-          this.form.address.neighborhood = value.bairro
+          this.form.address.street = value.street
+          this.form.address.complement = value.complement || undefined;
+          this.form.address.city = value.city
+          this.form.address.district = value.district
+          this.form.address.neighborhood = value.neighborhood
         },
         error: () => {
           this._toastr.info('Nenhum endereço encontrado com este CEP');
@@ -90,7 +90,7 @@ export class ModalCreateUserComponent extends BaseModalComponent {
     }
 
 
-    buscaCep(): Observable<AddressReturnApi> {
+    buscaCep(): Observable<CepAddress> {
       const zipCode = this.form.address.zipCode;
       const validZipcode = this.validZipCode(zipCode);
     
@@ -98,7 +98,7 @@ export class ModalCreateUserComponent extends BaseModalComponent {
     
       this.loadingSearchZipCode = true;
     
-      return this._zipCodeService.get(zipCode).pipe(
+      return this._zipCodeService.lookup(zipCode).pipe(
         finalize(() => {
           setTimeout(() => {
             this.loadingSearchZipCode = false;

@@ -8,6 +8,9 @@ import { finalize, tap } from 'rxjs';
 import { AddressCreate } from '@shared/models/AddressCreate';
 import { UserCorporationService } from '@shared/services/user-corporation.service';
 import { Role } from '@shared/models/UserCorporation';
+import { EstablishmentCreate } from '@shared/models/EstablishmentCreate';
+import { EstablishmentService } from '@shared/services/establishment.service';
+import { ModalCreateEstablishmentComponent } from '../modal-create-establishment/modal-create-establishment.component';
 
 interface Establishment {
   id: number;
@@ -46,7 +49,8 @@ export class ModalViewEstablishmentsComponent extends BaseModalComponent impleme
     bsModalRef: BsModalRef,
     private readonly _modalService: BsModalService,
     private readonly _toastr: ToastrService,
-    private readonly _userCorpService: UserCorporationService
+    private readonly _userCorpService: UserCorporationService,
+    private readonly _establishmentService: EstablishmentService
   ) {
     super(bsModalRef);
   }
@@ -113,14 +117,32 @@ export class ModalViewEstablishmentsComponent extends BaseModalComponent impleme
   }
 
   openCreate(): void {
-    this._toastr.info('Em breve: criação de estabelecimento.');
+    const ref = this._modalService.show(ModalCreateEstablishmentComponent, {
+      initialState: { title: 'Novo estabelecimento', withCadEnterprise: true },
+      class: 'modal-lg',
+    });
+
+    ref.content?.onClose.subscribe((form: EstablishmentCreate | null) => {
+      if (!form) return;
+      this._establishmentService.create(form).subscribe({
+        next: est => {
+          this._toastr.success(`${est.name} criado. Você foi vinculado como administrador.`);
+          this.load();
+        },
+        error: err => {
+          const msg = err?.status === 409 ? 'Já existe um estabelecimento com esse CNPJ.' : (err?.error?.message ?? 'Erro ao criar estabelecimento.');
+          this._toastr.error(msg);
+        },
+      });
+    });
   }
 
+  // Edição e exclusão dependem de endpoints ainda não existentes no backend.
   openEdit(est: Establishment): void {
-    this._toastr.info(`Editar: ${est.name}`);
+    this._toastr.info(`Edição de "${est.name}" ainda não está disponível.`);
   }
 
   confirmDelete(est: Establishment): void {
-    this._toastr.warning(`Excluir: ${est.name}`);
+    this._toastr.info(`Exclusão de "${est.name}" ainda não está disponível.`);
   }
 }

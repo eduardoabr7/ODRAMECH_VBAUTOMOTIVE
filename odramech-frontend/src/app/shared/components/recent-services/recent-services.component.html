@@ -1,41 +1,34 @@
-<div class="table-responsive">
-    <table class="table table-hover border">
-        <thead>
-            <tr class="table-title-row"> 
-                <th colspan="3">SERVIÇOS ACESSADOS RECENTEMENTE</th>
-            </tr>
-            <tr>
-                <th>Nome do Cliente</th>
-                <th>Veículo</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Eduardo Abreu</td>
-                <td>Ford Ka 2020</td>
-                <td>Em Serviço</td>
-            </tr>
-            <tr>
-                <td>Bruno Correa</td>
-                <td>VW PASSAT</td>
-                <td>Concluído</td>
-            </tr>
-            <tr>
-                <td>Paulo Figueiredo</td>
-                <td>Fiat Toro 2022</td>
-                <td>Aguardando Peças</td>
-            </tr>
-            <tr>
-                <td>Renata Martini</td>
-                <td>Chevrolet Onix</td>
-                <td>Concluído</td>
-            </tr>
-            <tr>
-                <td>Jairo Macedo</td>
-                <td>Peugeot 206</td>
-                <td>Aguardando Peças</td>
-            </tr>
-        </tbody>
-    </table>
+<div class="panel-head">
+  <span class="panel-title">Movimento recente</span>
+  <a routerLink="/orders" class="btn-x btn-ghost sm">Todas as OS</a>
+</div>
+
+<ul class="feed" *ngIf="!loading && orders.length">
+  <li *ngFor="let wo of orders; let i = index" class="reveal" [style.--i]="i">
+    <a [routerLink]="['/orders', wo.id]" class="row-link">
+      <span class="os-no">#<b>{{ wo.numberOs }}</b></span>
+      <span class="who">
+        <span class="who-name">{{ wo.client.name }}</span>
+        <span class="who-car">{{ wo.vehicle.make }} {{ wo.vehicle.name }}</span>
+      </span>
+      <span class="plate">{{ wo.vehicle.plate | plate }}</span>
+      <app-status [status]="wo.status"></app-status>
+      <span class="when">{{ wo.dateTimeCreation | relativeTime }}</span>
+    </a>
+  </li>
+</ul>
+
+<div class="feed-sk" *ngIf="loading">
+  <div class="sk-row" *ngFor="let s of [1,2,3,4]">
+    <span class="sk" style="width:36px"></span>
+    <span class="sk" style="flex:1"></span>
+    <span class="sk" style="width:64px"></span>
+  </div>
+</div>
+
+<div class="empty" *ngIf="!loading && !orders.length">
+  <div class="empty-mark"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+  <h4>Nenhuma OS ainda</h4>
+  <p>As ordens abertas aparecem aqui assim que forem criadas.</p>
+  <a routerLink="/orders/new" class="btn-x btn-solid sm"><i class="fa-solid fa-plus"></i>Abrir a primeira</a>
 </div>

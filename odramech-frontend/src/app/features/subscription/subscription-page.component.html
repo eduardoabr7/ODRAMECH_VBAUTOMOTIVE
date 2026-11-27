@@ -1,0 +1,198 @@
+<div class="page">
+
+  <a class="back reveal" routerLink="/settings"><i class="fa-solid fa-arrow-left"></i> Configurações</a>
+
+  <div class="page-head">
+    <div>
+      <div class="eyebrow reveal">Gestão</div>
+      <h1 class="page-title reveal" style="--i:1">Assinatura</h1>
+      <p class="page-sub reveal" style="--i:2">Plano, faturas e forma de pagamento do Odramech.</p>
+    </div>
+  </div>
+
+  @if (facade.loading() && !o()) {
+    <div class="grid"><div class="panel sk-block"></div><div class="panel sk-block"></div></div>
+  }
+
+  @if (facade.error() && !o()) {
+    <div class="panel"><div class="empty">
+      <div class="empty-mark"><i class="fa-solid fa-plug-circle-xmark"></i></div>
+      <h4>Assinaturas indisponíveis</h4>
+      <p>{{ facade.error() }}</p>
+      <button class="btn-x btn-outline sm" (click)="facade.load()">Tentar de novo</button>
+    </div></div>
+  }
+
+  @if (o(); as o) {
+    <!-- Status atual -->
+    <section class="hero reveal" style="--i:2" [class.warn]="o.access.level === 'grace'" [class.bad]="o.access.level === 'blocked'">
+      <div class="hero-main">
+        <span class="hero-label">Plano atual</span>
+        <h2>{{ o.plan.name }}</h2>
+        <div class="hero-meta">
+          <span class="pill {{ o.subscription.status }}">{{ STATUS_LABEL[o.subscription.status] }}</span>
+          @switch (o.subscription.status) {
+            @case ('TRIALING') { <span>Teste grátis até <b>{{ o.subscription.currentPeriodEnd | date:'dd/MM/yyyy' }}</b> · {{ facade.daysLeft() }} dia(s)</span> }
+            @case ('ACTIVE') {
+              <span>
+                {{ o.subscription.cancelAtPeriodEnd ? 'Encerra em' : 'Renova em' }}
+                <b>{{ o.subscription.currentPeriodEnd | date:'dd/MM/yyyy' }}</b>
+              </span>
+            }
+            @case ('PAST_DUE') { <span>{{ o.access.reason }} Acesso pleno até <b>{{ o.access.until | date:'dd/MM' }}</b>.</span> }
+            @default { <span>{{ o.access.reason }}</span> }
+          }
+        </div>
+      </div>
+      <div class="hero-side">
+        <span class="hero-price">{{ money(o.plan.priceCents) }}</span>
+        <span class="hero-per">/ {{ o.plan.interval === 'YEARLY' ? 'ano' : 'mês' }}</span>
+        @if (o.canManage) {
+          @if (o.subscription.cancelAtPeriodEnd) {
+            <button class="btn-x btn-outline sm hero-btn" [disabled]="!!facade.busy()" (click)="facade.resume()">Manter assinatura</button>
+          } @else if (o.subscription.status === 'ACTIVE' || o.subscription.status === 'TRIALING') {
+            <button class="btn-x btn-ghost sm hero-btn ghost-dark" [disabled]="!!facade.busy()" (click)="cancel()">Cancelar assinatura</button>
+          }
+        }
+      </div>
+      @if (o.enforcement !== 'block') {
+        <span class="enforce-note">Modo {{ o.enforcement === 'warn' ? 'aviso' : 'desligado' }}: o sistema não bloqueia por falta de pagamento neste ambiente.</span>
+      }
+    </section>
+
+    @if (!o.canManage) {
+      <div class="panel note reveal" style="--i:3"><i class="fa-solid fa-lock"></i> Só administradores podem alterar o plano ou pagar faturas.</div>
+    }
+
+    <div class="grid">
+      <!-- Planos -->
+      <section class="panel reveal" style="--i:3">
+        <div class="panel-head"><span class="panel-title">Escolha o plano</span></div>
+        <div class="panel-body">
+          <div class="plans">
+            @for (p of o.plans; track p.code) {
+              <button type="button" class="plan" [class.on]="selectedPlan()?.code === p.code" (click)="pickPlan(p)" [disabled]="!o.canManage">
+                @if (p.savingsPercent > 0) { <span class="save">−{{ p.savingsPercent }}%</span> }
+                <span class="plan-check"><i class="fa-solid fa-check"></i></span>
+                <span class="plan-name">{{ p.intervalLabel }}</span>
+                <span class="plan-price">{{ money(p.priceCents) }}<small>/{{ p.interval === 'YEARLY' ? 'ano' : 'mês' }}</small></span>
+                <span class="plan-eq">
+                  @if (p.interval === 'YEARLY') { equivale a {{ money(p.monthlyEquivalentCents) }}/mês } @else { sem fidelidade }
+                </span>
+                @if (p.description) { <span class="plan-desc">{{ p.description }}</span> }
+              </button>
+            }
+          </div>
+
+          <label class="field-label mt">Forma de pagamento</label>
+          <div class="methods">
+            @for (m of PAYMENT_LIST; track m.method) {
+              <button type="button" class="method" [class.on]="chosenMethod() === m.method" (click)="chosenMethod.set(m.method)" [disabled]="!o.canManage">
+                <i [class]="m.icon"></i>
+                <span class="m-txt"><b>{{ m.label }}</b><small>{{ m.hint }}</small></span>
+              </button>
+            }
+          </div>
+
+          @if (o.canManage && needsNewInvoice()) {
+            <button class="btn-x btn-accent lg block mt" [disabled]="!!facade.busy()" (click)="subscribe()">
+              @if (facade.busy() === 'plan') { <span class="spinner-x"></span> }
+              {{ o.subscription.status === 'TRIALING' ? 'Garantir' : 'Assinar' }} plano {{ selectedPlan()?.intervalLabel }} · {{ money(selectedPlan()?.priceCents) }}
+            </button>
+            @if (o.subscription.status === 'TRIALING') {
+              <p class="hint">A cobrança começa só no fim do teste grátis.</p>
+            }
+          }
+        </div>
+      </section>
+
+      <!-- Fatura em aberto -->
+      <section class="panel reveal" style="--i:4">
+        <div class="panel-head">
+          <span class="panel-title">Fatura em aberto</span>
+          @if (invoice(); as inv) { <span class="mono faint">#{{ inv.number }}</span> }
+        </div>
+        <div class="panel-body">
+          @if (invoice(); as inv) {
+            <div class="inv-amount">{{ money(inv.amountCents) }}</div>
+            <dl class="kv compact">
+              <dt>Plano</dt><dd>{{ inv.planCode === 'ANUAL' ? 'Anual' : 'Mensal' }}</dd>
+              <dt>Período</dt><dd>{{ inv.periodStart | date:'dd/MM/yy' }} – {{ inv.periodEnd | date:'dd/MM/yy' }}</dd>
+              <dt>Vencimento</dt><dd>{{ inv.dueDate | date:'dd/MM/yyyy' }}</dd>
+            </dl>
+
+            @if (inv.instructions; as ins) {
+              <div class="instr">
+                @if (ins.pixCode) {
+                  <span class="field-label">Pix copia e cola</span>
+                  <div class="code"><code>{{ ins.pixCode }}</code><button class="btn-x btn-outline sm" (click)="copy(ins.pixCode!)"><i class="fa-regular fa-copy"></i>Copiar</button></div>
+                }
+                @if (ins.boletoLine) {
+                  <span class="field-label">Linha digitável</span>
+                  <div class="code"><code>{{ ins.boletoLine }}</code><button class="btn-x btn-outline sm" (click)="copy(ins.boletoLine!)"><i class="fa-regular fa-copy"></i>Copiar</button></div>
+                }
+                @if (ins.note) { <p class="hint left"><i class="fa-solid fa-flask"></i> {{ ins.note }}</p> }
+              </div>
+            }
+
+            @if (o.canManage) {
+              @if (PAYMENT_UI[chosenMethod()].needsCardToken) {
+                <div class="field mt">
+                  <label class="field-label">Token do cartão <span class="opt">sandbox — "tok_recusado" simula recusa</span></label>
+                  <input class="input mono" [(ngModel)]="cardToken">
+                </div>
+              }
+              <div class="inv-actions">
+                <button class="btn-x btn-solid" [disabled]="!!facade.busy()" (click)="pay(inv)">
+                  @if (facade.busy() === 'pay') { <span class="spinner-x"></span> }
+                  @switch (chosenMethod()) {
+                    @case ('PIX') { <i class="fa-brands fa-pix"></i> {{ inv.gatewayRef ? 'Gerar novo Pix' : 'Gerar Pix' }} }
+                    @case ('BOLETO') { <i class="fa-solid fa-barcode"></i> Gerar boleto }
+                    @case ('CARD') { <i class="fa-regular fa-credit-card"></i> Pagar com cartão }
+                  }
+                </button>
+                @if (inv.gatewayRef && inv.status === 'OPEN') {
+                  <button class="btn-x btn-outline" [disabled]="!!facade.busy()" (click)="facade.simulate(inv.id)" title="Somente no ambiente sandbox">
+                    <i class="fa-solid fa-flask"></i> Simular pagamento
+                  </button>
+                }
+              </div>
+            }
+          } @else {
+            <div class="empty slim">
+              <div class="empty-mark"><i class="fa-solid fa-check"></i></div>
+              <h4>Nada a pagar agora</h4>
+              <p>{{ o.subscription.status === 'TRIALING' ? 'Escolha um plano para garantir a continuidade após o teste.' : 'A próxima fatura é gerada alguns dias antes da renovação.' }}</p>
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+
+    <!-- Histórico -->
+    <section class="panel reveal" style="--i:5">
+      <div class="panel-head"><span class="panel-title">Histórico de faturas <span class="count">{{ o.invoices.length }}</span></span></div>
+      @if (o.invoices.length) {
+        <table class="dtable">
+          <thead><tr><th>Nº</th><th>Período</th><th>Forma</th><th>Situação</th><th style="text-align:right">Valor</th></tr></thead>
+          <tbody>
+            @for (inv of o.invoices; track inv.id) {
+              <tr>
+                <td class="mono">#{{ inv.number }}</td>
+                <td>{{ inv.periodStart | date:'dd/MM/yy' }} – {{ inv.periodEnd | date:'dd/MM/yy' }}</td>
+                <td>{{ inv.method ? PAYMENT_UI[inv.method].label : '—' }}</td>
+                <td>
+                  <span class="inv-st {{ inv.status }}">{{ inv.status === 'PAID' ? 'Paga' : inv.status === 'OPEN' ? 'Em aberto' : 'Anulada' }}</span>
+                  @if (inv.paidAt) { <span class="faint small"> em {{ inv.paidAt | date:'dd/MM' }}</span> }
+                </td>
+                <td class="tnum" style="text-align:right">{{ money(inv.amountCents) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <div class="empty slim"><p>Nenhuma fatura ainda.</p></div>
+      }
+    </section>
+  }
+</div>

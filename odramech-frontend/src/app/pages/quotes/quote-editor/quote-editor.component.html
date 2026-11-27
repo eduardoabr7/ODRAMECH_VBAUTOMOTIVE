@@ -1,0 +1,172 @@
+<div class="page">
+
+  <a class="back reveal no-print" routerLink="/quotes"><i class="fa-solid fa-arrow-left"></i> Orçamentos</a>
+
+  <div class="panel no-print" *ngIf="notFound">
+    <div class="empty">
+      <div class="empty-mark"><i class="fa-solid fa-magnifying-glass"></i></div>
+      <h4>Orçamento não encontrado</h4>
+      <a routerLink="/quotes" class="btn-x btn-outline sm">Voltar</a>
+    </div>
+  </div>
+
+  <!-- ═════════════ NOVO ═════════════ -->
+  <ng-container *ngIf="isNew">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow reveal">Novo orçamento</div>
+        <h1 class="page-title reveal" style="--i:1">Monte a proposta</h1>
+        <p class="page-sub reveal" style="--i:2">Escolha cliente e veículo, lance peças e mão de obra. Depois é só enviar e aprovar.</p>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="col">
+        <section class="panel reveal" style="--i:2" [class.raise]="showResults">
+          <div class="panel-head"><span class="panel-title">Cliente e veículo</span></div>
+          <div class="panel-body">
+            <div *ngIf="!client" class="search-wrap" closeOnClickOutside (clickOutside)="showResults = false">
+              <div class="input-icon">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input class="input" placeholder="Buscar cliente por nome, telefone ou e-mail" [(ngModel)]="clientTerm" (ngModelChange)="onClientInput()" autofocus>
+              </div>
+              <div class="search-dropdown" *ngIf="showResults">
+                <div class="search-state" *ngIf="searching"><span class="spinner-x"></span></div>
+                <button type="button" class="menu-item" *ngFor="let c of clientResults" (click)="pickClient(c)">
+                  <span class="avatar sm">{{ c.name | initials }}</span>
+                  <span>{{ c.name }} <span class="muted">· {{ c.principalPhone | phone }}</span></span>
+                </button>
+                <div class="search-state" *ngIf="!searching && !clientResults.length">Nenhum cliente encontrado.</div>
+              </div>
+            </div>
+
+            <div class="picked" *ngIf="client">
+              <span class="avatar">{{ client.name | initials }}</span>
+              <div class="picked-txt"><strong>{{ client.name }}</strong><span>{{ client.principalPhone | phone }}</span></div>
+              <button class="btn-x btn-ghost sm" (click)="clearClient()">Trocar</button>
+            </div>
+
+            <div class="vehicles" *ngIf="client">
+              <button type="button" class="veh" *ngFor="let v of vehicles" [class.on]="vehicle?.id === v.id" (click)="vehicle = v">
+                <span class="plate">{{ v.plate | plate }}</span>
+                <span>{{ v.make }} {{ v.name }}</span>
+              </button>
+              <button type="button" class="veh add" (click)="newVehicle()"><i class="fa-solid fa-plus"></i> Veículo</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel reveal" style="--i:3">
+          <div class="panel-head"><span class="panel-title">Peças e serviços <span class="count">{{ draftItems.length }}</span></span></div>
+          <app-items-editor [items]="draftItems" [editable]="true" (add)="addItem($event)" (remove)="removeItem($event)"></app-items-editor>
+        </section>
+      </div>
+
+      <aside class="col side">
+        <section class="panel reveal" style="--i:3">
+          <div class="panel-body">
+            <div class="big-total">
+              <span class="muted">Total do orçamento</span>
+              <strong class="tnum">{{ draftTotal | currency:'BRL' }}</strong>
+            </div>
+            <div class="field mt">
+              <label class="field-label">Válido até</label>
+              <input class="input" type="date" [(ngModel)]="validUntil">
+            </div>
+            <div class="field mt">
+              <label class="field-label">Observações <span class="opt">aparecem no orçamento</span></label>
+              <textarea class="input" rows="4" [(ngModel)]="notes" placeholder="Prazo de execução, garantia, condições de pagamento…"></textarea>
+            </div>
+            <button class="btn-x btn-accent lg block mt" [disabled]="!client || !vehicle || !draftItems.length || saving" (click)="create()">
+              <span class="spinner-x" *ngIf="saving"></span> Salvar orçamento
+            </button>
+            <p class="hint" *ngIf="!client || !vehicle">Selecione cliente e veículo.</p>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </ng-container>
+
+  <!-- ═════════════ DETALHE ═════════════ -->
+  <ng-container *ngIf="!isNew && quote">
+    <header class="q-head no-print">
+      <div>
+        <div class="eyebrow reveal">
+          <span class="mono">Orçamento #{{ quote.numberQuote }}</span><span class="sep">/</span>
+          <span>criado {{ quote.createdAt | relativeTime }} por {{ quote.userCreation.name }}</span>
+        </div>
+        <h1 class="page-title reveal" style="--i:1">{{ quote.client.name }}</h1>
+        <p class="page-sub reveal" style="--i:2">{{ quote.vehicle.make }} {{ quote.vehicle.name }} · <span class="plate">{{ quote.vehicle.plate | plate }}</span></p>
+      </div>
+      <div class="page-actions reveal" style="--i:3">
+        <button class="btn-x btn-outline" (click)="print()"><i class="fa-solid fa-print"></i>Imprimir / PDF</button>
+        <a *ngIf="quote.workOrder" class="btn-x btn-solid" [routerLink]="['/orders', quote.workOrder.id]">Ver OS #{{ quote.workOrder.numberOs }}<i class="fa-solid fa-arrow-right"></i></a>
+        <button *ngIf="!locked" class="btn-x btn-accent" [disabled]="converting || !quote.items.length" (click)="convert()">
+          <span class="spinner-x" *ngIf="converting"></span><i class="fa-solid fa-check" *ngIf="!converting"></i>Aprovar e abrir OS
+        </button>
+      </div>
+    </header>
+
+    <div class="status-bar panel reveal no-print" style="--i:3" *ngIf="isStaff">
+      <span class="muted">Status</span>
+      <span class="qstatus {{ quote.status }}" *ngIf="locked">{{ LABEL[quote.status] }}</span>
+      <div class="segmented" *ngIf="!locked">
+        <button type="button" *ngFor="let s of editableStatuses" [class.active]="quote.status === s" (click)="setStatus(s)">{{ LABEL[s] }}</button>
+      </div>
+      <span class="warn" *ngIf="expired"><i class="fa-solid fa-triangle-exclamation"></i> Validade vencida em {{ quote.validUntil | date:'dd/MM/yyyy' }}</span>
+    </div>
+
+    <div class="layout">
+      <div class="col">
+        <!-- Documento (também é o que sai na impressão) -->
+        <section class="panel doc reveal" style="--i:4">
+          <div class="doc-head print-only">
+            <div>
+              <strong class="doc-brand">{{ establishmentName }}</strong>
+              <span>Orçamento #{{ quote.numberQuote }} · {{ quote.createdAt | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="doc-to">
+              <span>{{ quote.client.name }}</span>
+              <span>{{ quote.vehicle.make }} {{ quote.vehicle.name }} · {{ quote.vehicle.plate | plate }}</span>
+            </div>
+          </div>
+          <div class="panel-head no-print"><span class="panel-title">Peças e serviços <span class="count">{{ quote.items.length }}</span></span></div>
+          <app-items-editor [items]="quote.items" [editable]="!locked" [busy]="savingItem" (add)="addItem($event)" (remove)="removeItem($event)"></app-items-editor>
+          <div class="doc-notes" *ngIf="quote.notes">
+            <span class="field-label">Observações</span>
+            <p>{{ quote.notes }}</p>
+          </div>
+          <div class="doc-foot print-only">
+            Válido até {{ quote.validUntil ? (quote.validUntil | date:'dd/MM/yyyy') : '—' }} · Gerado pelo Odramech
+          </div>
+        </section>
+      </div>
+
+      <aside class="col side no-print">
+        <section class="panel reveal" style="--i:5">
+          <div class="panel-body">
+            <div class="big-total">
+              <span class="muted">Total</span>
+              <strong class="tnum">{{ quote.total | currency:'BRL' }}</strong>
+            </div>
+            <div class="field mt">
+              <label class="field-label">Válido até</label>
+              <input class="input" type="date" [(ngModel)]="validUntil" [disabled]="locked">
+            </div>
+            <div class="field mt">
+              <label class="field-label">Observações</label>
+              <textarea class="input" rows="4" [(ngModel)]="notes" [disabled]="locked"></textarea>
+            </div>
+            <button *ngIf="!locked" class="btn-x btn-outline block mt" (click)="saveMeta()">Salvar observações</button>
+            <p class="hint" *ngIf="quote.workOrder"><i class="fa-solid fa-lock"></i> Convertido em OS — os itens agora são editados na OS.</p>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </ng-container>
+
+  <div class="layout" *ngIf="loading && !quote">
+    <div class="panel" style="height:320px"></div>
+    <div class="panel" style="height:320px"></div>
+  </div>
+</div>

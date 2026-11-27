@@ -1,126 +1,43 @@
-import { ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma-service";
-import { CreateUserDto } from "../dto/create-user.dto";
-import * as bcrypt from "bcrypt";
-import { ListUserDto } from "../dto/list-user.dto";
-import { CreateWorkerDTO } from "../dto/create-worker-dto";
-import { Role } from "@prisma/client";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Role } from '@prisma/client';
+import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
+import { ListUserDto } from '../dto/list-user.dto';
+import { UpdateUserDTO } from '../dto/update-user.dto';
+import { FrontEndCreateUser } from '../dto/create-user.dto';
+import { CreateWorkerDTO } from '../dto/create-worker-dto';
+import { UserFactory } from '../factories/user.factory';
+import { UserRepository } from '../repositories/user.repository';
 
+/** Casos de uso de usuários. Criação via UserFactory, persistência via UserRepository. */
 @Injectable()
 export class UserService {
-    constructor(
-        private readonly _prismaService: PrismaService
-    ){}
+  constructor(private readonly users: UserRepository, private readonly factory: UserFactory) {}
 
-    async hashPassword(password: string): Promise<string> {
-      return bcrypt.hash(password, 12);
-    }
-    
-    async create(data: CreateUserDto) {
-      let passwordHash: string | undefined = undefined;
+  private tenant(auth: AuthPayload) {
+    return { enterpriseId: auth.enterpriseId, establishmentId: auth.establishmentId, requesterRole: auth.role };
+  }
 
-      if (data.password) {
-        passwordHash = await this.hashPassword(data.password);
-      }
+  async createClient(auth: AuthPayload, dto: FrontEndCreateUser) {
+    return this.users.create(await this.factory.createClient(dto, this.tenant(auth)));
+  }
 
-      return this._prismaService.user.create({
-        data: {
-          name: data.name,
-          gender: data.gender,
-          email: data.email ?? undefined,
-          password: passwordHash,
-          principalPhone: data.principalPhone,
-          secondaryPhone: data.secondaryPhone,
-        
-          address: data.address ? {
-            create: {
-              street: data.address.street,
-              number: data.address.number,
-              district: data.address.district,
-              neighborhood: data.address.neighborhood,
-              city: data.address.city,
-              zipCode: data.address.zipCode,
-              country: data.address.country,
-              complement: data.address.complement ?? undefined
-            }
-          } : undefined,
+  async createStaff(auth: AuthPayload, dto: CreateWorkerDTO) {
+    return this.users.create(await this.factory.createStaff(dto.role ?? Role.WORKER, dto, this.tenant(auth)));
+  }
 
-          userCorporation: {
-            create: {
-                idEnterprise: data.enterpriseId,
-                idEstablishment: data.establishmentId,
-                role: "USER"
-            }
-          }
-        }
-      });
-    }
+  search(auth: AuthPayload, term: string): Promise<ListUserDto[]> {
+    return this.users.search(auth.establishmentId, term.trim(), 10);
+  }
 
-    async createWorker(data) {
+  async getById(id: number, establishmentId: number) {
+    const user = await this.users.findInEstablishment(id, establishmentId);
+    if (!user) throw new NotFoundException('Usuário não encontrado neste estabelecimento.');
+    return user;
+  }
 
-      const requesterRole = data.role;
-      const targetRole = data.dataReceived.role;
-
-      if (requesterRole === Role.USER) {
-        throw new ForbiddenException('Seu perfil não tem permissão para cadastrar colaboradores.');
-      }
-
-      if (targetRole === Role.ADMIN) {
-        if (requesterRole !== Role.ADMIN && requesterRole !== Role.SUPERUSER) {
-          throw new ForbiddenException('Apenas administradores e super usuários podem criar perfis de nível administrativo.');
-        }
-      }
-
-      let passwordHash: string | undefined = undefined;
-
-      if (data.dataReceived.password) {
-        passwordHash = await this.hashPassword(data.dataReceived.password);
-      }
-
-      return this._prismaService.user.create({
-        data: {
-          name: data.dataReceived.name,
-          gender: data.dataReceived.gender,
-          email: data.dataReceived.email ?? undefined,
-          password: passwordHash,
-          principalPhone: data.dataReceived.principalPhone,
-          secondaryPhone: data.dataReceived.secondaryPhone,
-        
-          address: data.dataReceived.address ? {
-            create: {
-              street: data.dataReceived.address.street,
-              number: data.dataReceived.address.number,
-              district: data.dataReceived.address.district,
-              neighborhood: data.dataReceived.address.neighborhood,
-              city: data.dataReceived.address.city,
-              zipCode: data.dataReceived.address.zipCode,
-              country: data.dataReceived.address.country,
-              complement: data.dataReceived.address.complement ?? undefined
-            }
-          } : undefined,
-
-          userCorporation: {
-            create: {
-                idEnterprise: data.enterpriseId,
-                idEstablishment: data.establishmentId,
-                role: data.dataReceived.role
-            }
-          }
-        }
-      });
-    }
-
-    async search(q: string): Promise<ListUserDto[]> {
-      return this._prismaService.user.findMany({
-        where: {
-          OR: [
-            { name:  { contains: q, mode: 'insensitive' } },
-            { email: { contains: q, mode: 'insensitive' } },
-            { principalPhone: { contains: q } },
-          ],
-        },
-        take: 10,
-        select: { id: true, name: true, principalPhone: true, email: true },
-      });
-    }
+  async update(id: number, establishmentId: number, data: UpdateUserDTO) {
+    const updated = await this.users.update(id, establishmentId, data);
+    if (!updated) throw new NotFoundException('Usuário não encontrado neste estabelecimento.');
+    return this.getById(id, establishmentId);
+  }
 }

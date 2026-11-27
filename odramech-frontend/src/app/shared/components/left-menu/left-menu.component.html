@@ -1,64 +1,70 @@
-<div class="sidebar" [ngClass]="{'collapsed': isCollapsed}">
+<aside class="side" [class.collapsed]="isCollapsed">
 
-  <!-- Toggle -->
-  <div class="sidebar-toggle">
-    <button class="toggle-btn" (click)="toggleCollapse()">
-      <i class="fa-solid" [ngClass]="{ 'fa-bars': isCollapsed, 'fa-xmark': !isCollapsed }"></i>
+  <!-- Marca -->
+  <div class="brand">
+    <a routerLink="/home" class="brand-mark" aria-label="Odramech — início">
+      <img class="mark-img" src="assets/circle-sem-fundo-odramech-orange.png" alt="" width="26" height="26">
+      <span class="word">Odramech</span>
+    </a>
+    <button class="collapse-btn" type="button" (click)="toggleCollapse()" [attr.aria-label]="isCollapsed ? 'Expandir menu' : 'Recolher menu'">
+      <i class="fa-solid" [class.fa-angles-left]="!isCollapsed" [class.fa-angles-right]="isCollapsed"></i>
     </button>
   </div>
 
-  <!-- User profile -->
-  <div class="user-profile" *ngIf="!isCollapsed">
-    <div class="avatar-wrap">
-      <img
-        [src]="urlPhotoUser ? urlPhotoUser : '../../../../../../assets/no-photo-user-default.png'"
-        alt="foto do usuário"
-        class="avatar-img"
-      >
-      <span class="avatar-status"></span>
-    </div>
-    <div class="user-info">
-      <span class="user-name">{{ authContext?.user?.name }}</span>
-      <span class="user-role">{{ corpLogged?.establishment?.role }}</span>
+  <!-- Estabelecimento atual -->
+  <div class="workspace" [title]="authContext?.usercorp?.establishment?.name ?? ''">
+    <div class="ws-logo">{{ authContext?.usercorp?.name | initials }}</div>
+    <div class="ws-text">
+      <span class="ws-name">{{ authContext?.usercorp?.establishment?.name || '—' }}</span>
+      <span class="ws-sub">{{ authContext?.usercorp?.name }}</span>
     </div>
   </div>
 
-  <!-- Collapsed avatar -->
-  <div class="avatar-collapsed" *ngIf="isCollapsed">
-    <img
-      [src]="urlPhotoUser ? urlPhotoUser : '../../../../../../assets/no-photo-user-default.png'"
-      alt="foto do usuário"
-      class="avatar-img-sm"
-    >
-  </div>
-
-  <!-- Navigation -->
-  <nav class="sidebar-nav">
-    <ul class="nav-list">
-      <li
-        *ngFor="let button of buttons"
-        class="nav-item"
-        [class.active]="isActive(button.route)"
-        (click)="navigateUrl(button)"
-        [title]="isCollapsed ? button.nome : ''"
-      >
-        <i class="icon" [class]="button.icon"></i>
-        <span class="nav-label">{{ button.nome }}</span>
+  <!-- Navegação -->
+  <nav class="side-nav">
+    <span class="side-label">Operação</span>
+    <ul class="side-group">
+      <span
+        class="side-indicator"
+        *ngIf="activeIndex(operationItems) >= 0"
+        [style.transform]="'translateY(' + activeIndex(operationItems) * 38 + 'px)'">
+      </span>
+      <li *ngFor="let item of operationItems">
+        <a class="side-item" [routerLink]="item.route" [class.active]="isActive(item.route)" [attr.title]="isCollapsed ? item.label : null">
+          <i [class]="item.icon"></i>
+          <span class="txt">{{ item.label }}</span>
+        </a>
       </li>
     </ul>
 
-    <div class="nav-divider"></div>
-
-    <ul class="nav-list">
-      <li class="nav-item" (click)="navigateToSettings()" [title]="isCollapsed ? 'Configurações' : ''">
-        <i class="icon fa-solid fa-gear"></i>
-        <span class="nav-label">Configurações</span>
-      </li>
-      <li class="nav-item nav-logout" (click)="logout()" [title]="isCollapsed ? 'Logout' : ''">
-        <i class="icon fa-solid fa-arrow-right-from-bracket"></i>
-        <span class="nav-label">Logout</span>
-      </li>
-    </ul>
+    <ng-container *ngIf="managementItems.length">
+      <span class="side-label">Gestão</span>
+      <ul class="side-group">
+        <span
+          class="side-indicator"
+          *ngIf="activeIndex(managementItems) >= 0"
+          [style.transform]="'translateY(' + activeIndex(managementItems) * 38 + 'px)'">
+        </span>
+        <li *ngFor="let item of managementItems">
+          <a class="side-item" [routerLink]="item.route" [class.active]="isActive(item.route)" [attr.title]="isCollapsed ? item.label : null">
+            <i [class]="item.icon"></i>
+            <span class="txt">{{ item.label }}</span>
+          </a>
+        </li>
+      </ul>
+    </ng-container>
   </nav>
 
-</div>
+  <!-- Usuário -->
+  <div class="me">
+    <div class="avatar sm me-av">{{ authContext?.user?.name | initials }}</div>
+    <div class="me-text">
+      <span class="me-name">{{ authContext?.user?.name }}</span>
+      <span class="me-role">{{ role | roleLabel }}</span>
+    </div>
+    <button type="button" class="me-out" (click)="logout()" title="Sair">
+      <i class="fa-solid fa-arrow-right-from-bracket"></i>
+    </button>
+  </div>
+
+</aside>

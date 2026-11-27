@@ -38,40 +38,48 @@ Frontend: Angular para uma interface de usuário dinâmica e responsiva.
 
 Banco de Dados/ORM: Prisma para gestão e acesso simplificado ao banco de dados.
 
-## 🚀 Guia de Configuração e Ambiente
+## 🚀 Rodando na sua máquina (Windows)
 
-Siga os passos abaixo para clonar o repositório e configurar o ambiente de desenvolvimento local.
+**Pré-requisito único:** [Node.js 22 LTS](https://nodejs.org). Não precisa instalar PostgreSQL nem Docker.
 
-Pré-requisito Essencial
+1. Dê dois cliques em **`iniciar.bat`** na raiz do projeto.
+   - Na primeira vez ele roda o setup sozinho: instala dependências, cria o banco local, aplica as migrations e o seed.
+   - Depois sobe **banco + serviço de assinaturas (porta 3010) + backend (porta 3004) + frontend (porta 4200)** e abre o navegador.
+2. Entre com `odramechenterprise@gmail.com` / `odramin`.
+3. `Ctrl+C` na janela encerra tudo.
 
-⚠️ SEMPRE que clonar ou iniciar o desenvolvimento, rode o comando abaixo nas pastas odramech-backend e odramech-frontend para baixar as dependências do projeto.
+| Comando (na raiz) | O que faz |
+|---|---|
+| `setup.bat` ou `npm run setup` | Instala/atualiza tudo e aplica migrations + seed |
+| `iniciar.bat` ou `npm run dev` | Sobe banco, backend e frontend juntos |
+| `npm run db` | Sobe só o banco |
+| `npm run db:reset` | **Apaga** o banco local e recria do zero |
+| `npm test` | Testes do backend e do serviço de assinaturas |
+
+> Arquitetura, padrões de projeto e regras de assinatura: veja **[ARCHITECTURE.md](ARCHITECTURE.md)**.
+
+### Banco de dados
+
+- Por padrão é usado um **PostgreSQL embutido** (pacote `embedded-postgres`), com os dados em `.data/postgres` (fora do git).
+- Se já houver um PostgreSQL na porta da `DATABASE_URL` (instalado ou Docker), ele é usado no lugar.
+- Prefere Docker? `docker compose up -d` sobe um Postgres 16 com as mesmas credenciais.
+
+### Variáveis de ambiente
+
+- `odramech-backend/.env` (modelo em `.env.example`): porta, `DATABASE_URL`, JWT e origem do frontend (CORS).
+- `odramech-frontend/.env` (modelo em `.env.example`): host e porta do backend. O `environment.ts` é **gerado** a partir dele a cada `npm start` / `npm run build`.
+- Anexos dos apontamentos ficam em `odramech-backend/uploads` (configurável com `UPLOAD_DIR`).
+
+### Rodando manualmente (sem os scripts)
 
 ```bash
-npm install
+cd odramech-backend && npm install && npx prisma migrate deploy && npm run start:dev
 ```
-
-1. Criação do Banco de Dados (PostgreSQL)
-
-Utilize o Docker para criar uma instância local do PostgreSQL com as configurações necessárias:
 
 ```bash
-docker run -d --name odramech -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=Sop1503 -e POSTGRES_DB=postgres -p 5432:5432 postgres:16
+cd odramech-frontend && npm install --legacy-peer-deps && npm start
 ```
 
-2. Configurar a String de Conexão
+> Com npm 11+, rode também `npm rebuild bcrypt @prisma/engines prisma @prisma/client` no backend — o npm passou a bloquear scripts de instalação.
 
-No arquivo .env localizado na raiz da pasta odramech-backend, defina a variável DATABASE_URL com a string de conexão do seu banco de dados.
-
-```bash
-DATABASE_URL="postgresql://postgres:Sop1503@localhost:5432/odramech?schema=odramech"
-```
-
-3. Executar as Migrações do Prisma
-
-Execute o comando abaixo na pasta odramech-backend para criar as tabelas no banco de dados com base no schema do Prisma:
-
-```bash
-npx prisma migrate dev
-```
-
-![Screenshot Logo do Sistema Odramech](odramech-frontend/src/assets/logo_odramech.png)
+![Logo do Odramech](odramech-frontend/src/assets/logo_odramech-orange.png)

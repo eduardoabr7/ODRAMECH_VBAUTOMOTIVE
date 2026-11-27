@@ -1,0 +1,81 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.status-tabs {
+  overflow-x: auto;
+  max-width: 100%;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  &.PENDENTE { background: var(--st-pendente); }
+  &.EM_ATENDIMENTO { background: var(--st-atendimento); }
+  &.AGUARDANDO_PECAS { background: var(--st-pecas); }
+  &.FINALIZADA { background: var(--st-finalizada); }
+  &.CANCELADA { background: var(--st-cancelada); }
+}
+
+.list-search {
+  width: 320px;
+  .input { padding-right: 34px; }
+  .clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    &:hover { background: var(--surface-3); color: var(--ink); }
+  }
+  @media (max-width: 760px) { width: 100%; }
+}
+
+.table-scroll {
+  transition: opacity var(--dur-2) ease;
+  &.is-loading { opacity: .55; pointer-events: none; }
+}
+
+.cell-person { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.cell-vehicle { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+
+.dtable tbody tr.clickable td:first-child { position: relative; }
+.dtable tbody tr.clickable:hover td:first-child::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  animation: fadeIn var(--dur-1) ease;
+}
+
+.hide-md { @media (max-width: 1000px) { display: none; } }
+.hide-sm { @media (max-width: 640px) { display: none; } }
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.pager-btns { display: flex; align-items: center; gap: 10px; }

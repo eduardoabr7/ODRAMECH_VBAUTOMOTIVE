@@ -3,14 +3,15 @@ import { Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/cor
 import { FormsModule, NgForm } from '@angular/forms';
 import { GenderEnum } from '@shared/enums/gender.enum';
 import { RoleEnum } from '@shared/enums/role.enum';
-import { AddressReturnApi } from '@shared/models/AddressReturnApi';
+import { CepAddress } from "@shared/services/zipcode.service";
 import { WorkerCreate } from '@shared/models/WorkerCreate';
 import { UserCorporationService } from '@shared/services/user-corporation.service';
 import { ZipCodeService } from '@shared/services/zipcode.service';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { NgxMaskDirective } from 'ngx-mask';
 import { ToastrService } from 'ngx-toastr';
-import { EMPTY, finalize, Observable } from 'rxjs';
+import { EMPTY, finalize, Observable, take } from 'rxjs';
+import { AuthService } from '@shared/services/auth.service';
 import cloneDeep from 'lodash/cloneDeep';
 import { BaseModalComponent } from '../../base-modal.component';
 import { UserService } from '@shared/services/user.service';
@@ -80,13 +81,18 @@ export class ModalManageWorkersComponent extends BaseModalComponent {
     private readonly _userCorporationService: UserCorporationService,
     private readonly _userService: UserService,
     private readonly _toastr: ToastrService,
-    private readonly _zipCodeService: ZipCodeService
+    private readonly _zipCodeService: ZipCodeService,
+    private readonly _authService: AuthService
   ) {
     super(bsModalRef);
   }
 
   ngOnInit(): void {
-    this.loadWorkers();
+    // o estabelecimento vem da sessão logada (antes nunca era preenchido e a lista ficava vazia)
+    this._authService.user$.pipe(take(1)).subscribe(ctx => {
+      this.idEstablishment = this.idEstablishment ?? ctx?.usercorp?.establishment?.id;
+      this.loadWorkers();
+    });
   }
 
   get allEmployees(): Worker[] {
@@ -149,17 +155,25 @@ export class ModalManageWorkersComponent extends BaseModalComponent {
   }
 
   resetForm(): void {
-    this.form = { name: '', email: '', principalPhone: '', role: RoleEnum.WORKER, gender: undefined };
+    this.displayAddress = false;
+    this.form = {
+      name: '', email: '', password: '', principalPhone: '', secondaryPhone: '',
+      role: RoleEnum.WORKER, gender: undefined,
+      address: {
+        street: '', number: '', complement: undefined, city: '', district: '',
+        zipCode: '', country: 'Brasil', neighborhood: '',
+      },
+    };
   }
 
   setAddressFromZipCode() {
     this.buscaCep().subscribe({
       next: (value) => {
-        this.form.address.street = value.logradouro
-        this.form.address.complement = value.complemento.trim() || undefined;
-        this.form.address.city = value.localidade
-        this.form.address.district = value.uf
-        this.form.address.neighborhood = value.bairro
+        this.form.address.street = value.street
+        this.form.address.complement = value.complement || undefined;
+        this.form.address.city = value.city
+        this.form.address.district = value.district
+        this.form.address.neighborhood = value.neighborhood
       },
       error: () => {
         this._toastr.info('Nenhum endereço encontrado com este CEP');
@@ -167,7 +181,7 @@ export class ModalManageWorkersComponent extends BaseModalComponent {
     });
   }
 
-  buscaCep(): Observable<AddressReturnApi> {
+  buscaCep(): Observable<CepAddress> {
     const zipCode = this.form.address.zipCode;
     const validZipcode = this.validZipCode(zipCode);
   
@@ -175,7 +189,7 @@ export class ModalManageWorkersComponent extends BaseModalComponent {
   
     this.loadingSearchZipCode = true;
   
-    return this._zipCodeService.get(zipCode).pipe(
+    return this._zipCodeService.lookup(zipCode).pipe(
       finalize(() => {
         setTimeout(() => {
           this.loadingSearchZipCode = false;

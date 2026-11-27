@@ -1,16 +1,72 @@
-.header {
+.shell {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  background: var(--bg);
+}
+
+.shell-side {
+  flex: 0 0 var(--sidebar-w);
+  width: var(--sidebar-w);
+  height: 100vh;
+  transition: flex-basis var(--dur-3) var(--ease-out), width var(--dur-3) var(--ease-out);
+  z-index: 40;
+}
+
+.is-collapsed .shell-side {
+  flex-basis: var(--sidebar-w-collapsed);
+  width: var(--sidebar-w-collapsed);
+}
+
+.shell-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.shell-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
-  z-index: 10; 
-  box-shadow: 0 2.5px 6px -1px rgba(0, 0, 0, 0.05);
+  scroll-behavior: smooth;
 }
 
-app-left-menu {
-  display: inline-block;
-}
+.shell-scrim { display: none; }
 
-@media (max-width: 576px) {
-  app-left-menu.open {
-    width: 100%;
-    position: absolute;
+@media (max-width: 900px) {
+  .shell-side {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: var(--sidebar-w) !important;
+    transform: translateX(-100%);
+    transition: transform var(--dur-3) var(--ease-out);
+    box-shadow: var(--shadow-3);
   }
+
+  .is-mobile-open .shell-side { transform: none; }
+
+  .shell-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgba(17, 17, 17, .4);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--dur-2) ease;
+  }
+
+  .is-mobile-open .shell-scrim { opacity: 1; pointer-events: auto; }
+}
+
+
+// Transição de página: o componente roteado anima ao ser inserido (CSS puro,
+// não depende do motor de animações do Angular).
+.shell-content ::ng-deep > :not(router-outlet) {
+  display: block;
+  animation: rise 420ms var(--ease-out) both;
 }

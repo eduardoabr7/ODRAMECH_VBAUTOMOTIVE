@@ -1,13 +1,10 @@
-<div class="loading-modal-box">
-
-  <div class="spinner-ring">
-    <div></div>
-    <div></div>
-    <div></div>
-    <div></div>
+<div class="loading-box">
+  <div class="gauge" aria-hidden="true">
+    <svg viewBox="0 0 48 48">
+      <circle class="g-track" cx="24" cy="24" r="20" />
+      <circle class="g-arc" cx="24" cy="24" r="20" />
+    </svg>
   </div>
-
   <p class="loading-title">{{ title }}</p>
   <p class="loading-subtitle">{{ subtitle }}</p>
-
 </div>

@@ -1,24 +1,21 @@
 import { CommonModule } from '@angular/common';
 import { Component, Type } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { BsModalService } from 'ngx-bootstrap/modal';
 import { ModalSettingsEnterpriseComponent } from '@shared/components/modals/enterprise-modals/modal-settings-enterprise/modal-settings-enterprise.component';
 import { ModalManageWorkersComponent } from '@shared/components/modals/user-modals/modal-manage-workers/modal-manage-workers.component';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { ToastrService } from 'ngx-toastr';
-
-
 
 interface SettingCard {
   name: string;
   description: string;
   category: string;
-  iconClass: string;
-  iconColor: string;
-  iconBg: string;
-  enabled?: boolean;
-  enableMode: boolean;
-  connectMode: boolean;
+  icon: string;
   openModal?: Type<any>;
+  /** navega para uma página em vez de abrir modal */
+  route?: string;
+  /** false = funcionalidade ainda não implementada (precisa de backend/schema) */
+  available: boolean;
 }
 
 @Component({
@@ -29,123 +26,34 @@ interface SettingCard {
 })
 export class SettingsComponent {
 
-  constructor(
-    private readonly _bsModalService: BsModalService,
-    private readonly _toastr: ToastrService
-  ) {}
+  constructor(private readonly _bsModalService: BsModalService, private readonly _router: Router) {}
 
   searchQuery = '';
   activeFilter = 'all';
 
   filters = [
-    { key: 'all',          label: 'Todos'       },
-    { key: 'oficina',      label: 'Oficina'      },
-    { key: 'usuarios',     label: 'Usuários'     },
-    { key: 'financeiro',   label: 'Financeiro'   },
-    { key: 'notificacoes', label: 'Notificações' },
-    { key: 'integracao',   label: 'Integrações'  },
+    { key: 'all',          label: 'Tudo' },
+    { key: 'oficina',      label: 'Oficina' },
+    { key: 'usuarios',     label: 'Equipe' },
+    { key: 'financeiro',   label: 'Financeiro' },
+    { key: 'integracao',   label: 'Integrações' },
   ];
 
   cards: SettingCard[] = [
-    {
-      name: 'Minha Oficina',
-      description: 'Defina permissões, configure informações e gerencie sua oficina.',
-      category: 'oficina',
-      iconClass: 'fas fa-store',
-      iconColor: '#4f6ef7',
-      iconBg: '#eef1fe',
-      enableMode: false,
-      connectMode: false,
-      openModal: ModalSettingsEnterpriseComponent
-    },
-    {
-      name: 'Usuários e Permissões',
-      description: 'Gerencie colaboradores, funções e níveis de acesso ao sistema.',
-      category: 'usuarios',
-      iconClass: 'fas fa-users',
-      iconColor: '#e04f3a',
-      iconBg: '#fef3f2',
-      enableMode: false,
-      connectMode: false,
-      openModal: ModalManageWorkersComponent
-    },
-    {
-      name: 'Financeiro',
-      description: 'Configure formas de pagamento, taxas e relatórios financeiros.',
-      category: 'financeiro',
-      iconClass: 'fas fa-dollar-sign',
-      iconColor: '#22c55e',
-      iconBg: '#f0fdf4',
-      enableMode: false,
-      connectMode: false,
-    },
-    {
-      name: 'Notificações',
-      description: 'Configure alertas por e-mail, SMS e push para clientes e equipe.',
-      category: 'notificacoes',
-      iconClass: 'fas fa-bell',
-      iconColor: '#f97316',
-      iconBg: '#fff7ed',
-      enabled: false,
-      enableMode: true,
-      connectMode: false,
-    },
-    {
-      name: 'WhatsApp',
-      description: 'Envie mensagens automáticas de confirmação e lembrete via WhatsApp.',
-      category: 'integracao',
-      iconClass: 'fab fa-whatsapp',
-      iconColor: '#22c55e',
-      iconBg: '#f0fdf4',
-      enableMode: true,
-      connectMode: true,
-    },
-    {
-      name: 'API Externa',
-      description: 'Conecte sistemas externos via API REST para sincronização de dados.',
-      category: 'integracao',
-      iconClass: 'fas fa-plug',
-      iconColor: '#a855f7',
-      iconBg: '#faf5ff',
-      enabled: true,
-      enableMode: true,
-      connectMode: false,
-    },
-    {
-      name: 'Agendamentos',
-      description: 'Gerencie horários, bloqueios e regras de agendamento online.',
-      category: 'oficina',
-      iconClass: 'fas fa-calendar-alt',
-      iconColor: '#3b82f6',
-      iconBg: '#eff6ff',
-      enableMode: false,
-      connectMode: false,
-    },
-    {
-      name: 'Notas Fiscais',
-      description: 'Emita NF-e e NFS-e diretamente pelo sistema de forma automatizada.',
-      category: 'financeiro',
-      iconClass: 'fas fa-file-invoice',
-      iconColor: '#ec4899',
-      iconBg: '#fdf2f8',
-      enabled: false,
-      enableMode: true,
-      connectMode: false,
-    },
-    {
-      name: 'Segurança',
-      description: 'Configure autenticação em dois fatores e políticas de senha.',
-      category: 'usuarios',
-      iconClass: 'fas fa-shield-alt',
-      iconColor: '#f97316',
-      iconBg: '#fff7ed',
-      enableMode: false,
-      connectMode: false,
-    },
+    { name: 'Assinatura', description: 'Plano mensal ou anual, faturas e forma de pagamento do Odramech.', category: 'financeiro', icon: 'fa-solid fa-crown', route: '/settings/subscription', available: true },
+    { name: 'Minha oficina', description: 'Estabelecimentos da empresa, dados de contato e endereço.', category: 'oficina', icon: 'fa-solid fa-warehouse', openModal: ModalSettingsEnterpriseComponent, available: true },
+    { name: 'Equipe e permissões', description: 'Cadastre mecânicos e administradores e defina quem acessa o quê.', category: 'usuarios', icon: 'fa-solid fa-user-shield', openModal: ModalManageWorkersComponent, available: true },
+    { name: 'Agendamentos', description: 'Horários de atendimento, bloqueios e agendamento online.', category: 'oficina', icon: 'fa-regular fa-calendar', available: false },
+    { name: 'Financeiro', description: 'Formas de pagamento, taxas e relatórios de faturamento.', category: 'financeiro', icon: 'fa-solid fa-wallet', available: false },
+    { name: 'Notas fiscais', description: 'Emissão de NF-e e NFS-e direto da OS.', category: 'financeiro', icon: 'fa-solid fa-file-invoice', available: false },
+    { name: 'Notificações', description: 'Avisos por e-mail e SMS para cliente e equipe a cada mudança de status.', category: 'integracao', icon: 'fa-regular fa-bell', available: false },
+    { name: 'WhatsApp', description: 'Confirmações e lembretes automáticos pelo WhatsApp.', category: 'integracao', icon: 'fa-brands fa-whatsapp', available: false },
+    { name: 'API externa', description: 'Integre sistemas de terceiros via API REST.', category: 'integracao', icon: 'fa-solid fa-code', available: false },
+    { name: 'Segurança', description: 'Autenticação em duas etapas e política de senhas.', category: 'usuarios', icon: 'fa-solid fa-fingerprint', available: false },
   ];
 
   get filteredCards(): SettingCard[] {
-    const q = this.searchQuery.toLowerCase();
+    const q = this.searchQuery.toLowerCase().trim();
     return this.cards.filter(card => {
       const matchesFilter = this.activeFilter === 'all' || card.category === this.activeFilter;
       const matchesSearch = !q || card.name.toLowerCase().includes(q) || card.description.toLowerCase().includes(q);
@@ -153,16 +61,16 @@ export class SettingsComponent {
     });
   }
 
-  afterClickCard(card: SettingCard): void {
+  open(card: SettingCard): void {
+    if (!card.available) return;
+    if (card.route) {
+      this._router.navigateByUrl(card.route);
+      return;
+    }
     if (!card.openModal) return;
-
     this._bsModalService.show(card.openModal, {
       initialState: { title: card.name },
       class: 'modal-lg'
     });
-  }
-
-  setFilter(key: string): void {
-    this.activeFilter = key;
   }
 }

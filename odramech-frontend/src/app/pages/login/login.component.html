@@ -1,104 +1,101 @@
-<section class="login-page">
+<section class="login">
 
-  <!-- Top nav -->
-  <nav class="login-nav">
-    <div class="nav-logo">
-      <img src="../../../assets/circle-sem-fundo-odramech.png" alt="logo" class="nav-logo-img">
-      <span class="nav-logo-text">ODRAMECH</span>
+  <!-- Painel de marca -->
+  <aside class="brand-panel">
+    <div class="bp-top">
+      <img class="mark-img" src="assets/circle-sem-fundo-odramech-orange.png" alt="" width="28" height="28">
+      <span class="word">Odramech</span>
     </div>
-    <ul class="nav-links">
-      <li>Traga o Odramech para sua empresa</li>
-      <li>Contatos</li>
-    </ul>
-  </nav>
 
-  <!-- Main content -->
-  <div class="login-content">
+    <div class="bp-main">
+      <p class="bp-kicker">Gestão para oficinas mecânicas</p>
+      <h1 class="bp-title">
+        Do check-in<br>
+        à entrega,<br>
+        <span>sem papel.</span>
+      </h1>
+      <p class="bp-copy">Ordens de serviço, histórico de cada veículo e o cliente acompanhando tudo — num lugar só.</p>
+    </div>
 
-    <!-- Left: branding -->
-    <div class="login-branding">
-      <div class="branding-inner">
-        <div class="brand-logo-row">
-          <img
-            src="../../../assets/circle-sem-fundo-odramech.png"
-            alt="logo"
-            class="brand-logo"
-          >
-          <h1 class="brand-name">ODRAMECH</h1>
-        </div>
-        <p class="brand-desc">
-          Plataforma moderna para oficinas mecânicas.<br>
-          Tudo o que você precisa em um único sistema.
-        </p>
-        <div class="brand-features">
-          <div class="feature-pill"><i class="fas fa-list-check"></i> Ordens de Serviço</div>
-          <div class="feature-pill"><i class="fas fa-users"></i> Gestão de Clientes</div>
-          <div class="feature-pill"><i class="fas fa-chart-line"></i> BI</div>
-        </div>
+    <!-- Ticket ilustrativo -->
+    <div class="ticket" aria-hidden="true">
+      <div class="t-row">
+        <span class="t-no">OS #0482</span>
+        <span class="t-status"><i></i>Em atendimento</span>
+      </div>
+      <div class="t-car">
+        <span class="t-plate">RXT4F21</span>
+        <span class="t-model">Volkswagen Polo TSI</span>
+      </div>
+      <div class="t-steps">
+        <span class="on"></span><span class="on"></span><span class="cur"></span><span></span>
+      </div>
+      <div class="t-log">
+        <span class="t-dot"></span>
+        <span>Pastilhas dianteiras substituídas. Aguardando teste de rodagem.</span>
       </div>
     </div>
 
-    <!-- Right: form -->
-    <div class="login-form-panel">
-      <div class="login-card">
+    <div class="bp-foot">
+      <span>© {{ year }} Odramech</span>
+      <span>Feito para quem vive de graxa e prazo.</span>
+    </div>
+  </aside>
 
-        <div class="login-card-header">
-          <h2 class="login-title">Bem-vindo de volta</h2>
-          <p class="login-subtitle">Acesse sua conta para continuar</p>
+  <!-- Formulário -->
+  <main class="form-panel">
+    <div class="form-wrap">
+      <div class="mobile-brand">
+        <img class="mark-img" src="assets/circle-sem-fundo-odramech-orange.png" alt="" width="28" height="28">
+        <span class="word">Odramech</span>
+      </div>
+
+      <header class="fh">
+        <h2>Entrar</h2>
+        <p>Use o e-mail cadastrado pela sua oficina.</p>
+      </header>
+
+      <form (ngSubmit)="tryLogin()" #formLogin="ngForm" class="fform" novalidate>
+
+        <div class="field">
+          <label class="field-label" for="email">E-mail</label>
+          <input
+            class="input lg"
+            type="email"
+            id="email"
+            name="email"
+            [(ngModel)]="email"
+            placeholder="voce@oficina.com.br"
+            autocomplete="email"
+            autofocus>
         </div>
 
-        <form (ngSubmit)="tryLogin()" #formLogin="ngForm" class="login-form">
-
-          <div class="field-group">
-            <label for="email">E-mail</label>
-            <div class="input-wrapper">
-              <i class="fas fa-envelope input-icon"></i>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                [(ngModel)]="email"
-                placeholder="seu@email.com"
-                autocomplete="email"
-              >
-            </div>
+        <div class="field">
+          <label class="field-label" for="password">Senha</label>
+          <div class="pw">
+            <input
+              class="input lg"
+              [type]="showPassword ? 'text' : 'password'"
+              id="password"
+              name="password"
+              [(ngModel)]="password"
+              placeholder="••••••••"
+              autocomplete="current-password">
+            <button type="button" class="pw-toggle" (click)="showPassword = !showPassword" [attr.aria-label]="showPassword ? 'Ocultar senha' : 'Mostrar senha'">
+              <i class="fa-regular" [class.fa-eye]="!showPassword" [class.fa-eye-slash]="showPassword"></i>
+            </button>
           </div>
+        </div>
 
-          <div class="field-group">
-            <div class="label-row">
-              <label for="password">Senha</label>
-              <a href="#!" class="forgot-link" tabindex="-1">Esqueceu a senha?</a>
-            </div>
-            <div class="input-wrapper">
-              <i class="fas fa-lock input-icon"></i>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                [(ngModel)]="password"
-                placeholder="••••••••"
-                autocomplete="current-password"
-              >
-            </div>
-          </div>
+        <button type="submit" class="btn-x btn-solid lg block submit" [disabled]="loadingLogin">
+          <span class="spinner-x" *ngIf="loadingLogin"></span>
+          <span>{{ loadingLogin ? 'Entrando…' : 'Entrar' }}</span>
+          <i class="fa-solid fa-arrow-right arrow" *ngIf="!loadingLogin"></i>
+        </button>
+      </form>
 
-          <button
-            type="submit"
-            class="btn-login"
-            [class.loading]="loadingLogin"
-            [disabled]="loadingLogin"
-          >
-            <span *ngIf="!loadingLogin">Acessar Sistema</span>
-            <span *ngIf="loadingLogin">
-              <i class="fa-solid fa-circle-notch fa-spin me-2"></i>Entrando...
-            </span>
-          </button>
-
-        </form>
-
-      </div>
+      <p class="help">Esqueceu a senha ou ainda não tem acesso? Fale com o responsável pela sua oficina.</p>
     </div>
-
-  </div>
+  </main>
 
 </section>

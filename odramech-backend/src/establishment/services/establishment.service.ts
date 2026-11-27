@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { EstablishmentCreateDTO } from "../dto/establishment-create.dto";
 import { PrismaService } from "src/prisma/prisma-service";
+import { Role } from "@prisma/client";
 
 @Injectable()
 export class EstablishmentService {
@@ -9,7 +10,7 @@ export class EstablishmentService {
         private readonly _prisma : PrismaService
     ){}
 
-    async createEstablishment({ address, enterpriseId, ...data }: EstablishmentCreateDTO) {
+    async createEstablishment({ address, enterpriseId, ...data }: EstablishmentCreateDTO, creatorUserId?: number) {
       try {
         return await this._prisma.establishment.create({
           data: {
@@ -17,7 +18,14 @@ export class EstablishmentService {
             enterprise: { connect: { id: enterpriseId } },
             address: { create: address },
             counter: { create: {} },
+            // quem cria o estabelecimento já entra como ADMIN dele
+            ...(creatorUserId && {
+              users: {
+                create: { idUser: creatorUserId, idEnterprise: enterpriseId, role: Role.ADMIN },
+              },
+            }),
           },
+          include: { address: true },
         });
       } catch (error: any) {
         // prisma lança erro com código P2002 para unique constraint (ex: CNPJ duplicado)

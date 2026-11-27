@@ -1,19 +1,23 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '@shared/services/auth.service';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
+import { AuthService } from '@shared/services/auth.service';
 import { AuthContext } from '@shared/models/AuthContext';
+import { RoleEnum } from '@shared/enums/role.enum';
+import { InitialsPipe, RoleLabelPipe } from '@shared/ui/pipes';
 
-interface BotoesMenuLateral {
-  nome: string;
+interface NavItem {
+  label: string;
   icon: string;
-  route?: string;
+  route: string;
+  staffOnly?: boolean;
+  clientLabel?: string;
 }
 
 @Component({
   selector: 'app-left-menu',
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule, InitialsPipe, RoleLabelPipe],
   templateUrl: './left-menu.component.html',
   styleUrl: './left-menu.component.scss',
 })
@@ -25,40 +29,56 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
   ) {}
 
   @Output() estadoMenuChange = new EventEmitter<boolean>();
-  @Input() isCollapsed = true;
+  @Input() isCollapsed = false;
 
-  authContext: AuthContext;
-  corpLogged = null;
-  urlPhotoUser: string | null = null;
+  authContext: AuthContext | null = null;
+  role: RoleEnum | null = null;
   currentUrl = '';
 
-  private subs = new Subscription();
+  private readonly subs = new Subscription();
 
-  buttons: BotoesMenuLateral[] = [
-    { nome: 'Home',          icon: 'fa-solid fa-house',    route: '/home'          },
-    { nome: 'Serviços',      icon: 'fa-solid fa-wrench',   route: '/orders'      },
-    { nome: 'Meus veículos', icon: 'fa-solid fa-car-side', route: '/vehicles'      },
-    { nome: 'Faturamento',   icon: 'fa-solid fa-file',     route: '/billing'       },
-    { nome: 'Notificações',  icon: 'fa-solid fa-envelope', route: '/notifications' },
-    { nome: 'Clientes',      icon: 'fa-solid fa-users',    route: '/clients'       },
+  private readonly operation: NavItem[] = [
+    { label: 'Início',            icon: 'fa-solid fa-house',            route: '/home' },
+    { label: 'Ordens de serviço', icon: 'fa-solid fa-screwdriver-wrench', route: '/orders', clientLabel: 'Meus serviços' },
+    { label: 'Orçamentos',        icon: 'fa-solid fa-file-invoice-dollar', route: '/quotes', clientLabel: 'Meus orçamentos' },
+    { label: 'Clientes',          icon: 'fa-solid fa-user-group',       route: '/clients', staffOnly: true },
+    { label: 'Veículos',          icon: 'fa-solid fa-car-side',         route: '/vehicles', clientLabel: 'Meus veículos' },
   ];
+
+  private readonly management: NavItem[] = [
+    { label: 'Configurações', icon: 'fa-solid fa-sliders', route: '/settings', staffOnly: true },
+  ];
+
+  get isStaff(): boolean {
+    return this.role === RoleEnum.ADMIN || this.role === RoleEnum.WORKER || this.role === RoleEnum.SUPERUSER;
+  }
+
+  get operationItems(): NavItem[] { return this.visible(this.operation); }
+  get managementItems(): NavItem[] { return this.visible(this.management); }
+
+  private visible(items: NavItem[]): NavItem[] {
+    return items
+      .filter(i => !i.staffOnly || this.isStaff)
+      .map(i => (!this.isStaff && i.clientLabel ? { ...i, label: i.clientLabel } : i));
+  }
+
+  /** índice do item ativo dentro do grupo — usado pelo indicador deslizante */
+  activeIndex(items: NavItem[]): number {
+    return items.findIndex(i => this.isActive(i.route));
+  }
 
   ngOnInit(): void {
     this.currentUrl = this._router.url;
 
     this.subs.add(
-      this._router.events.pipe(
-        filter(event => event instanceof NavigationEnd)
-      ).subscribe((event: NavigationEnd) => {
-        this.currentUrl = event.urlAfterRedirects;
-      })
+      this._router.events.pipe(filter(e => e instanceof NavigationEnd))
+        .subscribe((e: NavigationEnd) => this.currentUrl = e.urlAfterRedirects)
     );
 
     this.subs.add(
-      this._authService.user$.subscribe(authCtx => {
-        this.authContext = authCtx;
-        this.corpLogged = authCtx?.usercorp ?? null;
-        this.getUserPhotoURL();
+      this._authService.user$.subscribe(ctx => {
+        this.authContext = ctx;
+        this.role = (ctx?.usercorp?.establishment?.role ?? null) as unknown as RoleEnum | null;
       })
     );
   }
@@ -67,29 +87,16 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
-  getUserPhotoURL(): void {
-    this.urlPhotoUser = '../../../assets/remover_foto.jpeg';
-  }
-
-  isActive(route?: string): boolean {
-    if (!route) return false;
-    return this.currentUrl === route || this.currentUrl.startsWith(route + '/');
+  isActive(route: string): boolean {
+    const url = this.currentUrl.split('?')[0];
+    return url === route || url.startsWith(route + '/');
   }
 
   logout(): void {
     this._authService.logout().subscribe();
   }
 
-  navigateUrl(option: BotoesMenuLateral): void {
-    if (option.route) this._router.navigateByUrl(option.route);
-  }
-
-  navigateToSettings(): void {
-    this._router.navigateByUrl('/settings');
-  }
-
   toggleCollapse(): void {
-    this.isCollapsed = !this.isCollapsed;
     this.estadoMenuChange.emit(!this.isCollapsed);
   }
 }

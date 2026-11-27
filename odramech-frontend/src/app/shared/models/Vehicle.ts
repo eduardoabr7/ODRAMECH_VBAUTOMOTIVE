@@ -1,3 +1,5 @@
+import { StatusOS } from "@shared/enums/status-os.enum";
+
 export interface Vehicle {
   id: number;
   plate: string;
@@ -7,5 +9,11 @@ export interface Vehicle {
   km?: string;
   modelYear?: number;
   manufactureYear?: number;
-  clientId: number;
+  clientId?: number;
+}
+
+export interface VehicleListItem extends Vehicle {
+  owners: { id: number; name: string; principalPhone: string }[];
+  lastWorkOrder: { id: number; numberOs: number; status: StatusOS; dateTimeCreation: string } | null;
+  workOrdersCount: number;
 }

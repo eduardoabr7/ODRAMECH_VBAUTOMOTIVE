@@ -1,0 +1,211 @@
+<div class="page">
+
+  <a class="back reveal" routerLink="/clients"><i class="fa-solid fa-arrow-left"></i> Clientes</a>
+
+  <div class="panel" *ngIf="notFound">
+    <div class="empty">
+      <div class="empty-mark"><i class="fa-solid fa-user-slash"></i></div>
+      <h4>Cliente não encontrado</h4>
+      <p>Ele não está vinculado a este estabelecimento.</p>
+      <a routerLink="/clients" class="btn-x btn-outline sm">Voltar</a>
+    </div>
+  </div>
+
+  <ng-container *ngIf="loading && !user">
+    <div class="hero-sk">
+      <span class="sk" style="width:64px;height:64px;border-radius:50%"></span>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span class="sk" style="width:220px;height:22px"></span>
+        <span class="sk" style="width:140px"></span>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="user">
+
+    <!-- Hero -->
+    <header class="hero">
+      <span class="avatar xl reveal">{{ user.name | initials }}</span>
+      <div class="hero-txt">
+        <div class="eyebrow reveal" style="--i:1">
+          <span>{{ user.role | roleLabel }}</span>
+          <span class="sep">/</span>
+          <span>desde {{ user.createdAt | date:'MMM yyyy' }}</span>
+        </div>
+        <h1 class="page-title reveal" style="--i:1">{{ user.name }}</h1>
+        <div class="hero-contacts reveal" style="--i:2">
+          <a [href]="'tel:' + user.principalPhone"><i class="fa-solid fa-phone"></i>{{ user.principalPhone | phone }}</a>
+          <a *ngIf="user.email" [href]="'mailto:' + user.email"><i class="fa-regular fa-envelope"></i>{{ user.email }}</a>
+        </div>
+      </div>
+      <div class="page-actions reveal" style="--i:3">
+        <button class="btn-x btn-outline" (click)="startEdit()" *ngIf="!editing"><i class="fa-solid fa-pen"></i>Editar</button>
+        <button class="btn-x btn-solid" (click)="newOrder()"><i class="fa-solid fa-plus"></i>Abrir OS</button>
+      </div>
+    </header>
+
+    <!-- Números -->
+    <section class="stats reveal" style="--i:3">
+      <div class="stat"><span class="stat-n tnum">{{ user.workOrdersCount }}</span><span class="stat-l">ordens de serviço</span></div>
+      <div class="stat"><span class="stat-n tnum">{{ openOrders }}</span><span class="stat-l">em aberto</span></div>
+      <div class="stat"><span class="stat-n tnum">{{ user.vehicles.length }}</span><span class="stat-l">{{ user.vehicles.length === 1 ? 'veículo' : 'veículos' }}</span></div>
+      <div class="stat"><span class="stat-n">{{ orders[0]?.dateTimeCreation ? (orders[0].dateTimeCreation | relativeTime) : '—' }}</span><span class="stat-l">última visita</span></div>
+    </section>
+
+    <div class="layout">
+
+      <div class="main-col">
+
+        <!-- Edição -->
+        <section class="panel edit-panel" *ngIf="editing && form">
+          <div class="panel-head">
+            <span class="panel-title">Editar cadastro</span>
+          </div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <div class="field span-2">
+                <label class="field-label">Nome completo <span class="req">*</span></label>
+                <input class="input" [(ngModel)]="form.name" name="name">
+              </div>
+              <div class="field">
+                <label class="field-label">Telefone principal <span class="req">*</span></label>
+                <input class="input" [(ngModel)]="form.principalPhone" name="phone" mask="(00) 00000-0000||(00) 0000-0000">
+              </div>
+              <div class="field">
+                <label class="field-label">Telefone secundário</label>
+                <input class="input" [(ngModel)]="form.secondaryPhone" name="phone2" mask="(00) 00000-0000||(00) 0000-0000">
+              </div>
+              <div class="field">
+                <label class="field-label">E-mail</label>
+                <input class="input" type="email" [(ngModel)]="form.email" name="email">
+              </div>
+              <div class="field">
+                <label class="field-label">Gênero</label>
+                <div class="segmented">
+                  <button type="button" [class.active]="form.gender === GenderEnum.Male" (click)="form.gender = GenderEnum.Male">Masc.</button>
+                  <button type="button" [class.active]="form.gender === GenderEnum.Fem" (click)="form.gender = GenderEnum.Fem">Fem.</button>
+                  <button type="button" [class.active]="form.gender === GenderEnum.Other" (click)="form.gender = GenderEnum.Other">Outro</button>
+                </div>
+              </div>
+            </div>
+
+            <label class="addr-toggle">
+              <span class="switch"><input type="checkbox" [(ngModel)]="form.hasAddress" name="hasAddr"><span></span></span>
+              Endereço
+            </label>
+
+            <div class="form-grid addr" *ngIf="form.hasAddress">
+              <div class="field">
+                <label class="field-label">CEP</label>
+                <div class="input-icon">
+                  <input class="input" [(ngModel)]="form.address.zipCode" name="cep" mask="00000-000" (blur)="lookupCep()">
+                  <span class="spinner-x cep-spin" *ngIf="loadingCep"></span>
+                </div>
+              </div>
+              <div class="field span-2">
+                <label class="field-label">Logradouro</label>
+                <input class="input" [(ngModel)]="form.address.street" name="street">
+              </div>
+              <div class="field">
+                <label class="field-label">Número</label>
+                <input class="input" [(ngModel)]="form.address.number" name="number">
+              </div>
+              <div class="field">
+                <label class="field-label">Complemento</label>
+                <input class="input" [(ngModel)]="form.address.complement" name="compl">
+              </div>
+              <div class="field">
+                <label class="field-label">Bairro</label>
+                <input class="input" [(ngModel)]="form.address.neighborhood" name="bairro">
+              </div>
+              <div class="field">
+                <label class="field-label">Cidade</label>
+                <input class="input" [(ngModel)]="form.address.city" name="city">
+              </div>
+              <div class="field">
+                <label class="field-label">UF</label>
+                <input class="input" [(ngModel)]="form.address.district" name="uf" maxlength="2">
+              </div>
+            </div>
+          </div>
+          <div class="edit-foot">
+            <button class="btn-x btn-ghost" (click)="cancelEdit()">Cancelar</button>
+            <button class="btn-x btn-solid" (click)="save()" [disabled]="saving">
+              <span class="spinner-x" *ngIf="saving"></span> Salvar alterações
+            </button>
+          </div>
+        </section>
+
+        <!-- Histórico de OS -->
+        <section class="panel reveal" style="--i:4">
+          <div class="panel-head">
+            <span class="panel-title">Histórico de serviços <span class="count">{{ ordersTotal }}</span></span>
+          </div>
+          <table class="dtable" *ngIf="orders.length">
+            <tbody>
+              <tr *ngFor="let wo of orders; let i = index" class="clickable" (click)="openOrder(wo)">
+                <td style="width:80px"><span class="os-no">#<b>{{ wo.numberOs }}</b></span></td>
+                <td>
+                  <span class="cell-main">{{ wo.vehicle.make }} {{ wo.vehicle.name }}</span>
+                  <span class="cell-sub"> · {{ wo.vehicle.plate | plate }}</span>
+                </td>
+                <td><app-status [status]="wo.status"></app-status></td>
+                <td style="text-align:right" class="cell-sub">{{ wo.dateTimeCreation | date:'dd/MM/yy' }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="empty" *ngIf="!orders.length">
+            <div class="empty-mark"><i class="fa-solid fa-clipboard"></i></div>
+            <h4>Sem serviços por aqui</h4>
+            <p>Quando uma OS for aberta para este cliente, ela aparece nesta lista.</p>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side-col">
+        <!-- Veículos -->
+        <section class="panel reveal" style="--i:5">
+          <div class="panel-head">
+            <span class="panel-title">Veículos</span>
+            <button class="btn-x btn-ghost sm" (click)="addVehicle()"><i class="fa-solid fa-plus"></i>Adicionar</button>
+          </div>
+          <ul class="vlist" *ngIf="user.vehicles.length">
+            <li *ngFor="let v of user.vehicles">
+              <span class="plate">{{ v.plate | plate }}</span>
+              <div class="vlist-txt">
+                <strong>{{ v.make }} {{ v.name }}</strong>
+                <span>
+                  <ng-container *ngIf="v.manufactureYear">{{ v.manufactureYear }}<ng-container *ngIf="v.modelYear">/{{ v.modelYear }}</ng-container></ng-container>
+                  <ng-container *ngIf="v.color"> · {{ v.color }}</ng-container>
+                  <ng-container *ngIf="v.km"> · {{ v.km }} km</ng-container>
+                </span>
+              </div>
+            </li>
+          </ul>
+          <div class="empty small" *ngIf="!user.vehicles.length">
+            <p>Nenhum veículo vinculado.</p>
+          </div>
+        </section>
+
+        <!-- Dados -->
+        <section class="panel reveal" style="--i:6" *ngIf="!editing">
+          <div class="panel-head"><span class="panel-title">Dados</span></div>
+          <div class="panel-body">
+            <dl class="kv compact">
+              <dt>Gênero</dt><dd>{{ genderLabel }}</dd>
+              <dt>Tel. secundário</dt><dd>{{ user.secondaryPhone ? (user.secondaryPhone | phone) : '—' }}</dd>
+              <dt>Endereço</dt>
+              <dd>
+                <ng-container *ngIf="user.address; else noAddr">
+                  {{ user.address.street }}, {{ user.address.number }}<ng-container *ngIf="user.address.complement"> — {{ user.address.complement }}</ng-container><br>
+                  <span class="muted">{{ user.address.neighborhood }} · {{ user.address.city }}/{{ user.address.district }}</span>
+                </ng-container>
+                <ng-template #noAddr><span class="faint">Não informado</span></ng-template>
+              </dd>
+            </dl>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </ng-container>
+</div>

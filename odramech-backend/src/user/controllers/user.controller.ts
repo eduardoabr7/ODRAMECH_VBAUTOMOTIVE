@@ -1,35 +1,41 @@
-import { Body, Controller, Get, Post, Query, Req } from "@nestjs/common";
-import { UserService } from "../services/user.service";
-import { AuthPayload } from "src/auth/interfaces/auth-payload.interface";
-import { FrontEndCreateUser } from "../dto/create-user.dto";
-import { CreateWorkerDTO } from "../dto/create-worker-dto";
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
+import { CurrentAuth } from 'src/core/auth/current-auth.decorator';
+import { assertStaff } from 'src/shared/utils/role.util';
+import { UserService } from '../services/user.service';
+import { FrontEndCreateUser } from '../dto/create-user.dto';
+import { CreateWorkerDTO } from '../dto/create-worker-dto';
+import { UpdateUserDTO } from '../dto/update-user.dto';
 
 @Controller('user')
 export class UserController {
-    
-    constructor(
-        private readonly _userService: UserService
-    ){}
+  constructor(private readonly users: UserService) {}
 
-    @Post('create')
-    createUser(@Body() data: FrontEndCreateUser, @Req() req){
-        const { establishmentId, enterpriseId } = req.authContext as AuthPayload;
-        const dataWithCredentials = {establishmentId, enterpriseId, ...data}
+  @Post('create')
+  createUser(@Body() data: FrontEndCreateUser, @CurrentAuth() auth: AuthPayload) {
+    return this.users.createClient(auth, data);
+  }
 
-        return this._userService.create(dataWithCredentials)
-    }
+  @Post('create-worker')
+  createWorker(@Body() data: CreateWorkerDTO, @CurrentAuth() auth: AuthPayload) {
+    return this.users.createStaff(auth, data);
+  }
 
-    @Post('create-worker')
-    createWorker(@Body() data: CreateWorkerDTO, @Req() req){
-        const { establishmentId, enterpriseId, role } = req.authContext as AuthPayload;
-        const dataWithCredentials = {establishmentId, enterpriseId, role, dataReceived : {...data}}
+  @Get('search')
+  search(@Query('term') term: string, @CurrentAuth() auth: AuthPayload) {
+    assertStaff(auth.role);
+    return this.users.search(auth, term ?? '');
+  }
 
-        return this._userService.createWorker(dataWithCredentials)
-    }
+  @Get(':id')
+  getById(@Param('id', ParseIntPipe) id: number, @CurrentAuth() auth: AuthPayload) {
+    if (auth.sub !== id) assertStaff(auth.role);
+    return this.users.getById(id, auth.establishmentId);
+  }
 
-    @Get('search')
-    search(@Query('term') term: string) {
-        return this._userService.search(term);
-    }
-
+  @Put(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateUserDTO, @CurrentAuth() auth: AuthPayload) {
+    if (auth.sub !== id) assertStaff(auth.role);
+    return this.users.update(id, auth.establishmentId, data);
+  }
 }

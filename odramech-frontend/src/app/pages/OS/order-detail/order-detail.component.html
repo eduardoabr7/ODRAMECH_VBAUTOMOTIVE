@@ -1,0 +1,357 @@
+<div class="page">
+
+  <a class="back reveal" routerLink="/orders"><i class="fa-solid fa-arrow-left"></i> Ordens de serviço</a>
+
+  <!-- Loading -->
+  <ng-container *ngIf="loading && !wo">
+    <div class="head-sk">
+      <span class="sk" style="width:120px"></span>
+      <span class="sk" style="width:360px;height:28px"></span>
+    </div>
+    <div class="layout">
+      <div class="panel" style="height:360px"></div>
+      <div class="panel" style="height:360px"></div>
+    </div>
+  </ng-container>
+
+  <!-- Não encontrada -->
+  <div class="panel" *ngIf="notFound">
+    <div class="empty">
+      <div class="empty-mark"><i class="fa-solid fa-magnifying-glass"></i></div>
+      <h4>OS não encontrada</h4>
+      <p>Ela pode ter sido aberta em outro estabelecimento ou você não tem acesso a ela.</p>
+      <a routerLink="/orders" class="btn-x btn-outline sm">Voltar para a lista</a>
+    </div>
+  </div>
+
+  <ng-container *ngIf="wo">
+
+    <!-- Cabeçalho -->
+    <header class="wo-head">
+      <div class="wo-head-main">
+        <div class="eyebrow reveal">
+          <span class="mono">OS #{{ wo.numberOs }}</span>
+          <span class="sep">/</span>
+          <span>aberta {{ wo.dateTimeCreation | relativeTime }}</span>
+          <span class="sep">/</span>
+          <span>{{ isClosed ? 'duração' : 'em aberto há' }} {{ durationLabel() }}</span>
+          <ng-container *ngIf="wo.quote">
+            <span class="sep">/</span>
+            <a class="from-quote" [routerLink]="['/quotes', wo.quote.id]">do orçamento #{{ wo.quote.numberQuote }}</a>
+          </ng-container>
+        </div>
+        <h1 class="page-title reveal" style="--i:1">
+          {{ wo.vehicle.make }} {{ wo.vehicle.name }}
+          <span class="title-client">de {{ wo.client.name }}</span>
+        </h1>
+      </div>
+      <div class="reveal" style="--i:2">
+        <app-status [status]="wo.status"></app-status>
+      </div>
+    </header>
+
+    <!-- Stepper de status -->
+    <section class="panel stepper reveal" style="--i:2" [class.cancelled]="wo.status === StatusOS.CANCELADA">
+      <div class="steps">
+        <div class="track">
+          <div class="track-fill" [style.width.%]="progress"></div>
+        </div>
+        <button
+          type="button"
+          class="step"
+          *ngFor="let s of flow; let i = index"
+          [class.done]="wo.status !== StatusOS.CANCELADA && i < flowIndex"
+          [class.current]="wo.status === s"
+          [class.saving]="savingStatus === s"
+          [disabled]="!isStaff || !!savingStatus"
+          (click)="setStatus(s)">
+          <span class="step-dot">
+            <i class="fa-solid fa-check" *ngIf="wo.status !== StatusOS.CANCELADA && i < flowIndex"></i>
+            <span class="spinner-x" *ngIf="savingStatus === s"></span>
+          </span>
+          <span class="step-label">{{ STATUS_LABEL[s] }}</span>
+        </button>
+      </div>
+      <div class="stepper-side" *ngIf="isStaff">
+        <button
+          *ngIf="wo.status !== StatusOS.CANCELADA"
+          type="button"
+          class="btn-x btn-danger-ghost sm"
+          [disabled]="!!savingStatus"
+          (click)="setStatus(StatusOS.CANCELADA)">
+          Cancelar OS
+        </button>
+        <button
+          *ngIf="wo.status === StatusOS.CANCELADA"
+          type="button"
+          class="btn-x btn-outline sm"
+          [disabled]="!!savingStatus"
+          (click)="setStatus(StatusOS.PENDENTE)">
+          <i class="fa-solid fa-rotate-left"></i> Reabrir
+        </button>
+      </div>
+    </section>
+
+    <div class="layout">
+     <div class="main-col">
+
+      <!-- Avaliação do cliente -->
+      <section class="panel review-card reveal" style="--i:3" *ngIf="canReview">
+        <div class="panel-body review-body">
+          <div>
+            <h3>Como foi o serviço?</h3>
+            <p class="muted">Sua avaliação ajuda a oficina a melhorar.</p>
+          </div>
+          <div class="stars" (mouseleave)="reviewHover = 0">
+            <button type="button" *ngFor="let s of [1,2,3,4,5]"
+              [class.on]="s <= (reviewHover || reviewRating)"
+              (mouseenter)="reviewHover = s" (click)="reviewRating = s"
+              [attr.aria-label]="s + ' estrela(s)'">
+              <i class="fa-solid fa-star"></i>
+            </button>
+          </div>
+          <textarea class="input" rows="2" placeholder="Quer deixar um comentário? (opcional)" [(ngModel)]="reviewComment"></textarea>
+          <button class="btn-x btn-solid" [disabled]="!reviewRating || sendingReview" (click)="sendReview()">
+            <span class="spinner-x" *ngIf="sendingReview"></span> Enviar avaliação
+          </button>
+        </div>
+      </section>
+
+      <section class="panel review-done reveal" style="--i:3" *ngIf="wo.review">
+        <div class="panel-body review-done-body">
+          <span class="stars ro"><i class="fa-solid fa-star" *ngFor="let s of [1,2,3,4,5]" [class.on]="s <= wo.review.rating"></i></span>
+          <span class="muted">Avaliação do cliente {{ wo.review.createdAt | relativeTime }}</span>
+          <p class="review-comment" *ngIf="wo.review.comment">“{{ wo.review.comment }}”</p>
+        </div>
+      </section>
+
+      <!-- Peças e serviços -->
+      <section class="panel reveal" style="--i:3" *ngIf="isStaff || wo.items.length">
+        <div class="panel-head">
+          <span class="panel-title">Peças e serviços <span class="count">{{ wo.items.length }}</span></span>
+        </div>
+        <app-items-editor
+          [items]="wo.items"
+          [editable]="canEditMoney"
+          [busy]="savingItem"
+          (add)="addItem($event)"
+          (remove)="removeItem($event)">
+        </app-items-editor>
+      </section>
+
+      <!-- Timeline -->
+      <section class="panel reveal" style="--i:4">
+        <div class="panel-head">
+          <span class="panel-title">Histórico <span class="count">{{ wo.appointments.length }}</span></span>
+          <span class="legend" *ngIf="isStaff"><i class="fa-solid fa-lock"></i> notas internas não aparecem para o cliente</span>
+        </div>
+
+        <ol class="timeline">
+          <li *ngFor="let item of timeline; let i = index" class="tl-item reveal" [style.--i]="i" [ngSwitch]="item.kind">
+
+            <ng-container *ngSwitchCase="'event'">
+              <ng-container *ngIf="item.kind === 'event'">
+                <span class="tl-icon event"><i [class]="item.icon"></i></span>
+                <div class="tl-body tl-event">
+                  <strong>{{ item.who || 'Sistema' }}</strong> {{ item.text }}
+                  <time [title]="item.at | date:'dd/MM/yyyy HH:mm'">{{ item.at | relativeTime }}</time>
+                </div>
+              </ng-container>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'note'">
+              <ng-container *ngIf="item.kind === 'note'">
+                <span class="tl-icon avatar sm">{{ item.appt.userAppointment.name | initials }}</span>
+                <div class="tl-body tl-note" [class.internal]="item.appt.appointmentType === AppointmentType.INTERNO">
+                  <div class="tl-meta">
+                    <strong>{{ item.appt.userAppointment.name }}</strong>
+                    <span class="tag" *ngIf="item.appt.appointmentType === AppointmentType.INTERNO"><i class="fa-solid fa-lock"></i> Interno</span>
+                    <time [title]="item.at | date:'dd/MM/yyyy HH:mm'">{{ item.at | relativeTime }}</time>
+                  </div>
+                  <div class="rich" [innerHTML]="item.appt.contentHtml"></div>
+                  <div class="files" *ngIf="item.appt.archives?.length">
+                    <div class="file" *ngFor="let a of item.appt.archives" [class.img]="a.archiveType === 'IMAGEM'">
+                      <a [href]="fileUrl(a)" target="_blank" rel="noopener" class="file-link" [title]="a.originalName">
+                        <img *ngIf="a.archiveType === 'IMAGEM'" [src]="fileUrl(a)" [alt]="a.originalName" loading="lazy">
+                        <span class="file-ico" *ngIf="a.archiveType !== 'IMAGEM'">
+                          <i class="fa-regular" [class.fa-file-pdf]="a.mimeType === 'application/pdf'" [class.fa-file-video]="a.archiveType === 'VIDEO'" [class.fa-file]="a.mimeType !== 'application/pdf' && a.archiveType !== 'VIDEO'"></i>
+                        </span>
+                        <span class="file-meta">
+                          <span class="file-name">{{ a.originalName }}</span>
+                          <span class="file-size">{{ fileSize(a.sizeBytes) }}</span>
+                        </span>
+                      </a>
+                      <button *ngIf="isStaff" type="button" class="file-del" (click)="deleteFile(item.appt.id, a)" title="Excluir anexo">
+                        <i class="fa-solid fa-xmark"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+            </ng-container>
+
+          </li>
+        </ol>
+
+        <!-- Composer -->
+        <div class="composer" *ngIf="isStaff">
+          <div class="editor" [class.internal]="noteType === AppointmentType.INTERNO">
+            <div class="editor-bar">
+              <button type="button" (click)="format('bold')" title="Negrito"><i class="fa-solid fa-bold"></i></button>
+              <button type="button" (click)="format('italic')" title="Itálico"><i class="fa-solid fa-italic"></i></button>
+              <button type="button" (click)="format('insertUnorderedList')" title="Lista"><i class="fa-solid fa-list-ul"></i></button>
+              <span class="sep"></span>
+              <div class="segmented type-toggle">
+                <button type="button" [class.active]="noteType === AppointmentType.PUBLICO" (click)="noteType = AppointmentType.PUBLICO">
+                  <i class="fa-regular fa-eye"></i> Público
+                </button>
+                <button type="button" [class.active]="noteType === AppointmentType.INTERNO" (click)="noteType = AppointmentType.INTERNO">
+                  <i class="fa-solid fa-lock"></i> Interno
+                </button>
+              </div>
+            </div>
+            <div
+              #editor
+              class="editor-area"
+              contenteditable="true"
+              (input)="onEditorInput()"
+              (keydown)="onEditorKeydown($event)"
+              [attr.data-placeholder]="noteType === AppointmentType.INTERNO ? 'Nota para a equipe — o cliente não vê…' : 'Registre o andamento: diagnóstico, peças trocadas, próximos passos…'">
+            </div>
+          </div>
+          <div class="picked-files" *ngIf="noteFiles.length">
+            <span class="chip" *ngFor="let f of noteFiles; let i = index">
+              <i class="fa-solid fa-paperclip"></i>{{ f.name }}
+              <button type="button" (click)="removePicked(i)" aria-label="Remover"><i class="fa-solid fa-xmark"></i></button>
+            </span>
+          </div>
+          <div class="composer-foot">
+            <div class="foot-left">
+              <label class="btn-x btn-ghost sm attach">
+                <i class="fa-solid fa-paperclip"></i> Anexar
+                <input type="file" multiple hidden accept="image/*,application/pdf,video/mp4,video/quicktime,video/webm" (change)="onPickFiles($event)">
+              </label>
+              <span class="faint hide-sm"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> para enviar</span>
+            </div>
+            <button type="button" class="btn-x btn-solid sm" [disabled]="(noteIsEmpty && !noteFiles.length) || sendingNote" (click)="sendNote()">
+              <span class="spinner-x" *ngIf="sendingNote"></span>
+              {{ noteType === AppointmentType.INTERNO ? 'Salvar nota interna' : 'Registrar apontamento' }}
+            </button>
+          </div>
+        </div>
+      </section>
+     </div>
+
+      <!-- Lateral -->
+      <aside class="side">
+
+        <section class="panel money reveal" style="--i:4" *ngIf="isStaff || wo.summary.total">
+          <div class="panel-head">
+            <span class="panel-title">Financeiro</span>
+            <span class="tag" [class.paid]="wo.summary.total > 0 && wo.summary.balance <= 0" *ngIf="wo.summary.total > 0">
+              {{ wo.summary.balance <= 0 ? 'Quitado' : 'Em aberto' }}
+            </span>
+          </div>
+          <div class="panel-body">
+            <div class="money-total">
+              <span class="muted">Total da OS</span>
+              <strong class="tnum">{{ wo.summary.total | currency:'BRL' }}</strong>
+            </div>
+            <div class="money-bar"><span [style.width.%]="paidPct"></span></div>
+            <div class="money-split">
+              <span>Pago <b class="tnum">{{ wo.summary.paid | currency:'BRL' }}</b></span>
+              <span>Saldo <b class="tnum" [class.neg]="wo.summary.balance > 0">{{ wo.summary.balance | currency:'BRL' }}</b></span>
+            </div>
+
+            <ul class="pay-list" *ngIf="wo.payments.length">
+              <li *ngFor="let p of wo.payments">
+                <span class="pay-method">{{ PAYMENT_LABEL[p.method] }}</span>
+                <span class="pay-when faint">{{ p.paidAt | date:'dd/MM HH:mm' }} · {{ p.user.name.split(' ')[0] }}</span>
+                <span class="pay-amt tnum">{{ p.amount | currency:'BRL' }}</span>
+                <button *ngIf="isStaff" type="button" class="pay-del" title="Estornar" (click)="removePayment(p.id)"><i class="fa-solid fa-rotate-left"></i></button>
+              </li>
+            </ul>
+
+            <form class="pay-form" *ngIf="canEditMoney" (ngSubmit)="addPayment()">
+              <div class="select-x">
+                <select class="input" name="method" [(ngModel)]="payMethod">
+                  <option *ngFor="let m of paymentMethods" [ngValue]="m">{{ PAYMENT_LABEL[m] }}</option>
+                </select>
+              </div>
+              <div class="amt">
+                <span class="cur">R$</span>
+                <input class="input tnum" type="number" min="0.01" step="0.01" name="amount" placeholder="0,00" [(ngModel)]="payAmount">
+              </div>
+              <button class="btn-x btn-solid" type="submit" [disabled]="!payAmount || savingPayment">
+                <span class="spinner-x" *ngIf="savingPayment"></span> Registrar
+              </button>
+            </form>
+            <button *ngIf="canEditMoney && wo.summary.balance > 0" type="button" class="link-sm" (click)="fillBalance()">
+              Usar saldo restante ({{ wo.summary.balance | currency:'BRL' }})
+            </button>
+          </div>
+        </section>
+
+        <section class="panel vehicle-card reveal" style="--i:4">
+          <div class="vc-plate">
+            <span class="vc-plate-band">BRASIL</span>
+            <span class="vc-plate-num">{{ wo.vehicle.plate | plate }}</span>
+          </div>
+          <div class="vc-name">{{ wo.vehicle.make }} {{ wo.vehicle.name }}</div>
+          <dl class="kv compact">
+            <dt>Ano</dt>
+            <dd>{{ wo.vehicle.manufactureYear || '—' }}<span *ngIf="wo.vehicle.modelYear"> / {{ wo.vehicle.modelYear }}</span></dd>
+            <dt>Cor</dt><dd>{{ wo.vehicle.color || '—' }}</dd>
+            <dt>Quilometragem</dt><dd class="tnum">{{ wo.vehicle.km ? (wo.vehicle.km + ' km') : '—' }}</dd>
+          </dl>
+        </section>
+
+        <section class="panel reveal" style="--i:5">
+          <div class="panel-head">
+            <span class="panel-title">Cliente</span>
+            <a *ngIf="isStaff" [routerLink]="['/clients', wo.client.id]" class="btn-x btn-ghost sm">Ver ficha</a>
+          </div>
+          <div class="panel-body person">
+            <span class="avatar lg">{{ wo.client.name | initials }}</span>
+            <div class="person-info">
+              <strong>{{ wo.client.name }}</strong>
+              <a *ngIf="wo.client.principalPhone" [href]="'tel:' + wo.client.principalPhone">{{ wo.client.principalPhone | phone }}</a>
+              <a *ngIf="wo.client.email" [href]="'mailto:' + wo.client.email">{{ wo.client.email }}</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel reveal" style="--i:6">
+          <div class="panel-head"><span class="panel-title">Detalhes</span></div>
+          <div class="panel-body">
+            <div class="field" *ngIf="isStaff; else respRead">
+              <label class="field-label">Responsável</label>
+              <div class="select-x">
+                <select class="input" [ngModel]="wo.userResponsible?.id ?? null" (ngModelChange)="setResponsible($event)" [disabled]="savingResponsible">
+                  <option [ngValue]="null">Sem responsável</option>
+                  <option *ngFor="let w of workers" [ngValue]="w.id">{{ w.name }}</option>
+                </select>
+              </div>
+            </div>
+            <ng-template #respRead>
+              <dl class="kv compact"><dt>Responsável</dt><dd>{{ wo.userResponsible?.name || 'A definir' }}</dd></dl>
+            </ng-template>
+
+            <hr class="divider">
+
+            <dl class="kv compact">
+              <dt>Aberta por</dt><dd>{{ wo.userCreation.name }}</dd>
+              <dt>Abertura</dt><dd>{{ wo.dateTimeCreation | date:"dd/MM/yyyy 'às' HH:mm" }}</dd>
+              <ng-container *ngIf="wo.dateTimeEnd">
+                <dt>{{ wo.status === StatusOS.CANCELADA ? 'Cancelada' : 'Encerrada' }}</dt>
+                <dd>{{ wo.dateTimeEnd | date:"dd/MM/yyyy 'às' HH:mm" }}</dd>
+                <dt>Por</dt><dd>{{ wo.userEnd?.name || '—' }}</dd>
+              </ng-container>
+            </dl>
+          </div>
+        </section>
+
+      </aside>
+    </div>
+  </ng-container>
+</div>

@@ -1,49 +1,49 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  OnInit,
-  OnDestroy,
-  ViewChild,
-  ElementRef,
-} from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
+import { ToastrService } from 'ngx-toastr';
+import { Subject } from 'rxjs';
+import { filter, map, switchMap, takeUntil, tap } from 'rxjs/operators';
+
 import { ModalCreateUserComponent } from '@shared/components/modals/user-modals/modal-create-user/modal-create-user.component';
 import { ModalCreateVehicleComponent } from '@shared/components/modals/vehicle-modals/modal-create-vehicle/modal-create-vehicle.component';
 import { CloseOnClickOutsideDirective } from '@shared/directives/close-onclick-outside.directive';
 import { RoleEnum } from '@shared/enums/role.enum';
-import { StatusOS } from '@shared/enums/status-os.enum';
+import { STATUS_LABEL, StatusOS } from '@shared/enums/status-os.enum';
+import { AppointmentTypeEnum } from '@shared/enums/type-appointment.enum';
 import { AuthContext } from '@shared/models/AuthContext';
 import { Vehicle } from '@shared/models/Vehicle';
 import { UserList } from '@shared/models/UserList';
+import { WorkOrderCreate } from '@shared/models/WorkOrderCreate';
 import { AuthService } from '@shared/services/auth.service';
 import { UserCorporationService } from '@shared/services/user-corporation.service';
 import { UserService } from '@shared/services/user.service';
 import { VehicleService } from '@shared/services/vehicle.service';
-import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
-import { Subject } from 'rxjs';
-import { filter, map, switchMap, tap, takeUntil } from 'rxjs/operators';
-import { WorkOrderCreate } from '@shared/models/WorkOrderCreate';
 import { WorkOrderService } from '@shared/services/work-orders.service';
-import { AppointmentTypeEnum } from '@shared/enums/type-appointment.enum';
-
-type TypeAppointment = 'PUBLICO' | 'INTERNO';
+import { StatusBadgeComponent } from '@shared/ui/status-badge.component';
+import { InitialsPipe, PhonePipe, PlatePipe } from '@shared/ui/pipes';
 
 @Component({
   selector: 'app-new-os',
-  imports: [CommonModule, ReactiveFormsModule, CloseOnClickOutsideDirective],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, CloseOnClickOutsideDirective, StatusBadgeComponent, InitialsPipe, PhonePipe, PlatePipe],
   templateUrl: './new-os.component.html',
   styleUrls: ['./new-os.component.scss'],
 })
 export class NewOsComponent implements OnInit, OnDestroy {
 
   @ViewChild('editorRef') editorRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('searchRef') searchRef?: ElementRef<HTMLInputElement>;
+
+  readonly StatusOS = StatusOS;
+  readonly AppointmentType = AppointmentTypeEnum;
+  readonly STATUS_LABEL = STATUS_LABEL;
 
   osForm!: FormGroup;
 
   now = new Date();
   isSubmitting = false;
-  isDragging = false;
 
   authContext!: AuthContext;
 
@@ -52,6 +52,7 @@ export class NewOsComponent implements OnInit, OnDestroy {
   selectedClient: UserList | null = null;
   isSearchingClient = false;
   searchEmpty = false;
+  activeIndex = 0;
   private searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
   workers: UserList[] = [];
@@ -61,7 +62,6 @@ export class NewOsComponent implements OnInit, OnDestroy {
   isLoadingVehicles = false;
   private vehicleModalRef: BsModalRef | null = null;
 
-  attachedFiles: File[] = [];
   editorContent = '';
 
   private readonly destroy$ = new Subject<void>();
@@ -74,7 +74,8 @@ export class NewOsComponent implements OnInit, OnDestroy {
     private readonly bsModalService: BsModalService,
     private readonly authService: AuthService,
     private readonly userCorporationService: UserCorporationService,
-    private readonly workOrderService: WorkOrderService
+    private readonly workOrderService: WorkOrderService,
+    private readonly toastr: ToastrService,
   ) {}
 
   ngOnInit(): void {
@@ -93,7 +94,7 @@ export class NewOsComponent implements OnInit, OnDestroy {
       vehicleId: [null, Validators.required],
       userResponsibleId: [null],
       status: [StatusOS.PENDENTE, Validators.required],
-      appointmentType: ['PUBLICO'],
+      appointmentType: [AppointmentTypeEnum.PUBLICO],
     });
   }
 
@@ -104,9 +105,7 @@ export class NewOsComponent implements OnInit, OnDestroy {
         tap(authCtx => { this.authContext = authCtx; }),
         map(authCtx => authCtx?.usercorp?.establishment?.id),
         filter((id): id is number => !!id),
-        switchMap(idEstab =>
-          this.userCorporationService.getWorkersByEstablishments({ idEstab })
-        ),
+        switchMap(idEstab => this.userCorporationService.getWorkersByEstablishments({ idEstab })),
       )
       .subscribe(users => {
         this.workers = users
@@ -115,6 +114,14 @@ export class NewOsComponent implements OnInit, OnDestroy {
       });
   }
 
+  // ── Etapas ───────────────────────────────────────────────
+  get step(): number {
+    if (!this.selectedClient) return 1;
+    if (!this.selectedVehicle) return 2;
+    return 3;
+  }
+
+  // ── Cliente ──────────────────────────────────────────────
   onClientSearch(event: Event): void {
     const term = (event.target as HTMLInputElement).value.trim();
 
@@ -135,6 +142,7 @@ export class NewOsComponent implements OnInit, OnDestroy {
       this.userService.search(term).subscribe({
         next: results => {
           this.clientResults = results;
+          this.activeIndex = 0;
           this.isSearchingClient = false;
           this.searchEmpty = results.length === 0;
         },
@@ -143,7 +151,15 @@ export class NewOsComponent implements OnInit, OnDestroy {
           this.searchEmpty = true;
         },
       });
-    }, 400);
+    }, 300);
+  }
+
+  onSearchKeydown(e: KeyboardEvent): void {
+    if (!this.showClientDropdown || !this.clientResults.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); this.activeIndex = (this.activeIndex + 1) % this.clientResults.length; }
+    if (e.key === 'ArrowUp') { e.preventDefault(); this.activeIndex = (this.activeIndex - 1 + this.clientResults.length) % this.clientResults.length; }
+    if (e.key === 'Enter') { e.preventDefault(); this.selectClient(this.clientResults[this.activeIndex]); }
+    if (e.key === 'Escape') { this.showClientDropdown = false; }
   }
 
   selectClient(client: UserList): void {
@@ -162,33 +178,37 @@ export class NewOsComponent implements OnInit, OnDestroy {
     this.clientVehicles = [];
     this.selectedVehicle = null;
     this.osForm.patchValue({ vehicleId: null });
+    setTimeout(() => this.searchRef?.nativeElement.focus());
   }
 
   goToNewClient(): void {
-    this.bsModalService.show(ModalCreateUserComponent, {
-      initialState: { title: 'Novo Cliente' },
+    this.showClientDropdown = false;
+    const ref = this.bsModalService.show(ModalCreateUserComponent, {
+      initialState: { title: 'Novo cliente' },
       class: 'modal-lg',
+    });
+
+    ref.content?.onClose.pipe(takeUntil(this.destroy$)).subscribe((created: any) => {
+      if (created?.id) {
+        this.selectClient({ id: created.id, name: created.name, email: created.email, principalPhone: created.principalPhone });
+      }
     });
   }
 
+  // ── Veículo ──────────────────────────────────────────────
   private loadClientVehicles(userId: number): void {
     this.isLoadingVehicles = true;
     this.clientVehicles = [];
     this.selectedVehicle = null;
     this.osForm.patchValue({ vehicleId: null });
-  
+
     this.vehicleService.getByUser(userId).subscribe({
       next: vehicles => {
         this.clientVehicles = vehicles;
         this.isLoadingVehicles = false;
-      
-        if (vehicles.length === 1) {
-          this.selectVehicle(vehicles[0]);
-        }
+        if (vehicles.length === 1) this.selectVehicle(vehicles[0]);
       },
-      error: () => {
-        this.isLoadingVehicles = false;
-      },
+      error: () => { this.isLoadingVehicles = false; },
     });
   }
 
@@ -205,6 +225,7 @@ export class NewOsComponent implements OnInit, OnDestroy {
   openNewVehicleModal(): void {
     this.vehicleModalRef = this.bsModalService.show(ModalCreateVehicleComponent, {
       initialState: {
+        title: 'Novo veículo',
         userId: this.selectedClient!.id,
         clientName: this.selectedClient!.name,
       },
@@ -214,40 +235,24 @@ export class NewOsComponent implements OnInit, OnDestroy {
     this.vehicleModalRef.content?.vehicleCreated
       ?.pipe(takeUntil(this.destroy$))
       .subscribe((newVehicle: Vehicle) => {
-        this.clientVehicles = [...this.clientVehicles, newVehicle];
+        if (!this.clientVehicles.some(v => v.id === newVehicle.id)) {
+          this.clientVehicles = [...this.clientVehicles, newVehicle];
+        }
         this.selectVehicle(newVehicle);
-        this.vehicleModalRef?.hide();
       });
   }
 
+  // ── Resumo ───────────────────────────────────────────────
   get responsibleName(): string | null {
     const id = this.osForm.value.userResponsibleId;
     if (!id) return null;
     return this.workers.find(w => w.id === id)?.name ?? null;
   }
 
-  get statusLabel(): string {
-    const labels: Record<StatusOS, string> = {
-      [StatusOS.PENDENTE]: 'Pendente',
-      [StatusOS.EM_ATENDIMENTO]: 'Em Atendimento',
-      [StatusOS.AGUARDANDO_PECAS]: 'Aguardando Peças',
-      [StatusOS.CONCLUIDO]: 'Concluído',
-      [StatusOS.CANCELADO]: 'Cancelado',
-    };
-    return labels[this.osForm.value.status as StatusOS] ?? '';
-  }
+  setStatus(status: StatusOS): void { this.osForm.patchValue({ status }); }
+  setType(type: AppointmentTypeEnum): void { this.osForm.patchValue({ appointmentType: type }); }
 
-  get statusClass(): string {
-    const classes: Record<StatusOS, string> = {
-      [StatusOS.PENDENTE]: 'status-pendente',
-      [StatusOS.EM_ATENDIMENTO]: 'status-em-atendimento',
-      [StatusOS.AGUARDANDO_PECAS]: 'status-aguardando',
-      [StatusOS.CONCLUIDO]: 'status-finalizada',
-      [StatusOS.CANCELADO]: 'status-cancelada',
-    };
-    return classes[this.osForm.value.status as StatusOS] ?? '';
-  }
-
+  // ── Editor ───────────────────────────────────────────────
   formatText(command: string): void {
     document.execCommand(command, false);
     this.editorRef.nativeElement.focus();
@@ -257,49 +262,16 @@ export class NewOsComponent implements OnInit, OnDestroy {
     this.editorContent = (event.target as HTMLDivElement).innerHTML;
   }
 
-  onFileSelect(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files) this.addFiles(Array.from(input.files));
-  }
-
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    this.isDragging = true;
-  }
-
-  onDragLeave(): void {
-    this.isDragging = false;
-  }
-
-  onDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.isDragging = false;
-    const files = event.dataTransfer?.files;
-    if (files) this.addFiles(Array.from(files));
-  }
-
-  private addFiles(files: File[]): void {
-    const MAX_SIZE = 10 * 1024 * 1024;
-    const allowed = files.filter(f => f.size <= MAX_SIZE);
-    this.attachedFiles = [...this.attachedFiles, ...allowed];
-  }
-
-  removeFile(index: number): void {
-    this.attachedFiles = this.attachedFiles.filter((_, i) => i !== index);
-  }
-
-  formatFileSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  private get hasNote(): boolean {
+    return !!this.editorContent.replace(/<[^>]*>|&nbsp;/g, '').trim();
   }
 
   goBack(): void {
-    this.router.navigate(['/']);
+    this.router.navigate(['/orders']);
   }
 
   onSubmit(): void {
-    if (this.osForm.invalid || !this.selectedClient || !this.selectedVehicle) return;
+    if (this.osForm.invalid || !this.selectedClient || !this.selectedVehicle || this.isSubmitting) return;
 
     this.isSubmitting = true;
 
@@ -310,7 +282,7 @@ export class NewOsComponent implements OnInit, OnDestroy {
       ...(this.osForm.value.userResponsibleId && {
         userResponsibleId: this.osForm.value.userResponsibleId,
       }),
-      ...(this.editorContent && {
+      ...(this.hasNote && {
         appointment: {
           contentHtml: this.editorContent,
           appointmentType: this.osForm.value.appointmentType as AppointmentTypeEnum,
@@ -321,13 +293,14 @@ export class NewOsComponent implements OnInit, OnDestroy {
     this.workOrderService.create(payload)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => {
+        next: (wo) => {
           this.isSubmitting = false;
-          this.router.navigate(['/work-orders']);
+          this.toastr.success(`${this.selectedClient?.name} · ${this.selectedVehicle?.make} ${this.selectedVehicle?.name}`, `OS #${wo.numberOs} aberta`);
+          this.router.navigate(['/orders', wo.id]);
         },
         error: (err) => {
           this.isSubmitting = false;
-          console.error('Erro ao criar OS:', err);
+          this.toastr.error(err?.error?.message ?? 'Não foi possível abrir a OS.');
         },
       });
   }

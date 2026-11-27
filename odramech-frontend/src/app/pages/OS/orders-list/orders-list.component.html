@@ -1,0 +1,122 @@
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <div class="eyebrow reveal">Operação</div>
+      <h1 class="page-title reveal" style="--i:1">{{ (session.isStaff$ | async) ? 'Ordens de serviço' : 'Meus serviços' }}</h1>
+      <p class="page-sub reveal" style="--i:2">Acompanhe cada veículo do check-in à entrega.</p>
+    </div>
+    <div class="page-actions reveal" style="--i:3" *ngIf="session.isStaff$ | async">
+      <a routerLink="/orders/new" class="btn-x btn-solid"><i class="fa-solid fa-plus"></i>Abrir OS</a>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="toolbar reveal" style="--i:3">
+    <div class="segmented status-tabs">
+      <button type="button" [class.active]="status === null" (click)="setStatus(null)">
+        Todas <span class="n">{{ data ? totalAll : '·' }}</span>
+      </button>
+      <button type="button" *ngFor="let s of STATUS_ORDER" [class.active]="status === s" (click)="setStatus(s)">
+        <span class="tab-dot {{ s }}"></span>{{ STATUS_LABEL[s] }}
+        <span class="n">{{ data?.countsByStatus?.[s] ?? '·' }}</span>
+      </button>
+    </div>
+
+    <div class="input-icon list-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input
+        class="input"
+        placeholder="Nº da OS, placa, cliente ou modelo"
+        [(ngModel)]="search"
+        (ngModelChange)="onSearch($event)">
+      <button *ngIf="search" class="clear" type="button" (click)="clearSearch()" aria-label="Limpar busca">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="panel reveal" style="--i:4">
+    <div class="table-scroll" [class.is-loading]="loading && data">
+      <table class="dtable">
+        <thead>
+          <tr>
+            <th style="width:84px">OS</th>
+            <th>Cliente</th>
+            <th>Veículo</th>
+            <th>Status</th>
+            <th class="hide-md">Responsável</th>
+            <th class="hide-sm" style="text-align:right">Abertura</th>
+          </tr>
+        </thead>
+
+        <tbody *ngIf="data && data.items.length">
+          <tr *ngFor="let wo of data.items; let i = index; trackBy: trackById"
+              class="clickable reveal"
+              [style.--i]="i"
+              (click)="open(wo)">
+            <td><span class="os-no">#<b>{{ wo.numberOs }}</b></span></td>
+            <td>
+              <div class="cell-person">
+                <span class="avatar sm">{{ wo.client.name | initials }}</span>
+                <span class="cell-main">{{ wo.client.name }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="cell-vehicle">
+                <span class="plate">{{ wo.vehicle.plate | plate }}</span>
+                <span class="cell-sub">{{ wo.vehicle.make }} {{ wo.vehicle.name }}</span>
+              </div>
+            </td>
+            <td><app-status [status]="wo.status"></app-status></td>
+            <td class="hide-md">
+              <span *ngIf="wo.userResponsible; else noResp">{{ wo.userResponsible.name }}</span>
+              <ng-template #noResp><span class="faint">Sem responsável</span></ng-template>
+            </td>
+            <td class="hide-sm" style="text-align:right">
+              <span class="cell-sub" [title]="wo.dateTimeCreation | date:'dd/MM/yyyy HH:mm'">{{ wo.dateTimeCreation | relativeTime }}</span>
+            </td>
+          </tr>
+        </tbody>
+
+        <tbody *ngIf="loading && !data">
+          <tr *ngFor="let s of [1,2,3,4,5,6]">
+            <td><span class="sk" style="width:36px"></span></td>
+            <td><span class="sk" style="width:140px"></span></td>
+            <td><span class="sk" style="width:160px"></span></td>
+            <td><span class="sk" style="width:90px"></span></td>
+            <td class="hide-md"><span class="sk" style="width:100px"></span></td>
+            <td class="hide-sm"><span class="sk" style="width:60px;margin-left:auto"></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty" *ngIf="data && !data.items.length && !loading">
+      <div class="empty-mark"><i class="fa-solid fa-clipboard-list"></i></div>
+      <h4>{{ search || status ? 'Nada encontrado' : 'Nenhuma ordem de serviço' }}</h4>
+      <p *ngIf="search || status">Ajuste os filtros ou busque por outro termo.</p>
+      <p *ngIf="!search && !status">Abra a primeira OS para começar a acompanhar os serviços.</p>
+      <a *ngIf="!search && !status && (session.isStaff$ | async)" routerLink="/orders/new" class="btn-x btn-solid sm">
+        <i class="fa-solid fa-plus"></i>Abrir OS
+      </a>
+    </div>
+
+    <div class="pager" *ngIf="data && data.total > pageSize">
+      <span class="muted tnum">
+        {{ (page - 1) * pageSize + 1 }}–{{ Math.min(page * pageSize, data.total) }} de {{ data.total }}
+      </span>
+      <div class="pager-btns">
+        <button class="btn-x btn-outline sm icon" [disabled]="page === 1" (click)="goPage(page - 1)" aria-label="Anterior">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span class="tnum">{{ page }} / {{ pages }}</span>
+        <button class="btn-x btn-outline sm icon" [disabled]="page === pages" (click)="goPage(page + 1)" aria-label="Próxima">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

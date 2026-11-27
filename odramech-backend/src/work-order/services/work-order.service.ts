@@ -1,61 +1,72 @@
-import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma-service";
-import { WoCreateDTO } from "../dto/wo-create.dto";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
+import { DomainEventBus } from 'src/core/events/domain-event-bus';
+import { isStaff } from 'src/shared/utils/role.util';
+import { serializeItem, summarizeMoney, toNum } from 'src/shared/utils/money.util';
+import { WorkOrderRepository } from '../repositories/work-order.repository';
+import { WorkOrderCriteriaBuilder } from '../domain/work-order-criteria';
+import { WorkOrderOpened } from '../domain/work-order.events';
+import { WoListQueryDTO } from '../dto/wo-update.dto';
+import { WoCreateFrontDTO } from '../dto/wo-create-front.dto';
 
+/**
+ * Casos de uso de LEITURA e abertura de OS.
+ * Escritas sobre uma OS existente são Commands (ver commands/work-order.commands.ts).
+ * Persistência só via WorkOrderRepository (nada de Prisma aqui).
+ */
 @Injectable()
 export class WorkOrderService {
-    constructor(
-        private readonly _prismaService: PrismaService
-    ) {}
+  constructor(
+    private readonly repo: WorkOrderRepository,
+    private readonly events: DomainEventBus,
+  ) {}
 
-    async create(dataReceived: WoCreateDTO) {
-        const { establishmentId, userCreationId, userResponsibleId, clientId, vehicleId, status, appointment } = dataReceived;
+  async open(auth: AuthPayload, dto: WoCreateFrontDTO) {
+    const ref = await this.repo.open({
+      establishmentId: auth.establishmentId,
+      userCreationId: auth.sub,
+      clientId: dto.clientId,
+      vehicleId: dto.vehicleId,
+      status: dto.status,
+      userResponsibleId: dto.userResponsibleId ?? null,
+      firstAppointment: dto.appointment
+        ? { contentHtml: dto.appointment.contentHtml, appointmentType: dto.appointment.appointmentType }
+        : null,
+    });
+    await this.events.publish(new WorkOrderOpened(ref.id, ref.numberOs, auth.establishmentId, auth.sub));
+    return ref;
+  }
 
-        try {
-            return await this._prismaService.$transaction(async (tx) => {
-                const counter = await tx.establishmentOsCounter.update({
-                    where: { establishmentId },
-                    data: { lastNumberOs: { increment: 1 } },
-                });
+  async list(auth: AuthPayload, query: WoListQueryDTO) {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 20;
 
-                return tx.workOrder.create({
-                    data: {
-                        status,
-                        numberOs: counter.lastNumberOs,
-                        establishment: { connect: { id: establishmentId } },
-                        userCreation: { connect: { id: userCreationId } },
-                        ...(userResponsibleId && {
-                            userResponsible: { connect: { id: userResponsibleId } },
-                        }),
-                        client: { connect: { id: clientId } },
-                        vehicle: { connect: { id: vehicleId } },
-                        ...(appointment && {
-                            appointments: {
-                                create: {
-                                    dateTime: new Date(),
-                                    contentHtml: appointment.contentHtml,
-                                    appointmentType: appointment.appointmentType,
-                                    userAppointment: { connect: { id: appointment.userAppointmentId } },
-                                },
-                            },
-                        }),
-                    },
-                    include: {
-                        appointments: true,
-                    },
-                });
-            });
-        } catch (error: any) {
-            if (error.code === 'P2025') {
-                throw new NotFoundException('Estabelecimento ou contador não encontrado');
-            }
+    const builder = WorkOrderCriteriaBuilder.for(auth)
+      .withStatus(query.status)
+      .ofClient(query.clientId)
+      .ofVehicle(query.vehicleId)
+      .matching(query.search);
 
-            if (error.code === 'P2002') {
-                throw new ConflictException('Número de OS já existe para este estabelecimento');
-            }
+    const [{ items, total }, countsByStatus] = await Promise.all([
+      this.repo.findPage(builder.build(), page, pageSize),
+      // contagem por status respeita a busca, mas ignora o filtro de status (para as abas)
+      this.repo.countByStatus(builder.withoutStatus()),
+    ]);
 
-            console.error('Erro ao criar ordem de serviço:', error);
-            throw new InternalServerErrorException('Erro ao criar ordem de serviço', error);
-        }
-    }
+    return { items, total, page, pageSize, countsByStatus };
+  }
+
+  async getById(auth: AuthPayload, id: number) {
+    const criteria = WorkOrderCriteriaBuilder.for(auth).build();
+    const wo = await this.repo.findDetail(criteria, id, isStaff(auth.role));
+    if (!wo) throw new NotFoundException('Ordem de serviço não encontrada');
+
+    const { items, payments, ...rest } = wo;
+    return {
+      ...rest,
+      items: items.map(serializeItem),
+      payments: payments.map((p: any) => ({ ...p, amount: toNum(p.amount) })),
+      summary: summarizeMoney(items, payments),
+    };
+  }
 }

@@ -1,13 +1,19 @@
-<div class="content">
-    <div class="row header">
-        <div class="col-12 title">
-            <h5>Bloco de notas / Anotações</h5>
-        </div>
-    </div>
+<div class="panel-head">
+  <span class="panel-title">Anotações</span>
+  <span class="saved" *ngIf="state === 'saving'"><span class="spinner-x"></span> salvando…</span>
+  <span class="saved err" *ngIf="state === 'error'"><i class="fa-solid fa-triangle-exclamation"></i> não salvo</span>
+  <span class="saved" *ngIf="state === 'idle' && savedAt">
+    <i class="fa-solid fa-check"></i> salvo {{ savedAt | date:'HH:mm' }}
+  </span>
+</div>
 
-    <div class="row body">
-        <div class="col-12">
-            <textarea class="notes-area" spellcheck="false">fazer orçamento do pedro</textarea>
-        </div>
-    </div>
+<div class="notes">
+  <textarea
+    class="notes-area"
+    spellcheck="false"
+    [disabled]="!loaded"
+    [(ngModel)]="text"
+    (ngModelChange)="onInput()"
+    placeholder="Lembretes rápidos do dia — orçamento do Pedro, ligar pro fornecedor de pastilhas…"></textarea>
+  <span class="hint">Só você vê. Fica salvo na sua conta deste estabelecimento.</span>
 </div>

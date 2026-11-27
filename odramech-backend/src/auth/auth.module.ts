@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
 import { AuthController } from "./controllers/auth.controller";
 import { AuthService } from "./services/auth.service";
-import { PrismaService } from "src/prisma/prisma-service";
 import { BcryptService } from "src/crypto/bcrypt.service";
 import { JwtModule } from "@nestjs/jwt";
+import { AppConfig } from "src/core/config/app-config";
 import { JWTService } from "./services/jwt.service";
 import { CustomLogger } from "src/shared/services/custom-logger.service";
 import { EmailMaskService } from "src/shared/services/mask-email.service";
@@ -11,24 +11,25 @@ import { UserCorporationService } from "src/user-corporations/services/user-corp
 
 @Module({
     imports: [
-        JwtModule.register({
-            secret: process.env.JWT_SECRET,
-            signOptions: { expiresIn: process.env.JWT_EXPIRES }
+        // segredo vem do AppConfig (validado), não de process.env no momento do import
+        JwtModule.registerAsync({
+            useFactory: () => {
+                const { jwtSecret, jwtExpires } = AppConfig.get().values;
+                return { secret: jwtSecret, signOptions: { expiresIn: jwtExpires } };
+            },
         })
     ],
     controllers: [AuthController],
     providers: [
         AuthService, 
-        JWTService,
-        PrismaService, 
+        JWTService, 
         BcryptService,
         CustomLogger,
         EmailMaskService,
         UserCorporationService
     ],
     exports: [
-        JWTService,
-        PrismaService
+        JWTService
     ]
 })
 

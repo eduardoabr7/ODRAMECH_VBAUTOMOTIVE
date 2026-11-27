@@ -63,6 +63,7 @@ export class EnterpriseService {
           enterprise: {
             connect: { id: enterpriseCreated.id },
           },
+          counter: { create: {} },
           address: {
             create: {
               street: establishment.address.street,

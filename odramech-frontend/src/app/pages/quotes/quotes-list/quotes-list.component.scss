@@ -1,0 +1,35 @@
+.strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  margin-bottom: 14px;
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+}
+
+.strip-item {
+  display: flex; flex-direction: column; gap: 2px; padding: 14px 20px;
+  & + .strip-item { border-left: 1px solid var(--line); @media (max-width: 640px) { border-left: 0; border-top: 1px solid var(--line); } }
+}
+.s-l { font-size: 12px; color: var(--muted); }
+.s-v { font-size: 20px; font-weight: 600; letter-spacing: -0.03em; }
+
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.toolbar .segmented { overflow-x: auto; max-width: 100%; }
+.list-search { width: 300px; @media (max-width: 640px) { width: 100%; } }
+
+.cell-person { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.strong { font-weight: 600; }
+.to-os { font-size: 12px; color: var(--muted); margin-left: 6px; font-family: var(--font-mono); }
+.hide-sm { @media (max-width: 640px) { display: none; } }
+
+.q-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  &.RASCUNHO { background: var(--faint); }
+  &.ENVIADO { background: var(--info); }
+  &.APROVADO { background: var(--ok); }
+  &.RECUSADO { background: var(--danger); }
+  &.EXPIRADO { background: var(--st-cancelada); }
+}

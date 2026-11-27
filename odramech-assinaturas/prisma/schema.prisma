@@ -1,0 +1,114 @@
+// Gerenciamento de Assinaturas Odramech — banco próprio, independente do sistema da oficina.
+// Valores monetários sempre em CENTAVOS (Int) para evitar erro de ponto flutuante.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Plan {
+  id          Int             @id @default(autoincrement())
+  code        String          @unique // MENSAL | ANUAL
+  name        String
+  interval    BillingInterval
+  priceCents  Int             @map("price_cents")
+  currency    String          @default("BRL")
+  description String?
+  active      Boolean         @default(true)
+  sortOrder   Int             @default(0) @map("sort_order")
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                 String             @id @default(uuid())
+  /// id da empresa no sistema da oficina (tenant)
+  enterpriseId       Int                @unique @map("enterprise_id")
+  enterpriseName     String?            @map("enterprise_name")
+  planId             Int                @map("plan_id")
+  status             SubscriptionStatus
+  paymentMethod      PaymentMethod?     @map("payment_method")
+  trialEndsAt        DateTime?          @map("trial_ends_at")
+  currentPeriodStart DateTime           @map("current_period_start")
+  currentPeriodEnd   DateTime           @map("current_period_end")
+  cancelAtPeriodEnd  Boolean            @default(false) @map("cancel_at_period_end")
+  canceledAt         DateTime?          @map("canceled_at")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  plan     Plan                @relation(fields: [planId], references: [id])
+  invoices Invoice[]
+  events   SubscriptionEvent[]
+
+  @@index([status, currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  number         Int           @default(autoincrement()) @unique
+  subscriptionId String        @map("subscription_id")
+  planCode       String        @map("plan_code")
+  amountCents    Int           @map("amount_cents")
+  status         InvoiceStatus @default(OPEN)
+  periodStart    DateTime      @map("period_start")
+  periodEnd      DateTime      @map("period_end")
+  dueDate        DateTime      @map("due_date")
+  paidAt         DateTime?     @map("paid_at")
+  method         PaymentMethod?
+  gatewayRef     String?       @map("gateway_ref")
+  /// instruções de pagamento geradas pelo gateway (código Pix, linha do boleto…)
+  instructions   Json?
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@index([subscriptionId, status])
+  @@map("invoices")
+}
+
+/// Trilha de auditoria de tudo que acontece com uma assinatura.
+model SubscriptionEvent {
+  id             Int      @id @default(autoincrement())
+  subscriptionId String   @map("subscription_id")
+  type           String
+  payload        Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@index([subscriptionId, createdAt])
+  @@map("subscription_events")
+}
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum InvoiceStatus {
+  OPEN
+  PAID
+  VOID
+}
+
+enum PaymentMethod {
+  PIX
+  CARD
+  BOLETO
+}

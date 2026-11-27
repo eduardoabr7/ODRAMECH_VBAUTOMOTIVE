@@ -1,46 +1,63 @@
-<div class="header d-flex justify-content-between" style="padding: 15px;">
+<header class="topbar">
 
-  <div class="top-left d-flex position-relative">  
-    <!-- menu mobile -->
-      <div 
-      class="menu-mobile position-absolute"
-      >
-        <button 
-        class="toggle-btn" 
-        (click)="toggleCollapse()">
-          <i 
-          class="fa-solid fa-bars">
-          </i>
+  <div class="tb-left">
+    <button class="tb-burger" type="button" (click)="toggleCollapse()" aria-label="Abrir menu">
+      <i class="fa-solid fa-bars-staggered"></i>
+    </button>
+    <div class="crumbs">
+      <span class="crumb-root">{{ ctx?.usercorp?.establishment?.name }}</span>
+      <i class="fa-solid fa-chevron-right crumb-sep"></i>
+      <span class="crumb-cur">{{ section }}</span>
+    </div>
+  </div>
+
+  <div class="tb-right">
+    <form class="tb-search input-icon" (ngSubmit)="submitSearch()" *ngIf="session.isStaff$ | async">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input
+        #searchInput
+        class="input"
+        name="q"
+        [(ngModel)]="search"
+        placeholder="Buscar OS, placa ou cliente"
+        autocomplete="off">
+      <kbd>/</kbd>
+    </form>
+
+    <a routerLink="/orders/new" class="btn-x btn-accent sm tb-new" *ngIf="session.isStaff$ | async">
+      <i class="fa-solid fa-plus"></i><span>Nova OS</span>
+    </a>
+
+    <div class="tb-user" closeOnClickOutside (clickOutside)="menuOpen = false">
+      <button type="button" class="tb-user-btn" (click)="menuOpen = !menuOpen" [class.open]="menuOpen">
+        <span class="avatar sm">{{ ctx?.user?.name | initials }}</span>
+        <i class="fa-solid fa-chevron-down caret"></i>
+      </button>
+
+      <div class="menu-pop user-pop" *ngIf="menuOpen">
+        <div class="pop-head">
+          <span class="avatar">{{ ctx?.user?.name | initials }}</span>
+          <div class="pop-who">
+            <strong>{{ ctx?.user?.name }}</strong>
+            <span>{{ ctx?.user?.email }}</span>
+          </div>
+        </div>
+        <div class="pop-meta">
+          <span class="tag">{{ ctx?.usercorp?.establishment?.role | roleLabel }}</span>
+          <span class="muted">{{ ctx?.usercorp?.name }}</span>
+        </div>
+        <div class="pop-sep"></div>
+        <a class="menu-item" [routerLink]="['/clients', ctx?.user?.id]" *ngIf="session.isStaff$ | async">
+          <i class="fa-regular fa-user"></i> Meu cadastro
+        </a>
+        <a class="menu-item" routerLink="/settings" *ngIf="session.isStaff$ | async">
+          <i class="fa-solid fa-sliders"></i> Configurações
+        </a>
+        <button class="menu-item danger" type="button" (click)="logout()">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Sair
         </button>
-    </div>
-    <div class="image-logo me-3" style="margin-left: 40px;">
-      <img 
-      src="../../../assets/logo_odramech-sem-fundo.png" 
-      alt="ODRAMECH Logo" 
-      style="max-width: 120px; max-height: 200px;">
+      </div>
     </div>
   </div>
-  <!-- -->
 
-  <div class="user-icon dropdown">
-    <img 
-      [src]="urlPhotoUser ? urlPhotoUser : '../../../../../../assets/no-photo-user-default.png'"
-      alt="Ícone do Usuário" 
-      data-bs-toggle="dropdown"
-      aria-expanded="false"
-      style="
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
-        object-fit: cover;
-        cursor: pointer;
-      "
-    >
-    <ul class="dropdown-menu" aria-labelledby="dropdownHost">
-      <li><a class="dropdown-item" href="#">Exibir perfil</a></li>
-      <li><a class="dropdown-item" href="#">Teste</a></li>
-      <li><a class="dropdown-item" href="#">Alterar estabelecimento</a></li>
-      <li><a class="dropdown-item" href="#" (click)="logout()">Logout</a></li>
-    </ul>
-  </div>
-</div>
+</header>

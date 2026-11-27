@@ -8,39 +8,44 @@ datasource db {
 }
 
 model User {
-  id              Int               @id @default(autoincrement())
-  name            String
-  gender          Gender
-  email           String?            @unique
-  password        String?
-  principalPhone  String            @map("principal_phone")
-  secondaryPhone  String?           @map("secondary_phone")
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
-  addressId       Int?              @unique @map("address_id")
+  id             Int      @id @default(autoincrement())
+  name           String
+  gender         Gender
+  email          String?  @unique
+  password       String?
+  principalPhone String   @map("principal_phone")
+  secondaryPhone String?  @map("secondary_phone")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  addressId      Int?     @unique @map("address_id")
 
-  vehicles                    UserVehicle[]
-  address                     Address?          @relation(fields: [addressId], references: [id])
-  userCorporation             UserCorporation[]
-  workOrdersCreated           WorkOrder[]       @relation("WorkOrderCreatedBy")
-  workOrdersEnded             WorkOrder[]       @relation("WorkOrderEndedBy")
-  workOrdersAsClient          WorkOrder[]       @relation("WorkOrderClient")
-  workOrdersAsResponsible     WorkOrder[]       @relation("WorkOrderResponsible")
-  appointmentCreateds         Appointment[]     @relation("UserAppointmentCreated")
+  vehicles                UserVehicle[]
+  address                 Address?          @relation(fields: [addressId], references: [id])
+  userCorporation         UserCorporation[]
+  workOrdersCreated       WorkOrder[]       @relation("WorkOrderCreatedBy")
+  workOrdersEnded         WorkOrder[]       @relation("WorkOrderEndedBy")
+  workOrdersAsClient      WorkOrder[]       @relation("WorkOrderClient")
+  workOrdersAsResponsible WorkOrder[]       @relation("WorkOrderResponsible")
+  appointmentCreateds     Appointment[]     @relation("UserAppointmentCreated")
+  quotesAsClient          Quote[]           @relation("QuoteClient")
+  quotesCreated           Quote[]           @relation("QuoteCreatedBy")
+  paymentsRegistered      Payment[]         @relation("PaymentRegisteredBy")
+  reviews                 Review[]          @relation("ReviewClient")
+  notes                   UserNote[]
 
   @@map("cad_user")
 }
 
 model Enterprise {
-  id             Int              @id @default(autoincrement())
-  logoUrl        String?
-  name           String
-  email          String
-  phone          String
-  cnpj           String           @unique
-  addressId      Int              @unique
+  id        Int     @id @default(autoincrement())
+  logoUrl   String?
+  name      String
+  email     String
+  phone     String
+  cnpj      String  @unique
+  addressId Int     @unique
 
-  address        Address          @relation(fields: [addressId], references: [id])
+  address        Address           @relation(fields: [addressId], references: [id])
   establishments Establishment[]
   users          UserCorporation[]
 
@@ -48,34 +53,36 @@ model Enterprise {
 }
 
 model Establishment {
-  id            Int        @id @default(autoincrement())
-  logoUrl       String?
-  name          String
-  email         String?
-  phone         String
-  cnpj          String     @unique
-  addressId     Int        @unique
-  enterpriseId  Int
+  id           Int     @id @default(autoincrement())
+  logoUrl      String?
+  name         String
+  email        String?
+  phone        String
+  cnpj         String  @unique
+  addressId    Int     @unique
+  enterpriseId Int
 
-  enterprise    Enterprise @relation(fields: [enterpriseId], references: [id])
-  address       Address    @relation(fields: [addressId], references: [id])
-  users         UserCorporation[]
-  workOrders    WorkOrder[]
-  counter       EstablishmentOsCounter?
+  enterprise Enterprise              @relation(fields: [enterpriseId], references: [id])
+  address    Address                 @relation(fields: [addressId], references: [id])
+  users      UserCorporation[]
+  workOrders WorkOrder[]
+  counter    EstablishmentOsCounter?
+  quotes     Quote[]
+  notes      UserNote[]
 
   @@map("cad_establishment")
 }
 
 model Address {
-  id            Int             @id @default(autoincrement())
-  street        String
-  number        String
-  complement    String?
-  district      String
-  city          String
-  zipCode       String
-  country       String
-  neighborhood  String
+  id           Int     @id @default(autoincrement())
+  street       String
+  number       String
+  complement   String?
+  district     String
+  city         String
+  zipCode      String
+  country      String
+  neighborhood String
 
   user          User?
   enterprise    Enterprise?
@@ -85,89 +92,94 @@ model Address {
 }
 
 model UserCorporation {
-  idUser            Int
-  idEnterprise      Int
-  idEstablishment   Int
+  idUser          Int
+  idEnterprise    Int
+  idEstablishment Int
 
-  role              Role
+  role Role
 
-  user              User          @relation(fields: [idUser], references: [id])
-  enterprise        Enterprise    @relation(fields: [idEnterprise], references: [id])
-  establishment     Establishment @relation(fields: [idEstablishment], references: [id])
+  user          User          @relation(fields: [idUser], references: [id])
+  enterprise    Enterprise    @relation(fields: [idEnterprise], references: [id])
+  establishment Establishment @relation(fields: [idEstablishment], references: [id])
 
   @@id([idUser, idEnterprise, idEstablishment])
   @@map("cad_user_corporation")
 }
 
 model WorkOrder {
-  id                    Int           @id @default(autoincrement())
-  status                OrderStatus
-  dateTimeCreation      DateTime      @default(now()) @map("date_time_creation")
-  dateTimeEnd           DateTime?     @db.Timestamptz(6) @map("date_time_end")
-  establishmentId       Int           @map("id_establishment")
-  userCreationId        Int           @map("id_user_creation")
-  userEndId             Int?          @map("id_user_end")
-  userResponsibleId     Int?          @map("id_user_responsible")
-  clientId              Int           @map("id_client")
-  vehicleId             Int           @map("id_vehicle")
-  numberOs              Int           @map("number_os")
+  id                Int         @id @default(autoincrement())
+  status            OrderStatus
+  dateTimeCreation  DateTime    @default(now()) @map("date_time_creation")
+  dateTimeEnd       DateTime?   @map("date_time_end") @db.Timestamptz(6)
+  establishmentId   Int         @map("id_establishment")
+  userCreationId    Int         @map("id_user_creation")
+  userEndId         Int?        @map("id_user_end")
+  userResponsibleId Int?        @map("id_user_responsible")
+  clientId          Int         @map("id_client")
+  vehicleId         Int         @map("id_vehicle")
+  numberOs          Int         @map("number_os")
 
-  establishment         Establishment @relation(fields: [establishmentId], references: [id])
-  userCreation          User          @relation("WorkOrderCreatedBy", fields: [userCreationId], references: [id])
-  userEnd               User?         @relation("WorkOrderEndedBy", fields: [userEndId], references: [id])
-  userResponsible       User?         @relation("WorkOrderResponsible", fields: [userResponsibleId], references: [id])
-  client                User          @relation("WorkOrderClient", fields: [clientId], references: [id])
-  vehicle               Vehicle       @relation(fields: [vehicleId], references: [id])
-  appointments          Appointment[]
+  establishment   Establishment @relation(fields: [establishmentId], references: [id])
+  userCreation    User          @relation("WorkOrderCreatedBy", fields: [userCreationId], references: [id])
+  userEnd         User?         @relation("WorkOrderEndedBy", fields: [userEndId], references: [id])
+  userResponsible User?         @relation("WorkOrderResponsible", fields: [userResponsibleId], references: [id])
+  client          User          @relation("WorkOrderClient", fields: [clientId], references: [id])
+  vehicle         Vehicle       @relation(fields: [vehicleId], references: [id])
+  appointments    Appointment[]
+  items           ServiceItem[]
+  payments        Payment[]
+  quote           Quote?
+  review          Review?
 
   @@unique([establishmentId, numberOs])
   @@map("work_orders")
 }
 
 model Appointment {
-  id                    Int                   @id @default(autoincrement())
-  dateTime              DateTime              @db.Timestamptz(6) @map("date_time")
-  contentHtml           String                @map("content_html")
-  userAppointmentId     Int                   @map("id_user_appointment")
-  appointmentType       TypeAppointment       @map("appointment_type")
-  workOrderId           Int                   @map("id_work_order")
+  id                Int             @id @default(autoincrement())
+  dateTime          DateTime        @map("date_time") @db.Timestamptz(6)
+  contentHtml       String          @map("content_html")
+  userAppointmentId Int             @map("id_user_appointment")
+  appointmentType   TypeAppointment @map("appointment_type")
+  workOrderId       Int             @map("id_work_order")
 
-  userAppointment       User                  @relation("UserAppointmentCreated", fields: [userAppointmentId], references: [id])
-  workOrder             WorkOrder             @relation(fields: [workOrderId], references: [id])
+  userAppointment User      @relation("UserAppointmentCreated", fields: [userAppointmentId], references: [id])
+  workOrder       WorkOrder @relation(fields: [workOrderId], references: [id])
 
-  archives              ArchiveAppointment[]
+  archives ArchiveAppointment[]
 
   @@map("appointments")
 }
 
 model ArchiveAppointment {
-  id                    Int               @id @default(autoincrement())
-  archiveId             Int               @map("id_archive")
-  appointmentId         Int               @map("id_appointment")
-  archiveType           Int               @map("archive_type")
-  url                   String
-  mimeType              String            @map("mime_type")
-  createdAt             DateTime          @default(now())
+  id            Int         @id @default(autoincrement())
+  appointmentId Int         @map("id_appointment")
+  archiveType   ArchiveType @map("archive_type")
+  url           String
+  mimeType      String      @map("mime_type")
+  originalName  String      @map("original_name")
+  sizeBytes     Int         @map("size_bytes")
+  createdAt     DateTime    @default(now())
 
-  appointment           Appointment  @relation(fields: [appointmentId], references: [id])
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
 
   @@map("archive_appointment")
 }
 
 model UserVehicle {
-  userId     Int
-  vehicleId  Int
+  userId    Int
+  vehicleId Int
 
-  user       User    @relation(fields: [userId], references: [id])
-  vehicle    Vehicle @relation(fields: [vehicleId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
 
   @@id([userId, vehicleId])
   @@map("cad_user_vehicle")
 }
 
 model Vehicle {
-  id              Int    @id @default(autoincrement())
-  plate           String @unique
+  id              Int     @id @default(autoincrement())
+  plate           String  @unique
   km              String?
   modelYear       Int?
   manufactureYear Int?
@@ -175,17 +187,19 @@ model Vehicle {
   name            String
   make            String
 
-  users           UserVehicle[]
-  workOrders      WorkOrder[]
+  users      UserVehicle[]
+  workOrders WorkOrder[]
+  quotes     Quote[]
 
   @@map("cad_vehicle")
 }
 
 model EstablishmentOsCounter {
-  establishmentId Int           @id @map("id_establishment")
-  lastNumberOs    Int           @default(0) @map("last_number_os")
+  establishmentId Int @id @map("id_establishment")
+  lastNumberOs    Int @default(0) @map("last_number_os")
+  lastNumberQuote Int @default(0) @map("last_number_quote")
 
-  establishment   Establishment @relation(fields: [establishmentId], references: [id])
+  establishment Establishment @relation(fields: [establishmentId], references: [id])
 
   @@map("establishment_os_counter")
 }
@@ -214,4 +228,121 @@ enum Gender {
 enum TypeAppointment {
   PUBLICO
   INTERNO
+}
+
+// ══════════════════════════════════════════════════════════
+// Orçamentos, itens, pagamentos, avaliações e anotações
+// ══════════════════════════════════════════════════════════
+
+model Quote {
+  id              Int         @id @default(autoincrement())
+  numberQuote     Int         @map("number_quote")
+  status          QuoteStatus @default(RASCUNHO)
+  establishmentId Int         @map("id_establishment")
+  clientId        Int         @map("id_client")
+  vehicleId       Int         @map("id_vehicle")
+  userCreationId  Int         @map("id_user_creation")
+  workOrderId     Int?        @unique @map("id_work_order")
+  validUntil      DateTime?   @map("valid_until")
+  notes           String?
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id])
+  client        User          @relation("QuoteClient", fields: [clientId], references: [id])
+  vehicle       Vehicle       @relation(fields: [vehicleId], references: [id])
+  userCreation  User          @relation("QuoteCreatedBy", fields: [userCreationId], references: [id])
+  workOrder     WorkOrder?    @relation(fields: [workOrderId], references: [id])
+  items         ServiceItem[]
+
+  @@unique([establishmentId, numberQuote])
+  @@map("quotes")
+}
+
+model ServiceItem {
+  id          Int      @id @default(autoincrement())
+  kind        ItemKind
+  description String
+  quantity    Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @map("unit_price") @db.Decimal(10, 2)
+  discount    Decimal  @default(0) @db.Decimal(10, 2)
+  quoteId     Int?     @map("id_quote")
+  workOrderId Int?     @map("id_work_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  quote     Quote?     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  workOrder WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
+  @@index([workOrderId])
+  @@map("service_items")
+}
+
+model Payment {
+  id          Int           @id @default(autoincrement())
+  workOrderId Int           @map("id_work_order")
+  method      PaymentMethod
+  amount      Decimal       @db.Decimal(10, 2)
+  paidAt      DateTime      @default(now()) @map("paid_at")
+  userId      Int           @map("id_user")
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id])
+  user      User      @relation("PaymentRegisteredBy", fields: [userId], references: [id])
+
+  @@index([workOrderId])
+  @@map("payments")
+}
+
+model Review {
+  id          Int      @id @default(autoincrement())
+  workOrderId Int      @unique @map("id_work_order")
+  clientId    Int      @map("id_client")
+  rating      Int
+  comment     String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id])
+  client    User      @relation("ReviewClient", fields: [clientId], references: [id])
+
+  @@map("reviews")
+}
+
+model UserNote {
+  userId          Int      @map("id_user")
+  establishmentId Int      @map("id_establishment")
+  content         String   @default("")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user          User          @relation(fields: [userId], references: [id])
+  establishment Establishment @relation(fields: [establishmentId], references: [id])
+
+  @@id([userId, establishmentId])
+  @@map("user_notes")
+}
+
+enum QuoteStatus {
+  RASCUNHO
+  ENVIADO
+  APROVADO
+  RECUSADO
+  EXPIRADO
+}
+
+enum ItemKind {
+  PECA
+  SERVICO
+}
+
+enum PaymentMethod {
+  DINHEIRO
+  PIX
+  DEBITO
+  CREDITO
+  BOLETO
+}
+
+enum ArchiveType {
+  IMAGEM
+  DOCUMENTO
+  VIDEO
 }

@@ -1,29 +1,25 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
-import { validationSchema } from './variables-required';
+import { CoreModule } from './core/core.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
-import { CustomLogger } from './shared/services/custom-logger.service';
-import { APP_GUARD } from '@nestjs/core'
-import { JwtAuthGuard } from './shared/guards/jwt-auth.guard'
+import { JwtAuthGuard } from './shared/guards/jwt-auth.guard';
 import { SharedModule } from './shared/shared.module';
 import { EnterpriseModule } from './enterprise/enterprise.module';
 import { EstablishmentModule } from './establishment/establishment.module';
 import { UserCorporationModule } from './user-corporations/user-corporations.module';
 import { VehicleModule } from './vehicle/vehicle.module';
 import { WorkOrderModule } from './work-order/work-order.module';
+import { BillingModule } from './billing/billing.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { SubscriptionModule } from './subscription/subscription.module';
+import { SubscriptionAccessGuard } from './subscription/subscription-access.guard';
+
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      validationSchema,
-      validationOptions: {
-        allowUnknown: true,
-        abortEarly: true
-      }
-    }),
+    CoreModule,
     UserModule,
     AuthModule,
     SharedModule,
@@ -31,16 +27,17 @@ import { WorkOrderModule } from './work-order/work-order.module';
     EstablishmentModule,
     UserCorporationModule,
     VehicleModule,
-    WorkOrderModule
+    WorkOrderModule,
+    BillingModule,
+    DashboardModule,
+    SubscriptionModule,
   ],
   controllers: [AppController],
   providers: [
-    AppService, 
-    CustomLogger,
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard
-    }
+    AppService,
+    // ordem importa: autentica (JWT) e só então aplica a política de assinatura
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useExisting: SubscriptionAccessGuard },
   ],
 })
 export class AppModule {}

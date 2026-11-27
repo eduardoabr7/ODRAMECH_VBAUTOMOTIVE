@@ -1,0 +1,16 @@
+{
+  "name": "odramech",
+  "private": true,
+  "description": "Ambiente de desenvolvimento do Odramech (banco + backend + frontend)",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "node scripts/dev.mjs",
+    "db": "node scripts/db.mjs",
+    "db:reset": "node scripts/db.mjs --reset",
+    "test": "npm --prefix odramech-backend test && npm --prefix odramech-assinaturas test"
+  },
+  "devDependencies": {
+    "embedded-postgres": "17.5.0-beta.15",
+    "pg": "^8.23.1"
+  }
+}

@@ -1,29 +1,48 @@
-import { Injectable } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
-import { Observable } from "rxjs";
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { map, Observable } from 'rxjs';
 
-
-interface AddressReturn {
-  cep: string,
-  logradouro: string,
-  complemento: string,
-  bairro: string,
-  localidade: string,
-  uf: string,
-  ibge: string
+/** Endereço no vocabulário do sistema (o mesmo do backend: district = UF). */
+export interface CepAddress {
+  zipCode: string;
+  street: string;
+  complement: string;
+  neighborhood: string;
+  city: string;
+  district: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+/** Formato cru da OpenCEP — conhecido SOMENTE por este arquivo. */
+interface OpenCepResponse {
+  cep: string;
+  logradouro: string;
+  complemento: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+}
+
+/**
+ * ADAPTER — converte a API pública de CEP para o modelo do sistema.
+ * Trocar de provedor (ViaCEP, BrasilAPI…) muda só este arquivo; formulários não sabem de onde vem.
+ */
+@Injectable({ providedIn: 'root' })
 export class ZipCodeService {
-    constructor(
-        private readonly _httpClient: HttpClient
-    ) {}
+  constructor(private readonly http: HttpClient) {}
 
-//return this._httpClient.get<T>(`${this.baseAPI}/${endpoint}`, { withCredentials: true });
+  lookup(zipcode: string): Observable<CepAddress> {
+    const cep = zipcode.replace(/\D/g, '');
+    return this.http.get<OpenCepResponse>(`https://opencep.com/v1/${cep}`).pipe(map(r => this.adapt(r)));
+  }
 
-    get(zipcode: string): Observable<AddressReturn> {
-        return this._httpClient.get<AddressReturn>(`https://opencep.com/v1/${zipcode}`);
-    }
+  private adapt(r: OpenCepResponse): CepAddress {
+    return {
+      zipCode: (r.cep ?? '').replace(/\D/g, ''),
+      street: r.logradouro ?? '',
+      complement: (r.complemento ?? '').trim(),
+      neighborhood: r.bairro ?? '',
+      city: r.localidade ?? '',
+      district: r.uf ?? '',
+    };
+  }
 }

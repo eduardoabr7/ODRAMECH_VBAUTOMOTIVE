@@ -1,41 +1,44 @@
+// Valida o .env do frontend e gera src/environments/environment.ts a partir dele.
+// Roda automaticamente antes de `npm start` / `npm run build`.
 const Joi = require('joi');
 const dotenv = require('dotenv');
+const fs = require('fs');
+const path = require('path');
 
-// Carregando as variáveis do .env
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const envSchema = Joi.object({
-  HOST_BACKEND: Joi.string().required(),
-  PORT_BACKEND: Joi.string().required(),
+  HOST_BACKEND: Joi.string().hostname().required(),
+  PORT_BACKEND: Joi.number().port().required(),
 }).unknown(true);
 
-async function validateAndStart() {
-  const { error } = envSchema.validate(process.env, { abortEarly: false, convert: true });
+const { error, value } = envSchema.validate(process.env, { abortEarly: false, convert: true });
 
-  if (error) {
-    console.error('===================================================');
-    console.error('| ❌ Erro na validação das variáveis de ambiente! |');
-    console.error('===================================================');
-
-    error.details.forEach(detail => {
-      console.error(`- ${detail.message}`);
-    });
-
-    console.error('\nPor favor, verifique e preencha seu arquivo .env.');
-    console.error('===================================================');
-    process.exit(1);
-  } else {
-
-    console.log('Analisando variáveis de ambiente...')
-
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    console.log('✅ Variáveis de ambiente validadas com sucesso.');
-
-    console.log('🚀 Iniciando processo do Frontend 🚀...');
-
-    await new Promise(resolve => setTimeout(resolve, 2000));
-  }
+if (error) {
+  console.error('===================================================');
+  console.error('| ❌ Erro na validação das variáveis de ambiente! |');
+  console.error('===================================================');
+  error.details.forEach(detail => console.error(`- ${detail.message}`));
+  console.error('\nVerifique o arquivo odramech-frontend/.env (veja .env.example).');
+  console.error('===================================================');
+  process.exit(1);
 }
 
-validateAndStart();
+// aceita também a grafia "nomeEstabelecimeno"
+const nome = value.nomeEstabelecimento || value.nomeEstabelecimeno || 'Odramech';
+
+const content = `// ARQUIVO GERADO por src/validation-variables.js a partir do .env — não edite à mão.
+export const env = {
+    production: false,
+    nomeEstabelecimento: ${JSON.stringify(nome)},
+    hostBackend: ${JSON.stringify(value.HOST_BACKEND)},
+    portBackend: ${Number(value.PORT_BACKEND)}
+}
+`;
+
+const target = path.join(__dirname, 'environments', 'environment.ts');
+if (!fs.existsSync(target) || fs.readFileSync(target, 'utf8') !== content) {
+  fs.writeFileSync(target, content);
+}
+
+console.log(`✅ .env validado — backend em http://${value.HOST_BACKEND}:${value.PORT_BACKEND}`);

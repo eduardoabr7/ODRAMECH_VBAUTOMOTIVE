@@ -1,21 +1,24 @@
-<div class="main-layout">
-  <div class="row header m-0">
-    <app-header
-    class="col-12 p-0"
-    (estadoMenuChange)="onEstadoMenuChange()"
-    ></app-header>
+<div class="shell" [class.is-collapsed]="collapsed" [class.is-mobile-open]="mobileOpen">
+
+  <app-left-menu
+    class="shell-side"
+    [isCollapsed]="collapsed"
+    (estadoMenuChange)="toggleCollapse()">
+  </app-left-menu>
+
+  <div class="shell-scrim" (click)="closeMobile()"></div>
+
+  <div class="shell-main">
+    <app-header (estadoMenuChange)="toggleMobile()"></app-header>
+    @if (isStaff()) {
+      <app-subscription-banner></app-subscription-banner>
+    }
+
+    <main class="shell-content">
+      @if (outletAlive) {
+        <router-outlet></router-outlet>
+      }
+    </main>
   </div>
 
-  <div class="main-body" style="display: flex; height: calc(100vh - 60px);">
-    <!-- Left menu -->
-    <app-left-menu 
-      [class.open]="!closeMenu" 
-      [isCollapsed]="closeMenu"
-      (estadoMenuChange)="onEstadoMenuChange()">
-    </app-left-menu>
-
-    <div class="container-fluid content-area" style="flex: 1; overflow-y: auto; background-color: rgb(250, 250, 250);">
-      <router-outlet></router-outlet>
-    </div>
-  </div>
 </div>

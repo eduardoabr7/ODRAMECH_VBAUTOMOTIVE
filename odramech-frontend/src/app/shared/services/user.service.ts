@@ -1,9 +1,8 @@
 import { Injectable } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
 import { Observable } from "rxjs";
 import { UserCreate } from "@shared/models/UserCreate";
 import { NestAPI } from "./nest-api.service";
-import { UserList } from "@shared/models/UserList";
+import { UserDetail, UserList } from "@shared/models/UserList";
 import { WorkerCreate } from "@shared/models/WorkerCreate";
 
 @Injectable({
@@ -23,7 +22,15 @@ export class UserService {
     }
 
     search(term: string): Observable<UserList[]> {
-      return this._nestApi.get(`user/search?term=${term}`);
+      return this._nestApi.get(`user/search?term=${encodeURIComponent(term)}`);
+    }
+
+    getById(id: number): Observable<UserDetail> {
+      return this._nestApi.get(`user/${id}`);
+    }
+
+    update(id: number, data: Partial<UserCreate>): Observable<UserDetail> {
+      return this._nestApi.put(`user/${id}`, data);
     }
 
 }

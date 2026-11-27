@@ -1,118 +1,132 @@
-<div class="homepage-wrapper">
+<div class="page">
 
-  <div class="row pt-3 pb-2 align-items-center">
-    <div class="col">
-      <h4 class="page-title mb-0">Olá, {{ authContext?.user?.name }}</h4>
-      <p class="page-subtitle mb-0">Bem vindo ao Odramech, o que você deseja fazer?</p>
-      <div class="corp-info mt-1">
-        <span class="corp-name">{{ corpLogged?.name }}</span>
-        <span class="corp-sep">·</span>
-        <span class="corp-estab">{{ corpLogged?.establishment?.name }}</span>
+  <!-- Cabeçalho -->
+  <div class="page-head">
+    <div>
+      <div class="eyebrow reveal">
+        <span>{{ today | date:"EEEE, d 'de' MMMM" }}</span>
       </div>
+      <h1 class="page-title reveal" style="--i:1">{{ greeting }}, {{ firstName }}.</h1>
+      <p class="page-sub reveal" style="--i:2" *ngIf="stats">
+        <ng-container *ngIf="stats.open; else allClear">
+          Há <strong class="tnum">{{ stats.open }}</strong> {{ stats.open === 1 ? 'ordem aberta' : 'ordens abertas' }} na oficina agora.
+        </ng-container>
+        <ng-template #allClear>Nenhuma ordem aberta no momento. Pátio livre.</ng-template>
+      </p>
+      <p class="page-sub reveal" style="--i:2" *ngIf="!stats">Visão geral de {{ authContext?.usercorp?.establishment?.name }}</p>
+    </div>
+
+    <div class="page-actions reveal" style="--i:3" *ngIf="session.isStaff$ | async">
+      <a routerLink="/clients" class="btn-x btn-outline"><i class="fa-solid fa-user-plus"></i>Cliente</a>
+      <a routerLink="/quotes/new" class="btn-x btn-outline"><i class="fa-solid fa-file-invoice-dollar"></i>Orçamento</a>
+      <a routerLink="/orders/new" class="btn-x btn-solid"><i class="fa-solid fa-plus"></i>Abrir OS</a>
     </div>
   </div>
 
-  <div class="row g-3 mt-1">
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div class="action-card action-primary" (click)="navigate('orders')">
-        <div class="action-icon-wrap">
-          <i class="fas fa-plus"></i>
-        </div>
-        <span class="action-label">Nova Ordem de Serviço</span>
-      </div>
+  <!-- Erro -->
+  <div class="panel load-error reveal" *ngIf="error">
+    <i class="fa-solid fa-plug-circle-xmark"></i>
+    <div>
+      <strong>Não foi possível carregar os indicadores.</strong>
+      <span>Verifique a conexão com o servidor.</span>
     </div>
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div class="action-card action-secondary">
-        <div class="action-icon-wrap">
-          <i class="fas fa-list-check"></i>
-        </div>
-        <span class="action-label">Novo Orçamento</span>
-      </div>
-    </div>
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div
-        class="action-card action-tertiary"
-        (click)="navigate('clients')"
-        style="cursor: pointer;"
-      >
-        <div class="action-icon-wrap">
-          <i class="fas fa-users"></i>
-        </div>
-        <span class="action-label">
-          Cadastrar Clientes
-        </span>
-      </div>
-    </div>
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div class="action-card action-muted">
-        <div class="action-icon-wrap">
-          <i class="fas fa-car"></i>
-        </div>
-        <span class="action-label">Listar OS abertas</span>
-      </div>
-    </div>
+    <button class="btn-x btn-outline sm" (click)="load()">Tentar de novo</button>
   </div>
 
-  <!-- Stat Cards -->
-  <div class="row g-3 mt-1">
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div class="stat-card">
-        <div class="stat-icon-wrap" style="background: #eef1fe;">
-          <i class="fas fa-list" style="color: #4f6ef7;"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">12</span>
-          <span class="stat-label">OS em andamento</span>
-        </div>
+  <!-- KPIs -->
+  <section class="kpis">
+    <article class="kpi kpi-hero reveal" style="--i:3">
+      <span class="kpi-label">Em aberto</span>
+      <span class="kpi-value">
+        <ng-container *ngIf="!loading; else skBig"><span [countUp]="stats?.open"></span></ng-container>
+      </span>
+      <span class="kpi-foot">pendentes, em atendimento e aguardando peças</span>
+      <div class="kpi-art" aria-hidden="true">
+        <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="44" /><circle cx="60" cy="60" r="28" /><circle cx="60" cy="60" r="10" /></svg>
       </div>
-    </div>
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div class="stat-card">
-        <div class="stat-icon-wrap" style="background: #f0fdf4;">
-          <i class="fas fa-circle-check" style="color: #22c55e;"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">8</span>
-          <span class="stat-label">Serviços concluídos hoje</span>
-        </div>
-      </div>
-    </div>
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div class="stat-card">
-        <div class="stat-icon-wrap" style="background: #fdf2f8;">
-          <i class="fas fa-hand-holding-dollar" style="color: #ec4899;"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">R$5.500</span>
-          <span class="stat-label">Faturamento do dia</span>
-        </div>
-      </div>
-    </div>
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div class="stat-card">
-        <div class="stat-icon-wrap" style="background: #fff7ed;">
-          <i class="fas fa-clock" style="color: #53ffaf;"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">R$4.350</span>
-          <span class="stat-label">A Receber</span>
-        </div>
-      </div>
-    </div>
-  </div>
+    </article>
 
-  <!-- Bottom panels -->
-  <div class="row g-3 mt-1 pb-4">
-    <div class="col-12 col-md-6">
-      <div class="panel-card">
-        <app-recent-services></app-recent-services>
-      </div>
+    <article class="kpi reveal" style="--i:4">
+      <span class="kpi-label">Abertas hoje</span>
+      <span class="kpi-value"><ng-container *ngIf="!loading; else sk"><span [countUp]="stats?.openedToday"></span></ng-container></span>
+      <span class="kpi-foot"><span class="tnum">{{ stats?.openedThisMonth ?? 0 }}</span> no mês</span>
+    </article>
+
+    <article class="kpi reveal" style="--i:5">
+      <span class="kpi-label">Finalizadas hoje</span>
+      <span class="kpi-value"><ng-container *ngIf="!loading; else sk"><span [countUp]="stats?.finishedToday"></span></ng-container></span>
+      <span class="kpi-foot"><span class="tnum">{{ stats?.byStatus?.FINALIZADA ?? 0 }}</span> no total</span>
+    </article>
+
+    <article class="kpi reveal" style="--i:6" *ngIf="session.isStaff$ | async">
+      <span class="kpi-label">Clientes</span>
+      <span class="kpi-value"><ng-container *ngIf="!loading; else sk"><span [countUp]="stats?.clients"></span></ng-container></span>
+      <span class="kpi-foot">vinculados ao estabelecimento</span>
+    </article>
+  </section>
+
+  <ng-template #sk><span class="sk" style="width:48px;height:30px"></span></ng-template>
+  <ng-template #skBig><span class="sk sk-dark" style="width:72px;height:44px"></span></ng-template>
+
+  <!-- Pipeline -->
+  <section class="panel pipeline reveal" style="--i:6">
+    <div class="panel-head">
+      <span class="panel-title">Fluxo da oficina</span>
+      <a routerLink="/orders" class="btn-x btn-ghost sm">Ver todas <i class="fa-solid fa-arrow-right"></i></a>
     </div>
-    <div class="col-12 col-md-6">
-      <div class="panel-card">
-        <app-user-reminders></app-user-reminders>
-      </div>
+
+    <div class="pipe-bar" *ngIf="!loading">
+      <span
+        *ngFor="let s of pipeline"
+        class="seg {{ s }}"
+        [style.flex-grow]="share(s) || 0.0001"
+        [attr.title]="STATUS_LABEL[s] + ': ' + (stats?.byStatus?.[s] ?? 0)">
+      </span>
     </div>
-  </div>
+    <div class="pipe-bar" *ngIf="loading"><span class="sk" style="width:100%;height:8px"></span></div>
+
+    <div class="pipe-cols">
+      <button type="button" class="pipe-col" *ngFor="let s of pipeline; let i = index" (click)="goToStatus(s)">
+        <span class="pipe-name"><span class="dot {{ s }}"></span>{{ STATUS_LABEL[s] }}</span>
+        <span class="pipe-n tnum">{{ stats?.byStatus?.[s] ?? '–' }}</span>
+        <i class="fa-solid fa-arrow-right pipe-go"></i>
+      </button>
+    </div>
+  </section>
+
+  <!-- Financeiro -->
+  <section class="finance reveal" style="--i:7" *ngIf="session.isStaff$ | async">
+    <div class="fin">
+      <span class="fin-l"><i class="fa-solid fa-arrow-trend-up"></i>Faturamento hoje</span>
+      <span class="fin-v tnum">{{ (stats?.finance?.revenueToday ?? 0) | currency:'BRL' }}</span>
+    </div>
+    <div class="fin">
+      <span class="fin-l"><i class="fa-regular fa-calendar"></i>No mês</span>
+      <span class="fin-v tnum">{{ (stats?.finance?.revenueMonth ?? 0) | currency:'BRL' }}</span>
+    </div>
+    <div class="fin">
+      <span class="fin-l"><i class="fa-regular fa-clock"></i>A receber</span>
+      <span class="fin-v tnum" [class.due]="(stats?.finance?.receivable ?? 0) > 0">{{ (stats?.finance?.receivable ?? 0) | currency:'BRL' }}</span>
+      <span class="fin-s">de OS finalizadas</span>
+    </div>
+    <div class="fin">
+      <span class="fin-l"><i class="fa-regular fa-star"></i>Avaliação média</span>
+      <span class="fin-v tnum">
+        <ng-container *ngIf="stats?.finance?.ratingAvg; else noRating">{{ stats!.finance.ratingAvg | number:'1.1-1' }}<small> / 5</small></ng-container>
+        <ng-template #noRating>—</ng-template>
+      </span>
+      <span class="fin-s">{{ stats?.finance?.ratingCount ?? 0 }} avaliação(ões)</span>
+    </div>
+  </section>
+
+  <!-- Painéis -->
+  <section class="grid-2">
+    <div class="panel reveal" style="--i:7">
+      <app-recent-services [orders]="stats?.recent ?? []" [loading]="loading"></app-recent-services>
+    </div>
+    <div class="panel reveal" style="--i:8">
+      <app-user-reminders [userId]="authContext?.user?.id"></app-user-reminders>
+    </div>
+  </section>
 
 </div>

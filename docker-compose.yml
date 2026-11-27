@@ -1,0 +1,19 @@
+# Alternativa ao banco embutido, para quem já usa Docker Desktop.
+# Suba com:  docker compose up -d
+# Com ele no ar, o "iniciar.bat" detecta a porta 5432 ocupada e usa este banco.
+services:
+  postgres:
+    image: postgres:16
+    container_name: odramech-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Sop1503
+      POSTGRES_DB: odramech
+    ports:
+      - "5432:5432"
+    volumes:
+      - odramech-pgdata:/var/lib/postgresql/data
+
+volumes:
+  odramech-pgdata:

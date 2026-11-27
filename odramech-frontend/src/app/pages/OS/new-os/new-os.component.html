@@ -1,405 +1,250 @@
-<div class="create-os-wrapper">
+<div class="page">
 
-  <!-- Header -->
-  <div class="row pt-3 pb-2 align-items-center">
-    <div class="col">
-      <div class="d-flex align-items-center gap-2">
-        <button class="btn-back" (click)="goBack()">
-          <i class="fas fa-arrow-left"></i>
-        </button>
-        <div>
-          <h4 class="page-title mb-0">Nova Ordem de Serviço</h4>
-          <p class="page-subtitle mb-0">Preencha os dados abaixo para abrir uma OS</p>
-        </div>
-      </div>
+  <a class="back reveal" routerLink="/orders"><i class="fa-solid fa-arrow-left"></i> Ordens de serviço</a>
+
+  <div class="page-head">
+    <div>
+      <div class="eyebrow reveal">Nova ordem de serviço</div>
+      <h1 class="page-title reveal" style="--i:1">Check-in do veículo</h1>
+      <p class="page-sub reveal" style="--i:2">Cliente, veículo e o relato inicial. O resto você registra no histórico da OS.</p>
     </div>
   </div>
 
-  <form [formGroup]="osForm" (ngSubmit)="onSubmit()">
-    <div class="row g-3 mt-1">
+  <form [formGroup]="osForm" (ngSubmit)="onSubmit()" class="layout">
 
-      <!-- LEFT COLUMN -->
-      <div class="col-12 col-lg-8">
+    <div class="steps-col">
 
-        <!-- Client Card -->
-        <div class="form-card anim-1">
-          <div class="form-card-header">
-            <div class="form-card-icon" style="background:#eef1fe;">
-              <i class="fas fa-user" style="color:#4f6ef7;"></i>
+      <!-- 1 · Cliente -->
+      <section class="panel step reveal" style="--i:2" [class.done]="step > 1" [class.active]="step === 1">
+        <header class="step-head">
+          <span class="step-no">{{ step > 1 ? '' : '1' }}<i class="fa-solid fa-check" *ngIf="step > 1"></i></span>
+          <div>
+            <h2 class="step-title">Cliente</h2>
+            <p class="step-sub">Busque pelo nome, telefone ou e-mail.</p>
+          </div>
+        </header>
+
+        <div class="step-body">
+          <div *ngIf="!selectedClient" class="search-wrap" closeOnClickOutside (clickOutside)="showClientDropdown = false">
+            <div class="input-icon">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input
+                #searchRef
+                type="text"
+                class="input lg"
+                placeholder="Ex.: Maria, 51 99999…, maria@email.com"
+                formControlName="clientSearch"
+                (input)="onClientSearch($event)"
+                (keydown)="onSearchKeydown($event)"
+                autocomplete="off"
+                autofocus />
             </div>
-            <span class="form-card-title">Dados do Cliente</span>
+
+            <div class="search-dropdown" *ngIf="showClientDropdown">
+              <div class="search-state" *ngIf="isSearchingClient">
+                <span class="spinner-x"></span>
+                <span>Buscando…</span>
+              </div>
+
+              <ng-container *ngIf="!isSearchingClient && clientResults.length > 0">
+                <button
+                  type="button"
+                  class="menu-item result"
+                  *ngFor="let client of clientResults; let i = index"
+                  [class.hl]="i === activeIndex"
+                  (mouseenter)="activeIndex = i"
+                  (click)="selectClient(client)">
+                  <span class="avatar sm">{{ client.name | initials }}</span>
+                  <span class="result-txt">
+                    <span class="result-name">{{ client.name }}</span>
+                    <span class="result-sub">{{ client.principalPhone | phone }}<ng-container *ngIf="client.email"> · {{ client.email }}</ng-container></span>
+                  </span>
+                  <i class="fa-solid fa-arrow-turn-down fa-rotate-90 result-enter" *ngIf="i === activeIndex"></i>
+                </button>
+              </ng-container>
+
+              <div class="search-state" *ngIf="!isSearchingClient && searchEmpty">
+                <span>Nenhum cliente com esse termo.</span>
+                <button type="button" class="btn-new-item" (click)="goToNewClient()">
+                  <i class="fa-solid fa-plus"></i> Cadastrar cliente
+                </button>
+              </div>
+            </div>
+
+            <button type="button" class="link-btn" (click)="goToNewClient()">
+              <i class="fa-solid fa-user-plus"></i> Cliente novo? Cadastre agora
+            </button>
           </div>
 
-          <div class="row g-3 mt-1">
-            <div class="col-12">
-              <label class="field-label">Buscar Cliente <span class="required">*</span></label>
-              <div
-                class="search-field-wrap"
-                closeOnClickOutside
-                (clickOutside)="showClientDropdown = false">
-                <i class="fas fa-magnifying-glass search-icon"></i>
-                <input
-                  type="text"
-                  class="field-input search-input"
-                  placeholder="Nome, telefone ou e-mail..."
-                  formControlName="clientSearch"
-                  (input)="onClientSearch($event)"
-                  autocomplete="off"
-                />
-                <div class="search-dropdown" *ngIf="showClientDropdown">
-
-                  <!-- Loading -->
-                  <div class="search-state" *ngIf="isSearchingClient">
-                    <i class="fa-solid fa-circle-notch fa-spin"></i>
-                    <span>Buscando clientes...</span>
-                  </div>
-
-                  <!-- Results -->
-                  <ng-container *ngIf="!isSearchingClient && clientResults.length > 0">
-                    <div
-                      class="search-item"
-                      *ngFor="let client of clientResults"
-                      (click)="selectClient(client)">
-                      <div class="search-item-avatar">{{ client.name.charAt(0) }}</div>
-                      <div class="search-item-info">
-                        <span class="search-item-name">{{ client.name }}</span>
-                        <span class="search-item-sub">{{ client.principalPhone }}</span>
-                      </div>
-                    </div>
-                  </ng-container>
-
-                  <!-- No result -->
-                  <div class="search-state search-state--empty" *ngIf="!isSearchingClient && searchEmpty">
-                    <i class="fas fa-user-slash"></i>
-                    <span>Nenhum cliente encontrado</span>
-                    <button type="button" class="btn-new-item" (click)="goToNewClient()">
-                      <i class="fas fa-plus me-1"></i>Cadastrar cliente
-                    </button>
-                  </div>
-
-                </div>
-              </div>
+          <div class="picked" *ngIf="selectedClient">
+            <span class="avatar">{{ selectedClient.name | initials }}</span>
+            <div class="picked-txt">
+              <strong>{{ selectedClient.name }}</strong>
+              <span>{{ selectedClient.principalPhone | phone }}<ng-container *ngIf="selectedClient.email"> · {{ selectedClient.email }}</ng-container></span>
             </div>
-
-            <ng-container *ngIf="selectedClient">
-              <div class="col-12">
-                <div class="selected-client-card">
-                  <div class="selected-avatar">{{ selectedClient.name.charAt(0) }}</div>
-                  <div class="selected-info">
-                    <span class="selected-name">{{ selectedClient.name }}</span>
-                    <div class="selected-meta">
-                      <span><i class="fas fa-phone me-1"></i>{{ selectedClient.principalPhone }}</span>
-                      <span *ngIf="selectedClient.email"><i class="fas fa-envelope me-1"></i>{{ selectedClient.email }}</span>
-                    </div>
-                  </div>
-                  <button type="button" class="btn-clear-client" (click)="clearClient()">
-                    <i class="fas fa-xmark"></i>
-                  </button>
-                </div>
-              </div>
-            </ng-container>
+            <button type="button" class="btn-x btn-ghost sm" (click)="clearClient()">Trocar</button>
           </div>
         </div>
+      </section>
 
-        <div class="form-card anim-2 mt-3" *ngIf="selectedClient">
-          <div class="form-card-header">
-            <div class="form-card-icon" style="background:#fdf4ff;">
-              <i class="fas fa-car" style="color:#a855f7;"></i>
-            </div>
-            <span class="form-card-title">Veículo</span>
-            <span class="required-badge ms-auto">Obrigatório</span>
+      <!-- 2 · Veículo -->
+      <section class="panel step reveal" style="--i:3" [class.done]="step > 2" [class.active]="step === 2" [class.locked]="step < 2">
+        <header class="step-head">
+          <span class="step-no">{{ step > 2 ? '' : '2' }}<i class="fa-solid fa-check" *ngIf="step > 2"></i></span>
+          <div>
+            <h2 class="step-title">Veículo</h2>
+            <p class="step-sub" *ngIf="!selectedClient">Selecione o cliente primeiro.</p>
+            <p class="step-sub" *ngIf="selectedClient">Veículos vinculados a {{ selectedClient.name.split(' ')[0] }}.</p>
           </div>
+        </header>
 
-          <div class="vehicle-loading mt-3" *ngIf="isLoadingVehicles">
-            <div class="vehicle-skeleton" *ngFor="let s of [1,2]">
-              <div class="skel skel-icon"></div>
-              <div class="skel-body">
-                <div class="skel skel-line skel-line--lg"></div>
-                <div class="skel skel-line skel-line--sm"></div>
-              </div>
+        <div class="step-body" *ngIf="selectedClient">
+          <div class="vehicle-grid" *ngIf="isLoadingVehicles">
+            <div class="vehicle-opt sk-card" *ngFor="let s of [1,2]">
+              <span class="sk" style="width:70px;height:20px"></span>
+              <span class="sk" style="width:120px"></span>
             </div>
           </div>
 
           <ng-container *ngIf="!isLoadingVehicles">
+            <div class="vehicle-grid">
+              <button
+                type="button"
+                class="vehicle-opt reveal"
+                *ngFor="let v of clientVehicles; let i = index"
+                [style.--i]="i"
+                [class.selected]="selectedVehicle?.id === v.id"
+                (click)="selectedVehicle?.id === v.id ? clearVehicle() : selectVehicle(v)">
+                <span class="check"><i class="fa-solid fa-check"></i></span>
+                <span class="plate">{{ v.plate | plate }}</span>
+                <span class="vo-name">{{ v.make }} {{ v.name }}</span>
+                <span class="vo-meta">
+                  <ng-container *ngIf="v.manufactureYear">{{ v.manufactureYear }}<ng-container *ngIf="v.modelYear">/{{ v.modelYear }}</ng-container></ng-container>
+                  <ng-container *ngIf="v.color"> · {{ v.color }}</ng-container>
+                </span>
+              </button>
 
-            <div class="selected-vehicle-card mt-3" *ngIf="selectedVehicle">
-              <div class="sv-icon">
-                <i class="fas fa-car"></i>
-              </div>
-              <div class="sv-info">
-                <span class="sv-name">{{ selectedVehicle.make }} {{ selectedVehicle.name }}</span>
-                <div class="sv-meta">
-                  <span class="sv-plate">
-                    <i class="fas fa-hashtag me-1"></i>{{ selectedVehicle.plate }}
-                  </span>
-                  <span *ngIf="selectedVehicle.modelYear">
-                    <i class="fas fa-calendar me-1"></i>{{ selectedVehicle.manufactureYear }}/{{ selectedVehicle.modelYear }}
-                  </span>
-                  <span *ngIf="selectedVehicle.color">
-                    <i class="fas fa-palette me-1"></i>{{ selectedVehicle.color }}
-                  </span>
-                  <span *ngIf="selectedVehicle.km">
-                    <i class="fas fa-gauge me-1"></i>{{ selectedVehicle.km }} km
-                  </span>
-                </div>
-              </div>
-              <button type="button" class="btn-clear-client" (click)="clearVehicle()">
-                <i class="fas fa-xmark"></i>
+              <button type="button" class="vehicle-opt add" (click)="openNewVehicleModal()">
+                <i class="fa-solid fa-plus"></i>
+                <span>Cadastrar veículo</span>
               </button>
             </div>
-
-            <ng-container *ngIf="!selectedVehicle">
-
-              <ng-container *ngIf="clientVehicles.length > 0">
-                <p class="vehicle-hint mt-3">Selecione um veículo do cliente:</p>
-                <div class="vehicle-list">
-                  <button
-                    type="button"
-                    class="vehicle-option"
-                    *ngFor="let vehicle of clientVehicles"
-                    (click)="selectVehicle(vehicle)">
-                    <div class="vehicle-option-icon">
-                      <i class="fas fa-car"></i>
-                    </div>
-                    <div class="vehicle-option-info">
-                      <span class="vehicle-option-name">{{ vehicle.make }} {{ vehicle.name }}</span>
-                      <div class="vehicle-option-meta">
-                        <span class="vehicle-plate-badge">{{ vehicle.plate }}</span>
-                        <span *ngIf="selectedVehicle?.modelYear">{{ vehicle.manufactureYear }}/{{ vehicle.modelYear }}</span>
-                        <span *ngIf="vehicle.color">{{ vehicle.color }}</span>
-                      </div>
-                    </div>
-                    <i class="fas fa-chevron-right vehicle-option-arrow"></i>
-                  </button>
-                </div>
-
-                <button type="button" class="btn-add-vehicle mt-3" (click)="openNewVehicleModal()">
-                  <i class="fas fa-plus me-2"></i>Cadastrar novo veículo para este cliente
-                </button>
-              </ng-container>
-
-              <div class="vehicle-empty mt-3" *ngIf="clientVehicles.length === 0">
-                <div class="vehicle-empty-icon">
-                  <i class="fas fa-car-burst"></i>
-                </div>
-                <p class="vehicle-empty-title">Nenhum veículo cadastrado</p>
-                <p class="vehicle-empty-sub">{{ selectedClient?.name }} ainda não possui veículos cadastrados no sistema. Cadastre um para continuar.</p>
-                <button type="button" class="btn-submit-outline" (click)="openNewVehicleModal()">
-                  <i class="fas fa-plus me-2"></i>Cadastrar veículo
-                </button>
-              </div>
-
-            </ng-container>
           </ng-container>
         </div>
+      </section>
 
-        <div class="form-card anim-3 mt-3">
-          <div class="form-card-header">
-            <div class="form-card-icon" style="background:#f0fdf4;">
-              <i class="fas fa-user-tie" style="color:#22c55e;"></i>
-            </div>
-            <span class="form-card-title">Responsável pela OS</span>
+      <!-- 3 · Detalhes -->
+      <section class="panel step reveal" style="--i:4" [class.active]="step === 3" [class.locked]="step < 3">
+        <header class="step-head">
+          <span class="step-no">3</span>
+          <div>
+            <h2 class="step-title">Atendimento</h2>
+            <p class="step-sub">Status inicial, responsável e o relato do cliente.</p>
           </div>
+        </header>
 
-          <div class="row g-3 mt-1">
-            <div class="col-12 col-sm-6">
-              <label class="field-label">Mecânico Responsável</label>
-              <div class="select-wrap">
-                <select class="field-input field-select" formControlName="userResponsibleId">
-                  <option [ngValue]="null">Sem responsável</option>
-                  <option *ngFor="let worker of workers" [ngValue]="worker.id">
-                    {{ worker.name }}
-                  </option>
-                </select>
-                <i class="fas fa-chevron-down select-arrow"></i>
+        <div class="step-body">
+          <div class="grid-2">
+            <div class="field">
+              <label class="field-label">Status inicial</label>
+              <div class="segmented">
+                <button type="button" [class.active]="osForm.value.status === StatusOS.PENDENTE" (click)="setStatus(StatusOS.PENDENTE)">
+                  <span class="dot PENDENTE"></span>Pendente
+                </button>
+                <button type="button" [class.active]="osForm.value.status === StatusOS.EM_ATENDIMENTO" (click)="setStatus(StatusOS.EM_ATENDIMENTO)">
+                  <span class="dot EM_ATENDIMENTO"></span>Em atendimento
+                </button>
               </div>
             </div>
 
-            <div class="col-12 col-sm-6">
-              <label class="field-label">Status Inicial <span class="required">*</span></label>
-              <div class="select-wrap">
-                <select class="field-input field-select" formControlName="status">
-                  <option value="PENDENTE">Pendente</option>
-                  <option value="EM_ATENDIMENTO">Em Atendimento</option>
+            <div class="field">
+              <label class="field-label">Mecânico responsável <span class="opt">opcional</span></label>
+              <div class="select-x">
+                <select class="input" formControlName="userResponsibleId">
+                  <option [ngValue]="null">Definir depois</option>
+                  <option *ngFor="let worker of workers" [ngValue]="worker.id">{{ worker.name }}</option>
                 </select>
-                <i class="fas fa-chevron-down select-arrow"></i>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Appointment Card -->
-        <div class="form-card anim-4 mt-3">
-          <div class="form-card-header">
-            <div class="form-card-icon" style="background:#fff7ed;">
-              <i class="fas fa-note-sticky" style="color:#f97316;"></i>
-            </div>
-            <span class="form-card-title">Apontamento Inicial</span>
-            <span class="optional-badge">Opcional</span>
-          </div>
-
-          <div class="row g-3 mt-1">
-            <div class="col-12 col-sm-6">
-              <label class="field-label">Tipo de Apontamento</label>
-              <div class="select-wrap">
-                <select class="field-input field-select" formControlName="appointmentType">
-                  <option value="PUBLICO">Público</option>
-                  <option value="INTERNO">Interno</option>
-                </select>
-                <i class="fas fa-chevron-down select-arrow"></i>
+          <div class="field mt">
+            <div class="label-row">
+              <label class="field-label">Relato inicial <span class="opt">opcional</span></label>
+              <div class="segmented mini">
+                <button type="button" [class.active]="osForm.value.appointmentType === AppointmentType.PUBLICO" (click)="setType(AppointmentType.PUBLICO)">
+                  <i class="fa-regular fa-eye"></i> Público
+                </button>
+                <button type="button" [class.active]="osForm.value.appointmentType === AppointmentType.INTERNO" (click)="setType(AppointmentType.INTERNO)">
+                  <i class="fa-solid fa-lock"></i> Interno
+                </button>
               </div>
             </div>
-
-            <div class="col-12">
-              <label class="field-label">Descrição do Problema / Apontamento</label>
-              <div class="editor-toolbar">
-                <button type="button" class="editor-btn" (click)="formatText('bold')" title="Negrito">
-                  <i class="fas fa-bold"></i>
-                </button>
-                <button type="button" class="editor-btn" (click)="formatText('italic')" title="Itálico">
-                  <i class="fas fa-italic"></i>
-                </button>
-                <button type="button" class="editor-btn" (click)="formatText('underline')" title="Sublinhado">
-                  <i class="fas fa-underline"></i>
-                </button>
-                <div class="editor-sep"></div>
-                <button type="button" class="editor-btn" (click)="formatText('insertUnorderedList')" title="Lista">
-                  <i class="fas fa-list-ul"></i>
-                </button>
+            <div class="editor" [class.internal]="osForm.value.appointmentType === AppointmentType.INTERNO">
+              <div class="editor-bar">
+                <button type="button" (click)="formatText('bold')" title="Negrito"><i class="fa-solid fa-bold"></i></button>
+                <button type="button" (click)="formatText('italic')" title="Itálico"><i class="fa-solid fa-italic"></i></button>
+                <button type="button" (click)="formatText('underline')" title="Sublinhado"><i class="fa-solid fa-underline"></i></button>
+                <span class="sep"></span>
+                <button type="button" (click)="formatText('insertUnorderedList')" title="Lista"><i class="fa-solid fa-list-ul"></i></button>
               </div>
               <div
                 #editorRef
-                class="rich-editor"
+                class="editor-area"
                 contenteditable="true"
                 (input)="onEditorInput($event)"
-                data-placeholder="Descreva o problema relatado pelo cliente, defeitos observados, serviços solicitados...">
-              </div>
-            </div>
-
-            <!-- File Upload -->
-            <div class="col-12">
-              <label class="field-label">Anexos</label>
-              <div
-                class="dropzone"
-                [class.dragging]="isDragging"
-                (dragover)="onDragOver($event)"
-                (dragleave)="onDragLeave()"
-                (drop)="onDrop($event)"
-                (click)="fileInput.click()">
-                <input #fileInput type="file" hidden multiple (change)="onFileSelect($event)" />
-                <i class="fas fa-cloud-arrow-up dropzone-icon"></i>
-                <span class="dropzone-text">Arraste arquivos ou <span class="dropzone-link">clique aqui</span></span>
-                <span class="dropzone-sub">Imagens, PDFs — máx. 10MB cada</span>
-              </div>
-              <div class="file-list mt-2" *ngIf="attachedFiles.length > 0">
-                <div class="file-item" *ngFor="let file of attachedFiles; let i = index">
-                  <i class="fas fa-file-alt file-icon"></i>
-                  <span class="file-name">{{ file.name }}</span>
-                  <span class="file-size">{{ formatFileSize(file.size) }}</span>
-                  <button type="button" class="btn-remove-file" (click)="removeFile(i)">
-                    <i class="fas fa-xmark"></i>
-                  </button>
-                </div>
+                data-placeholder="O que o cliente relatou? Barulhos, luzes no painel, serviços pedidos…">
               </div>
             </div>
           </div>
         </div>
-
-      </div>
-
-      <!-- RIGHT COLUMN -->
-      <div class="col-12 col-lg-4 right-col">
-
-        <!-- Tips Card -->
-        <div class="form-card tips-card anim-6 order-2 order-lg-1">
-          <div class="form-card-header">
-            <div class="form-card-icon" style="background:#eef1fe;">
-              <i class="fas fa-lightbulb" style="color:#4f6ef7;"></i>
-            </div>
-            <span class="form-card-title">Dicas</span>
-          </div>
-          <ul class="tips-list mt-2">
-            <li>Busque o cliente pelo nome, telefone ou e-mail cadastrado.</li>
-            <li>Após selecionar o cliente, escolha o veículo ou cadastre um novo.</li>
-            <li>O apontamento inicial documenta o relato do cliente na abertura.</li>
-            <li>Apontamentos <strong>Internos</strong> são visíveis apenas para a equipe.</li>
-            <li>Você pode adicionar mais apontamentos e arquivos após a abertura.</li>
-          </ul>
-        </div>
-
-        <!-- Summary Card -->
-        <div class="form-card summary-card anim-5 order-1 order-lg-2 mt-3 mt-lg-0">
-          <div class="form-card-header">
-            <div class="form-card-icon" style="background:#fdf2f8;">
-              <i class="fas fa-receipt" style="color:#ec4899;"></i>
-            </div>
-            <span class="form-card-title">Resumo da OS</span>
-          </div>
-
-          <div class="summary-list mt-3">
-            <div class="summary-row">
-              <span class="summary-key">Status</span>
-              <span class="status-badge" [ngClass]="statusClass">{{ statusLabel }}</span>
-            </div>
-            <div class="summary-row">
-              <span class="summary-key">Cliente</span>
-              <span class="summary-val">{{ selectedClient?.name || '—' }}</span>
-            </div>
-            <div class="summary-row">
-              <span class="summary-key">Veículo</span>
-              <span class="summary-val">
-                <ng-container *ngIf="selectedVehicle; else noVehicle">
-                  {{ selectedVehicle.make }} {{ selectedVehicle.name }}
-                  <span class="summary-plate">{{ selectedVehicle.plate }}</span>
-                </ng-container>
-                <ng-template #noVehicle>—</ng-template>
-              </span>
-            </div>
-            <div class="summary-row">
-              <span class="summary-key">Responsável</span>
-              <span class="summary-val">{{ responsibleName || '—' }}</span>
-            </div>
-            <div class="summary-row">
-              <span class="summary-key">Criado por</span>
-              <span class="summary-val">{{ authContext?.user?.name }}</span>
-            </div>
-            <div class="summary-row">
-              <span class="summary-key">Criação</span>
-              <span class="summary-val">{{ now | date:'dd/MM/yyyy HH:mm' }}</span>
-            </div>
-            <div class="summary-row" *ngIf="attachedFiles.length > 0">
-              <span class="summary-key">Anexos</span>
-              <span class="summary-val">{{ attachedFiles.length }} arquivo(s)</span>
-            </div>
-          </div>
-
-          <div class="d-grid mt-4">
-            <button
-              type="submit"
-              class="btn-submit"
-              [disabled]="osForm.invalid || !selectedClient || !selectedVehicle || isSubmitting">
-              <span *ngIf="!isSubmitting">
-                <i class="fas fa-paper-plane me-2"></i>Abrir Ordem de Serviço
-              </span>
-              <span *ngIf="isSubmitting" class="d-flex align-items-center justify-content-center gap-2">
-                <span class="spinner"></span> Criando OS...
-              </span>
-            </button>
-          </div>
-
-          <div class="vehicle-warning mt-2" *ngIf="selectedClient && !selectedVehicle">
-            <i class="fas fa-triangle-exclamation me-1"></i>
-            Selecione um veículo para continuar
-          </div>
-
-          <button type="button" class="btn-cancel mt-2 w-100" (click)="goBack()">
-            Cancelar
-          </button>
-        </div>
-
-      </div>
-
+      </section>
     </div>
-  </form>
 
+    <!-- Resumo -->
+    <aside class="summary-col">
+      <section class="panel summary reveal" style="--i:3">
+        <div class="ticket-top">
+          <span class="ticket-label">Resumo</span>
+          <app-status [status]="osForm.value.status"></app-status>
+        </div>
+
+        <div class="ticket-hero">
+          <ng-container *ngIf="selectedVehicle; else noVehicle">
+            <span class="plate big">{{ selectedVehicle.plate | plate }}</span>
+            <span class="th-car">{{ selectedVehicle.make }} {{ selectedVehicle.name }}</span>
+          </ng-container>
+          <ng-template #noVehicle>
+            <span class="plate big ghost">AAA·0A00</span>
+            <span class="th-car faint">Veículo não selecionado</span>
+          </ng-template>
+        </div>
+
+        <div class="ticket-perf"></div>
+
+        <dl class="kv compact">
+          <dt>Cliente</dt><dd>{{ selectedClient?.name || '—' }}</dd>
+          <dt>Responsável</dt><dd>{{ responsibleName || 'A definir' }}</dd>
+          <dt>Atendente</dt><dd>{{ authContext?.user?.name }}</dd>
+          <dt>Entrada</dt><dd>{{ now | date:"dd/MM 'às' HH:mm" }}</dd>
+        </dl>
+
+        <div class="summary-actions">
+          <button
+            type="submit"
+            class="btn-x btn-accent lg block"
+            [disabled]="osForm.invalid || !selectedClient || !selectedVehicle || isSubmitting">
+            <span class="spinner-x" *ngIf="isSubmitting"></span>
+            {{ isSubmitting ? 'Abrindo OS…' : 'Abrir ordem de serviço' }}
+          </button>
+          <p class="hint" *ngIf="step < 3">
+            <i class="fa-solid fa-circle-info"></i>
+            {{ step === 1 ? 'Selecione o cliente para continuar.' : 'Escolha ou cadastre um veículo.' }}
+          </p>
+          <button type="button" class="btn-x btn-ghost block" (click)="goBack()">Cancelar</button>
+        </div>
+      </section>
+    </aside>
+
+  </form>
 </div>

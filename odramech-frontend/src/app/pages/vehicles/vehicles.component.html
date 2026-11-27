@@ -1,0 +1,100 @@
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <div class="eyebrow reveal">Frota atendida</div>
+      <h1 class="page-title reveal" style="--i:1">{{ (session.isStaff$ | async) ? 'Veículos' : 'Meus veículos' }}</h1>
+      <p class="page-sub reveal" style="--i:2">
+        <span class="tnum">{{ vehicles.length }}</span> {{ vehicles.length === 1 ? 'veículo' : 'veículos' }} de clientes deste estabelecimento.
+      </p>
+    </div>
+  </div>
+
+  <div class="toolbar reveal" style="--i:3">
+    <div class="input-icon list-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input class="input" placeholder="Placa, marca, modelo ou proprietário" [(ngModel)]="search" (ngModelChange)="onSearch($event)">
+    </div>
+    <div class="segmented">
+      <button type="button" [class.active]="view === 'grid'" (click)="view = 'grid'" title="Cartões"><i class="fa-solid fa-grip"></i></button>
+      <button type="button" [class.active]="view === 'list'" (click)="view = 'list'" title="Lista"><i class="fa-solid fa-list"></i></button>
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div class="vgrid" *ngIf="view === 'grid' && !loading && vehicles.length">
+    <article class="vcard reveal" *ngFor="let v of vehicles; let i = index" [style.--i]="i < 24 ? i : 24" (click)="openOwner(v)">
+      <div class="vcard-top">
+        <span class="plate">{{ v.plate | plate }}</span>
+        <span class="vcard-count" title="Ordens de serviço"><i class="fa-solid fa-screwdriver-wrench"></i>{{ v.workOrdersCount }}</span>
+      </div>
+      <h3 class="vcard-name">{{ v.make }} <b>{{ v.name }}</b></h3>
+      <p class="vcard-meta">
+        <ng-container *ngIf="v.manufactureYear">{{ v.manufactureYear }}<ng-container *ngIf="v.modelYear">/{{ v.modelYear }}</ng-container></ng-container>
+        <ng-container *ngIf="v.color"> · {{ v.color }}</ng-container>
+        <ng-container *ngIf="v.km"> · {{ v.km }} km</ng-container>
+        <ng-container *ngIf="!v.manufactureYear && !v.color && !v.km">Sem detalhes</ng-container>
+      </p>
+      <div class="vcard-foot">
+        <span class="owner">
+          <i class="fa-regular fa-user"></i>{{ v.owners[0]?.name || '—' }}
+          <span class="more" *ngIf="v.owners.length > 1">+{{ v.owners.length - 1 }}</span>
+        </span>
+        <button class="last" *ngIf="v.lastWorkOrder" (click)="openLast(v, $event)" [title]="'Última OS: #' + v.lastWorkOrder.numberOs">
+          <app-status [status]="v.lastWorkOrder.status"></app-status>
+        </button>
+      </div>
+    </article>
+  </div>
+
+  <!-- Lista -->
+  <div class="panel reveal" *ngIf="view === 'list' && !loading && vehicles.length">
+    <div class="table-scroll">
+      <table class="dtable">
+        <thead>
+          <tr>
+            <th>Placa</th>
+            <th>Veículo</th>
+            <th class="hide-sm">Ano</th>
+            <th>Proprietário</th>
+            <th class="hide-sm">OS</th>
+            <th>Última</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of vehicles" class="clickable" (click)="openOwner(v)">
+            <td><span class="plate">{{ v.plate | plate }}</span></td>
+            <td><span class="cell-main">{{ v.make }} {{ v.name }}</span><span class="cell-sub" *ngIf="v.color"> · {{ v.color }}</span></td>
+            <td class="hide-sm tnum">{{ v.manufactureYear || '—' }}</td>
+            <td>{{ v.owners[0]?.name || '—' }}</td>
+            <td class="hide-sm tnum">{{ v.workOrdersCount }}</td>
+            <td>
+              <button class="last" *ngIf="v.lastWorkOrder; else none" (click)="openLast(v, $event)">
+                <app-status [status]="v.lastWorkOrder.status"></app-status>
+              </button>
+              <ng-template #none><span class="faint">—</span></ng-template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="vgrid" *ngIf="loading">
+    <div class="vcard sk-card" *ngFor="let s of [1,2,3,4,5,6]">
+      <span class="sk" style="width:80px;height:22px"></span>
+      <span class="sk" style="width:60%;height:18px;margin-top:18px"></span>
+      <span class="sk" style="width:40%;margin-top:10px"></span>
+    </div>
+  </div>
+
+  <div class="panel" *ngIf="!loading && !vehicles.length">
+    <div class="empty">
+      <div class="empty-mark"><i class="fa-solid fa-car-side"></i></div>
+      <h4>{{ search ? 'Nenhum veículo encontrado' : 'Nenhum veículo cadastrado' }}</h4>
+      <p>{{ search ? 'Tente a placa sem traço ou o nome do proprietário.' : 'Veículos são cadastrados na ficha do cliente ou ao abrir uma OS.' }}</p>
+      <a *ngIf="!search && (session.isStaff$ | async)" routerLink="/orders/new" class="btn-x btn-solid sm"><i class="fa-solid fa-plus"></i>Abrir OS</a>
+    </div>
+  </div>
+</div>

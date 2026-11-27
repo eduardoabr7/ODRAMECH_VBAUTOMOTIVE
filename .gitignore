@@ -1,0 +1,37 @@
+# =================================
+# DEPENDENCIAS
+# =================================
+node_modules/
+
+# =================================
+# INTELIGENCIA ARTIFICIAL
+# =================================
+.claude/
+.cursor/
+.windsurf/
+
+# =================================
+# VARIAVEIS DE AMBIENTE
+# =================================
+.env
+.env.*
+!.env.example
+
+# =================================
+# LOGS E CACHE
+# =================================
+*.log
+logs/
+.cache/
+.tmp/
+
+# =================================
+# SISTEMA OPERACIONAL
+# =================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+
+# Banco de dados local PostgreSQL
+.data/postgres/

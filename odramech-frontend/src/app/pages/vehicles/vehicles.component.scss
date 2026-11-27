@@ -1,0 +1,92 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.list-search { width: 360px; @media (max-width: 640px) { width: 100%; } }
+
+.vgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.vcard {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  cursor: pointer;
+  transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2), border-color var(--dur-1);
+
+  &:hover { transform: translateY(-3px); box-shadow: var(--shadow-2); border-color: var(--line-strong); }
+  &:active { transform: translateY(-1px) scale(.995); }
+
+  &.sk-card { cursor: default; min-height: 150px; &:hover { transform: none; box-shadow: var(--shadow-1); } }
+}
+
+.vcard-top { display: flex; align-items: center; justify-content: space-between; }
+
+.vcard-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  i { font-size: 10px; color: var(--faint); }
+}
+
+.vcard-name {
+  margin-top: 18px;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--ink-2);
+  b { font-weight: 600; color: var(--ink); }
+}
+
+.vcard-meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+.vcard-foot {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+}
+
+.owner {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  i { font-size: 11px; color: var(--faint); }
+  .more { font-size: 11px; color: var(--muted); }
+}
+
+.last {
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform var(--dur-2) var(--ease-out);
+  &:hover { transform: scale(1.04); }
+}
+
+.hide-sm { @media (max-width: 640px) { display: none; } }
+.cell-sub { color: var(--muted); font-size: 12.5px; }

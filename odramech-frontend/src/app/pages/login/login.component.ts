@@ -36,6 +36,8 @@ export class LoginComponent {
   ){}
   
   loadingLogin = false;
+  showPassword = false;
+  year = new Date().getFullYear();
   email: string;
   password: string;
 

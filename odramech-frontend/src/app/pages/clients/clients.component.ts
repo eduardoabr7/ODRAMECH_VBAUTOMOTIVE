@@ -1,24 +1,24 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgSelectModule } from '@ng-select/ng-select';
+import { Router, RouterModule } from '@angular/router';
+import { BsModalService } from 'ngx-bootstrap/modal';
+import { ToastrService } from 'ngx-toastr';
 import { ModalCreateUserComponent } from '@shared/components/modals/user-modals/modal-create-user/modal-create-user.component';
 import { RoleEnum } from '@shared/enums/role.enum';
 import { UserCorporationService } from '@shared/services/user-corporation.service';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { ToastrService } from 'ngx-toastr';
+import { InitialsPipe, PhonePipe } from '@shared/ui/pipes';
 
-interface User {
+interface ClientRow {
   id: number;
   name: string;
-  email: string;
+  email: string | null;
   principalPhone: string;
-  selected: boolean;
 }
 
 @Component({
   selector: 'app-clients',
-  imports: [CommonModule, FormsModule, NgSelectModule],
+  imports: [CommonModule, FormsModule, RouterModule, InitialsPipe, PhonePipe],
   templateUrl: './clients.component.html',
   styleUrl: './clients.component.scss'
 })
@@ -26,95 +26,77 @@ export class ClientsComponent implements OnInit {
 
   constructor(
     private readonly _bsModalService: BsModalService,
-    private readonly _userCoporationService: UserCorporationService,
-    private readonly _toastr: ToastrService
+    private readonly _userCorporationService: UserCorporationService,
+    private readonly _toastr: ToastrService,
+    private readonly _router: Router,
   ) {}
 
-  establishments: any[];
-  users: User[] = [];
-  admins: User[] = [];
-  workers: User[] = [];
-  selectedEstablishmentId: number;
+  establishments: any[] = [];
+  selectedEstablishmentId: number | null = null;
 
-  hasSelectedClient = false;
+  users: ClientRow[] = [];
+  staffCount = 0;
+  loading = true;
   searchQuery = '';
 
-  get selectedCount(): number {
-    return this.users.filter(u => u.selected).length;
-  }
-
-  get filteredUsers(): User[] {
-    const q = this.searchQuery.toLowerCase();
+  get filteredUsers(): ClientRow[] {
+    const q = this.searchQuery.trim().toLowerCase();
     if (!q) return this.users;
+    const digits = q.replace(/\D/g, '');
     return this.users.filter(u =>
       u.name?.toLowerCase().includes(q) ||
       u.email?.toLowerCase().includes(q) ||
-      u.principalPhone?.toLowerCase().includes(q)
+      (digits && u.principalPhone?.replace(/\D/g, '').includes(digits))
     );
   }
 
-
   ngOnInit(): void {
-    this._userCoporationService.getEstablishmentsOnAdminOrWorker().subscribe({
+    this._userCorporationService.getEstablishmentsOnAdminOrWorker().subscribe({
       next: (value) => {
-        this.establishments = value;
-        this.selectedEstablishmentId = this.establishments[0]?.id;
-        this.loadUsersByEstablishment(this.selectedEstablishmentId);
+        this.establishments = value ?? [];
+        this.selectedEstablishmentId = this.establishments[0]?.id ?? null;
+        if (this.selectedEstablishmentId) this.loadUsersByEstablishment(this.selectedEstablishmentId);
+        else this.loading = false;
       },
       error: (err) => {
+        this.loading = false;
         if (err.status != 401)
-          this._toastr.warning('Ocorreu um erro ao buscar a lista de estabelecimentos', 'Atenção');
+          this._toastr.warning('Não foi possível carregar os estabelecimentos.', 'Atenção');
       }
     });
   }
 
+  loadUsersByEstablishment(idEstablishment: number | string | null) {
+    if (!idEstablishment) return;
+    this.loading = true;
 
-  loadUsersByEstablishment(idEstablishment: number) {
-    if (!idEstablishment) {
-      this._toastr.warning('Ocorreu um erro ao buscar a lista de clientes', 'Atenção');
-      console.error('Não foi informado id estabelecimento para busca dos usuários');
-      return;
-    }
-
-    const data = { idEstab: idEstablishment };
-
-    this._userCoporationService.getUsersByEstablishments(data).subscribe({
-      next: (value) => {
-        const grouped = value.reduce((acc, user) => {
-          acc[user.role] = acc[user.role] || [];
-          acc[user.role].push(user.user);
-          return acc;
-        }, {} as Record<string, User[]>);
-
-        this.users   = grouped[RoleEnum.USER]   || [];
-        this.admins  = grouped[RoleEnum.ADMIN]  || [];
-        this.workers = grouped[RoleEnum.WORKER] || [];
+    this._userCorporationService.getUsersByEstablishments({ idEstab: Number(idEstablishment) }).subscribe({
+      next: (value: { role: RoleEnum; user: ClientRow }[]) => {
+        this.users = value.filter(v => v.role === RoleEnum.USER).map(v => v.user)
+          .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+        this.staffCount = value.length - this.users.length;
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+        this._toastr.warning('Não foi possível carregar os clientes.', 'Atenção');
       }
     });
   }
 
-  toggleUserSelection(user: User): void {
-    user.selected = !user.selected;
-    this.updateSelectedClientStatus();
-  }
-
-  updateSelectedClientStatus(): void {
-    this.hasSelectedClient = this.users.some(user => user.selected);
+  open(user: ClientRow): void {
+    this._router.navigate(['/clients', user.id]);
   }
 
   openModalCreateUser() {
     const modalRef = this._bsModalService.show(ModalCreateUserComponent, {
-      initialState: { 
-        title: 'Novo Cliente'
-      },
+      initialState: { title: 'Novo cliente' },
       class: 'modal-lg'
     });
 
     modalRef.content.onClose.subscribe((result: any) => {
-      if (!result) return
-      
-      this.loadUsersByEstablishment(this.selectedEstablishmentId);
+      if (!result) return;
+      if (this.selectedEstablishmentId) this.loadUsersByEstablishment(this.selectedEstablishmentId);
     });
   }
-
 }

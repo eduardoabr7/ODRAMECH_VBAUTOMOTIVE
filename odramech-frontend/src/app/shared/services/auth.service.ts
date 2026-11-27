@@ -72,6 +72,13 @@ export class AuthService {
       );
     }
 
+    /** Busca o contexto no servidor ignorando o cache (usado ao reconectar). */
+    refreshAuthContext(): Observable<AuthContext> {
+      return this._nestApi.post<AuthContext>('auth/session').pipe(
+        tap(userContext => this.setUserLogged(userContext)),
+      );
+    }
+
     setStatusLogin(status: StatusLogin) {
       switch(status){
         case 'off': this._isLoggedIn.next(false);

@@ -1,0 +1,84 @@
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <div class="eyebrow reveal">Comercial</div>
+      <h1 class="page-title reveal" style="--i:1">Orçamentos</h1>
+      <p class="page-sub reveal" style="--i:2">Monte o orçamento, envie ao cliente e transforme em OS com um clique.</p>
+    </div>
+    <div class="page-actions reveal" style="--i:3" *ngIf="session.isStaff$ | async">
+      <a routerLink="/quotes/new" class="btn-x btn-solid"><i class="fa-solid fa-plus"></i>Novo orçamento</a>
+    </div>
+  </div>
+
+  <section class="strip reveal" style="--i:3">
+    <div class="strip-item"><span class="s-l">Em negociação</span><span class="s-v tnum">{{ pipelineValue | currency:'BRL' }}</span></div>
+    <div class="strip-item"><span class="s-l">Aprovado</span><span class="s-v tnum">{{ approvedValue | currency:'BRL' }}</span></div>
+    <div class="strip-item"><span class="s-l">Taxa de aprovação</span><span class="s-v tnum">{{ conversion === null ? '—' : conversion + '%' }}</span></div>
+  </section>
+
+  <div class="toolbar reveal" style="--i:4">
+    <div class="segmented">
+      <button type="button" [class.active]="!status" (click)="setStatus(null)">Todos <span class="n">{{ all.length }}</span></button>
+      <button type="button" *ngFor="let s of ORDER" [class.active]="status === s" (click)="setStatus(s)">
+        <span class="q-dot {{ s }}"></span>{{ LABEL[s] }} <span class="n">{{ count(s) }}</span>
+      </button>
+    </div>
+    <div class="input-icon list-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input class="input" placeholder="Nº, cliente ou placa" [(ngModel)]="search" (ngModelChange)="onSearch()">
+    </div>
+  </div>
+
+  <div class="panel reveal" style="--i:5">
+    <div class="table-scroll">
+      <table class="dtable">
+        <thead>
+          <tr>
+            <th style="width:84px">Nº</th>
+            <th>Cliente</th>
+            <th>Veículo</th>
+            <th>Status</th>
+            <th class="hide-sm">Criado</th>
+            <th style="text-align:right">Valor</th>
+          </tr>
+        </thead>
+        <tbody *ngIf="!loading">
+          <tr *ngFor="let q of quotes; let i = index" class="clickable reveal" [style.--i]="i < 20 ? i : 20" (click)="open(q)">
+            <td><span class="os-no">#<b>{{ q.numberQuote }}</b></span></td>
+            <td>
+              <div class="cell-person">
+                <span class="avatar sm">{{ q.client.name | initials }}</span>
+                <span class="cell-main">{{ q.client.name }}</span>
+              </div>
+            </td>
+            <td><span class="plate">{{ q.vehicle.plate | plate }}</span> <span class="cell-sub">{{ q.vehicle.make }} {{ q.vehicle.name }}</span></td>
+            <td>
+              <span class="qstatus {{ q.status }}">{{ LABEL[q.status] }}</span>
+              <span class="to-os" *ngIf="q.workOrder">→ OS #{{ q.workOrder.numberOs }}</span>
+            </td>
+            <td class="hide-sm cell-sub">{{ q.createdAt | relativeTime }}</td>
+            <td style="text-align:right" class="tnum strong">{{ q.total | currency:'BRL' }}</td>
+          </tr>
+        </tbody>
+        <tbody *ngIf="loading">
+          <tr *ngFor="let s of [1,2,3,4]">
+            <td><span class="sk" style="width:30px"></span></td>
+            <td><span class="sk" style="width:140px"></span></td>
+            <td><span class="sk" style="width:160px"></span></td>
+            <td><span class="sk" style="width:80px"></span></td>
+            <td class="hide-sm"><span class="sk" style="width:60px"></span></td>
+            <td><span class="sk" style="width:70px;margin-left:auto"></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty" *ngIf="!loading && !quotes.length">
+      <div class="empty-mark"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+      <h4>{{ search || status ? 'Nada encontrado' : 'Nenhum orçamento ainda' }}</h4>
+      <p>Orçamentos aprovados viram ordens de serviço com os itens já lançados.</p>
+      <a *ngIf="!search && !status && (session.isStaff$ | async)" routerLink="/quotes/new" class="btn-x btn-solid sm"><i class="fa-solid fa-plus"></i>Criar orçamento</a>
+    </div>
+  </div>
+</div>
