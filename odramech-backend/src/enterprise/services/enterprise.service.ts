@@ -42,8 +42,7 @@ export class EnterpriseService {
     async createEnterpriseWithEstablishment(dataReceived: EnterpriseWithEstablishmentDTO, creatorUserId: number) {
       const { enterprise, establishment } = dataReceived;
 
-      // tudo numa transação: empresa, estabelecimento e o criador como ADMIN (antes o front fazia
-      // o vínculo numa segunda chamada aberta — POST /usercorp — que aceitava qualquer papel/id)
+      // empresa, estabelecimento e o vínculo ADMIN de quem criou na mesma transação
       return this._prisma.$transaction(async (tx) => {
       const enterpriseCreated = await tx.enterprise.create({
         data: {

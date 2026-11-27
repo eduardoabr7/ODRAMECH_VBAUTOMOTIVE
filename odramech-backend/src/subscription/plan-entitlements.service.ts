@@ -2,13 +2,8 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { PlanEntitlements, PlanFeature, SubscriptionGateway } from './gateway/subscription.gateway';
 
-/**
- * O que o plano da empresa permite (recursos e limite de estabelecimentos).
- *
- * Usa a mesma decisão de acesso cacheada do guard (sem chamada extra na maioria das vezes).
- * Se o serviço de assinaturas estiver fora do ar, o plano é "desconhecido" e tudo é liberado —
- * mesma política de falha aberta: cobrança indisponível nunca trava a oficina.
- */
+// Recursos e limite de estabelecimentos do plano, usando a decisão de acesso que o guard já
+// cacheou. Se o serviço de assinaturas cair, libera tudo: cobrança fora do ar não trava a oficina.
 @Injectable()
 export class PlanEntitlementsService {
   constructor(private readonly gateway: SubscriptionGateway, private readonly prisma: PrismaService) {}

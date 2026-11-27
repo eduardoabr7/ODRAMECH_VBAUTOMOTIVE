@@ -54,7 +54,7 @@ export class EnterpriseSubscriptionController {
     return this.service.payInvoice(id, invoiceId, dto.method, { cardToken: dto.cardToken });
   }
 
-  /** só no sandbox fora de produção — com provedor real, isso daria plano pago de graça */
+  // só no sandbox e fora de produção, senão vira plano pago de graça
   @Post('invoices/:invoiceId/simulate-payment')
   simulate(@Param('enterpriseId', ParseIntPipe) id: number, @Param('invoiceId') invoiceId: string) {
     if (!SubscriptionsConfig.get().values.allowSimulatedPayments) {

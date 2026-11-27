@@ -48,7 +48,8 @@ const schema = Joi.object({
   SESSION_HOURS: Joi.number().min(0.25).max(24).default(4),
   FRONTEND_HOST: Joi.string().required(),
   FRONTEND_PORT: Joi.number().port().required(),
-  NODE_ENV: Joi.string().default('development'),
+  // vazio no .env conta como desenvolvimento
+  NODE_ENV: Joi.string().allow('').empty('').default('development'),
   UPLOAD_DIR: Joi.string().allow('').optional(),
   PUBLIC_APP_URL: Joi.string().uri().allow('').optional(),
   SMTP_HOST: Joi.string().allow('').optional(),

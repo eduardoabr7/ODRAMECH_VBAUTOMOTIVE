@@ -27,7 +27,7 @@ import {
 export class QuoteController {
   constructor(private readonly quotes: QuoteService, private readonly mail: QuoteMailService) {}
 
-  /** documento (HTML) para imprimir / salvar PDF — mesmo modelo do PDF do e-mail */
+  /** HTML pra imprimir/salvar PDF, mesmo modelo do PDF do e-mail */
   @Get(':id/document')
   @Header('Content-Type', 'text/html; charset=utf-8')
   document(@Param('id', ParseIntPipe) id: number, @CurrentAuth() auth: AuthPayload) { return this.quotes.documentHtml(auth, id); }

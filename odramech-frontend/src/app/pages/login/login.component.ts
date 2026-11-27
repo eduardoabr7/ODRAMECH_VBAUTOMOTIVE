@@ -33,7 +33,7 @@ export class LoginComponent implements OnInit {
   private readonly _settings = inject(SettingsService);
   private readonly _brandingService = inject(BrandingService);
 
-  /** marca da oficina (link /login?marca=… ou a última usada neste dispositivo) */
+  /** marca da oficina, só pelo link /login?marca= */
   brand: PublicBranding | null = null;
   readonly DEFAULT_BRAND = DEFAULT_BRAND;
 

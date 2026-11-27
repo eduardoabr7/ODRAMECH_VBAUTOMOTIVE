@@ -247,7 +247,7 @@
 
 .mark-img { width: 28px; height: 28px; object-fit: contain; transform: scale(1.35); }
 
-// ── Marca da oficina (tema) ───────────────────────────────
+// marca da oficina
 .brand-panel.has-image {
   background-size: cover; background-position: center;
   &::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.15) 40%, rgba(0,0,0,.7)); pointer-events: none; }

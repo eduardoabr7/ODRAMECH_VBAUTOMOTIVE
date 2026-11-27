@@ -40,18 +40,9 @@ export interface SmtpProfile {
   fromEmail: string;
 }
 
-/**
- * Envio de e-mail por SMTP (nodemailer).
- *
- *  - Empresa com SMTP próprio ativo (Configurações → E-mail de envio): sai pelo servidor dela,
- *    com o remetente dela (ex.: noreply@oficinadojoao.com.br).
- *  - Sem SMTP próprio: sai pelo SMTP padrão do Odramech (.env, ex.: noreply@odramech.com.br).
- *  - Sem SMTP padrão configurado (desenvolvimento): o e-mail é gerado igual e salvo como .eml em
- *    MAIL_OUTBOX_DIR — dá para abrir e conferir — mas não sai de verdade.
- *
- * Se o SMTP próprio da empresa falhar, NÃO cai para o padrão em silêncio: o erro aparece para a
- * oficina corrigir (ela escolheu enviar pelo domínio dela).
- */
+// Envio por SMTP (nodemailer). Usa o SMTP da empresa se ela configurou, senão o padrão do .env.
+// Sem SMTP padrão (dev) o e-mail é salvo como .eml em MAIL_OUTBOX_DIR e não sai de verdade.
+// Se o SMTP da empresa falhar não cai pro padrão: o erro aparece pra oficina corrigir.
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -120,10 +111,7 @@ export class MailService {
     return name ? `"${name.replace(/["\\\r\n]/g, '')}" <${email}>` : email;
   }
 
-  /**
-   * O servidor SMTP pode responder "ok" e ainda assim recusar algum destinatário.
-   * Confere a lista de recusados e registra a resposta exata (id da mensagem) no log.
-   */
+  // o servidor pode responder ok e mesmo assim recusar algum destinatário, então confere
   private checkAccepted(info: any, to: string, via: string) {
     const rejected: string[] = (info?.rejected ?? []).map(String);
     if (rejected.length) throw new Error(`O servidor recusou o destinatário ${rejected.join(', ')}: ${info?.response ?? ''}`);

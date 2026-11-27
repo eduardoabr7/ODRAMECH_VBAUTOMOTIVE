@@ -8,13 +8,8 @@ import { MailService } from 'src/mail/mail.service';
 import { assertManager } from 'src/shared/utils/role.util';
 import { MailSettingsDTO, MailTestDTO } from '../dto/mail-settings.dto';
 
-/**
- * Configurações → E-mail de envio: SMTP próprio da EMPRESA.
- *
- * Por que por empresa (e não por estabelecimento): o remetente é a marca/domínio
- * (noreply@oficinadojoao.com.br) e normalmente é um só para todas as unidades. O "responder para"
- * de cada e-mail continua sendo o e-mail do estabelecimento que fez o orçamento.
- */
+// SMTP próprio é por empresa porque o remetente é a marca, normalmente o mesmo pra todas as
+// unidades. O reply-to continua sendo o e-mail do estabelecimento que fez o orçamento.
 @Injectable()
 export class MailSettingsService {
   constructor(private readonly prisma: PrismaService, private readonly mail: MailService, private readonly config: AppConfig) {}
@@ -97,10 +92,8 @@ export class MailSettingsService {
     }
   }
 
-  /**
-   * Em produção, não deixa apontar o SMTP para a rede interna do servidor (evita usar o
-   * Odramech para sondar serviços internos). Em desenvolvimento, localhost é permitido (MailHog etc.).
-   */
+  // em produção não deixa apontar pra rede interna (dá pra usar isso pra sondar o servidor).
+  // Em dev localhost pode (MailHog etc.).
   private async assertSafeHost(host: string) {
     if (!this.config.values.isProduction) return;
     let address = host;

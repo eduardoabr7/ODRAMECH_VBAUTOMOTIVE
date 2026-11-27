@@ -25,11 +25,8 @@ interface PublicQuote {
   branding: { displayName: string | null; logoUrl: string | null; accentColor: string | null };
 }
 
-/**
- * Página que o cliente abre pelo e-mail (sem login): vê o orçamento e aprova ou recusa.
- * Os botões do e-mail só trazem até aqui (?acao=aprovar) — a resposta exige um clique na página,
- * assim leitores de e-mail que "visitam" links não aprovam nada sozinhos.
- */
+// Página do cliente (sem login). O botão do e-mail só traz pra cá e a resposta precisa de um
+// clique aqui, assim leitor de e-mail que abre links sozinho não aprova nada.
 @Component({
   selector: 'app-public-quote',
   standalone: true,
@@ -49,7 +46,7 @@ export class PublicQuoteComponent implements OnInit {
   readonly notFound = signal(false);
   readonly busy = signal<'aprovar' | 'recusar' | null>(null);
   readonly error = signal<string | null>(null);
-  /** ação pedida pelo botão do e-mail — destacada até a pessoa confirmar */
+  /** ação que veio do botão do e-mail, fica destacada até confirmar */
   readonly intent = signal<'aprovar' | 'recusar' | null>(null);
   readonly justAnswered = signal(false);
 

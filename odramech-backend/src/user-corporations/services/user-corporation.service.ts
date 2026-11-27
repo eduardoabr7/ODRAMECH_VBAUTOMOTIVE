@@ -51,7 +51,7 @@ export class UserCorporationService {
               logoUrl: true,
               name: true,
               phone: true,
-              // logo e nome do tema (Configurações → Tema e marca) têm prioridade
+              // logo e nome do tema têm prioridade
               branding: { select: { logoUrl: true, displayName: true } },
             }
           }

@@ -255,12 +255,12 @@ model Quote {
 
   /// sobe a cada alteração de conteúdo (itens, observações, validade)
   version          Int       @default(1)
-  /// link público do cliente (ver/aprovar/recusar) — criado no primeiro envio
+  /// link público do cliente (ver/aprovar/recusar), criado no primeiro envio
   publicToken      String?   @unique @map("public_token")
-  /// flag de envio: quando e qual versão foi enviada por e-mail (a mesma versão nunca é reenviada)
+  /// quando e qual versão foi por e-mail (a mesma versão não é reenviada)
   emailSentAt      DateTime? @map("email_sent_at")
   emailSentVersion Int?      @map("email_sent_version")
-  /// envio automático agendado (atualizações esperam 10 min para juntar edições seguidas)
+  /// envio automático agendado (espera 10 min pra juntar edições seguidas)
   emailPendingAt   DateTime? @map("email_pending_at")
   /// resposta do cliente pelo link (aprovou/recusou)
   clientRespondedAt DateTime? @map("client_responded_at")
@@ -309,7 +309,7 @@ enum QuoteEmailTrigger {
 
 enum QuoteEmailStatus {
   ENVIADO
-  /// SMTP não configurado: o e-mail foi gerado e salvo em arquivo (ambiente de desenvolvimento)
+  /// sem SMTP configurado: o e-mail só foi salvo em arquivo (dev)
   SIMULADO
   FALHOU
 }
@@ -402,9 +402,7 @@ enum ArchiveType {
   VIDEO
 }
 
-// ══════════════════════════════════════════════════════════
-// Configurações: documento de orçamento e tema (marca)
-// ══════════════════════════════════════════════════════════
+// Configurações: documento de orçamento e tema
 
 /// Configurações por estabelecimento (documento de orçamento, validade, impressão).
 model EstablishmentSettings {
@@ -416,7 +414,7 @@ model EstablishmentSettings {
   quoteFooterHtml      String?       @map("quote_footer_html")
   quoteValidityDays    Int           @default(15) @map("quote_validity_days")
   markQuoteSentOnPrint Boolean       @default(false) @map("mark_quote_sent_on_print")
-  /// enviar o orçamento (PDF) ao e-mail do cliente ao salvar, e as atualizações depois
+  /// manda o PDF pro e-mail do cliente ao salvar (e nas atualizações)
   autoEmailQuote       Boolean       @default(false) @map("auto_email_quote")
   updatedAt            DateTime      @updatedAt @map("updated_at")
 
@@ -425,13 +423,13 @@ model EstablishmentSettings {
   @@map("establishment_settings")
 }
 
-/// Tema da empresa: logo/nome no lugar do Odramech, cor de destaque e tela de login.
+/// Tema da empresa: logo, nome, cor de destaque e tela de login.
 model EnterpriseBranding {
   enterpriseId   Int      @id @map("id_enterprise")
   /// chave pública usada no link de login com a marca (/login?marca=<chave>)
   publicKey      String   @unique @default(uuid()) @map("public_key")
   displayName    String?  @map("display_name")
-  /// imagens guardadas como data URL (PNG/JPG/WebP/SVG), limitadas no backend
+  /// imagens em data URL (PNG/JPG/WebP/SVG), tamanho limitado no backend
   logoUrl        String?  @map("logo_url")
   accentColor    String?  @map("accent_color")
   loginImageUrl  String?  @map("login_image_url")
@@ -450,8 +448,7 @@ enum QuoteTemplate {
   CUSTOM
 }
 
-/// Servidor de e-mail (SMTP) próprio da empresa — ex.: noreply@oficinadojoao.com.br.
-/// Vale para todos os estabelecimentos da empresa. Sem isto (ou desativado), o envio usa o SMTP padrão do Odramech (.env).
+/// SMTP próprio da empresa, vale pra todos os estabelecimentos. Sem ele usa o padrão do .env.
 model EnterpriseMailSettings {
   enterpriseId      Int       @id @map("id_enterprise")
   enabled           Boolean   @default(false)
@@ -460,7 +457,7 @@ model EnterpriseMailSettings {
   /// true = SSL/TLS direto (porta 465); false = STARTTLS (587)
   secure            Boolean   @default(false)
   username          String?
-  /// senha criptografada (AES-256-GCM); nunca volta para o navegador
+  /// criptografada (AES-256-GCM), nunca volta pro navegador
   passwordEncrypted String?   @map("password_encrypted")
   fromName          String?   @map("from_name")
   fromEmail         String    @map("from_email")

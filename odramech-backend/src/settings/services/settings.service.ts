@@ -19,15 +19,13 @@ const DEFAULT_QUOTE_SETTINGS = {
   autoEmailQuote: false,
 };
 
-/**
- * Configurações do estabelecimento (documento de orçamento) e da empresa (tema/marca).
- * Recursos pagos são checados aqui, no servidor — o frontend só esconde/mostra.
- */
+// Configurações do estabelecimento e tema da empresa. Recurso de plano é conferido aqui,
+// o front só esconde.
 @Injectable()
 export class SettingsService {
   constructor(private readonly prisma: PrismaService, private readonly entitlements: PlanEntitlementsService) {}
 
-  // ═══ Documento de orçamento ═════════════════════════════
+  // documento de orçamento
   async quoteSettings(establishmentId: number) {
     const row = await this.prisma.establishmentSettings.findUnique({ where: { establishmentId } });
     const { establishmentId: _id, updatedAt: _u, ...values } = row ?? { establishmentId, updatedAt: null, ...DEFAULT_QUOTE_SETTINGS };
@@ -109,7 +107,7 @@ export class SettingsService {
     return this.quoteDocument(auth);
   }
 
-  // ═══ Tema / marca ═══════════════════════════════════════
+  // tema
   private async brandingRow(enterpriseId: number) {
     return this.prisma.enterpriseBranding.findUnique({ where: { enterpriseId } });
   }
@@ -159,10 +157,7 @@ export class SettingsService {
     return this.branding(auth);
   }
 
-  /**
-   * Tema público para a tela de login (antes de entrar).
-   * Logo/nome/cor valem para todos os planos; imagem e textos do login só com o recurso no plano.
-   */
+  // tema público pro login: logo/nome/cor em qualquer plano, imagem e textos só se o plano liberar
   async publicBranding(publicKey: string) {
     if (!/^[0-9a-f-]{36}$/i.test(publicKey)) throw new BadRequestException('Chave inválida.');
     const row = await this.prisma.enterpriseBranding.findUnique({ where: { publicKey } });

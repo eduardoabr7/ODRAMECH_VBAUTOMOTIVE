@@ -1,9 +1,5 @@
-/**
- * Lê uma imagem escolhida pelo usuário, reduz para no máximo `max` px no maior lado e devolve
- * como data URL (o backend guarda assim). SVG passa direto (quando permitido).
- *
- * keepTransparency: true → PNG (logos com fundo transparente); false → JPEG com fundo branco (fotos).
- */
+// Reduz a imagem (lado maior até `max` px) e devolve data URL. keepTransparency gera PNG,
+// senão JPEG com fundo branco. SVG passa direto.
 export async function imageToDataUrl(
   file: File,
   opts: { max: number; keepTransparency: boolean; maxBytes: number; allowSvg?: boolean },

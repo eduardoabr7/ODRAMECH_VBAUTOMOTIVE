@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsEmail, IsInt, IsNumber, IsOptional, IsString } from "class-validator";
 import { AddressDTO } from "src/address/dto/address.dto";
 import { Gender } from '@prisma/client';
 export class CreateUserDto {
@@ -66,5 +66,10 @@ export class FrontEndCreateUser {
     @IsOptional()
     @IsBoolean()
     active?: boolean
+
+    /** estabelecimento escolhido na tela de clientes (padrão: o da sessão) */
+    @IsOptional()
+    @IsInt()
+    establishmentId?: number
 
 }

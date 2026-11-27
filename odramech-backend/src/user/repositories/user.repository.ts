@@ -22,6 +22,8 @@ export abstract class UserRepository {
   abstract search(establishmentId: number, term: string, take: number): Promise<any[]>;
   abstract findInEstablishment(id: number, establishmentId: number): Promise<any | null>;
   abstract membership(id: number, establishmentId: number): Promise<{ role: Role; active: boolean } | null>;
+  /** vínculo ativo de equipe (admin/mecânico/super) da pessoa com o estabelecimento */
+  abstract staffMembership(id: number, establishmentId: number): Promise<{ role: Role; enterpriseId: number } | null>;
   abstract update(id: number, establishmentId: number, data: UpdateUserDTO): Promise<boolean>;
 }
 
@@ -60,11 +62,7 @@ export class PrismaUserRepository extends UserRepository {
     }
   }
 
-  /**
-   * Vincula uma pessoa já cadastrada ao estabelecimento. Os dados pessoais e a senha dela NÃO
-   * são sobrescritos (outro estabelecimento não pode trocar a senha de quem já tem acesso);
-   * a senha só é definida se a pessoa ainda não tinha nenhuma.
-   */
+  // vincula quem já tem cadastro sem mexer nos dados nem na senha (só define a senha se não tinha)
   private async link(
     existing: { id: number; name: string; email: string | null; principalPhone: string; password: string | null },
     m: Membership,
@@ -132,6 +130,14 @@ export class PrismaUserRepository extends UserRepository {
       where: { idUser: id, idEstablishment: establishmentId },
       select: { role: true, active: true },
     });
+  }
+
+  async staffMembership(id: number, establishmentId: number) {
+    const m = await this.prisma.userCorporation.findFirst({
+      where: { idUser: id, idEstablishment: establishmentId, active: true, role: { in: [Role.ADMIN, Role.WORKER, Role.SUPERUSER] } },
+      select: { role: true, idEnterprise: true },
+    });
+    return m ? { role: m.role, enterpriseId: m.idEnterprise } : null;
   }
 
   async update(id: number, establishmentId: number, data: UpdateUserDTO): Promise<boolean> {

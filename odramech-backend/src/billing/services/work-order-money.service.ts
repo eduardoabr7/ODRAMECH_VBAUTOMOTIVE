@@ -49,7 +49,7 @@ export class WorkOrderMoneyService {
     return { deleted: true };
   }
 
-  /** item de orçamento (ainda não virou OS) mudou → nova versão do orçamento para o cliente */
+  // mudou item de um orçamento que ainda não é OS: nova versão pro cliente
   private async quoteChanged(item: { quoteId: number | null; workOrderId: number | null }) {
     if (item.quoteId && !item.workOrderId) await this.quoteMail.onContentChanged(item.quoteId);
   }

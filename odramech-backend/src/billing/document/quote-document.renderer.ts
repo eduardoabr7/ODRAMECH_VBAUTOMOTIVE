@@ -1,10 +1,5 @@
-/**
- * Monta o documento do orçamento (HTML completo, independente da tela).
- *
- * Fonte única: a impressão do navegador, a pré-visualização das configurações e o PDF
- * enviado por e-mail usam este mesmo HTML. Três modelos: ODRAMECH (padrão), PREMIUM e CUSTOM
- * (cabeçalho/corpo/rodapé em HTML com variáveis {{...}}, a partir do plano Intermediário).
- */
+// HTML do documento de orçamento. É o mesmo usado na impressão, na prévia das configurações
+// e no PDF do e-mail. Modelos: ODRAMECH (padrão), PREMIUM e CUSTOM (HTML com variáveis {{...}}).
 
 export type QuoteTemplate = 'ODRAMECH' | 'PREMIUM' | 'CUSTOM';
 type ItemKind = 'PECA' | 'SERVICO';
@@ -172,7 +167,7 @@ function itemsTable(quote: DocQuote): string {
   </table>`;
 }
 
-// ── Estilos ───────────────────────────────────────────────
+// estilos
 function baseCss(accent: string): string {
   return `
   @page { size: A4; margin: 14mm 14mm 16mm; }
@@ -207,7 +202,7 @@ function shell(title: string, css: string, body: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style></head><body><div class="sheet">${body}</div></body></html>`;
 }
 
-// ── Modelo Odramech (padrão) ──────────────────────────────
+// modelo Odramech (padrão)
 function odramechTemplate(quote: DocQuote, doc: QuoteDocument, v: Record<string, string>, accent: string): string {
   const css = baseCss(accent) + `
   .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 14px; border-bottom: 3px solid ${accent}; }
@@ -241,7 +236,7 @@ function odramechTemplate(quote: DocQuote, doc: QuoteDocument, v: Record<string,
   return shell(`Orçamento ${quote.numberQuote} · ${doc.establishment.name}`, css, body);
 }
 
-// ── Modelo Premium ────────────────────────────────────────
+// modelo Premium
 function premiumTemplate(quote: DocQuote, doc: QuoteDocument, v: Record<string, string>, accent: string): string {
   const css = baseCss(accent) + `
   .band { background: #141414; color: #fff; border-radius: 12px; padding: 20px 22px; display: flex; justify-content: space-between; align-items: center; gap: 16px; position: relative; overflow: hidden; }
@@ -285,7 +280,7 @@ function premiumTemplate(quote: DocQuote, doc: QuoteDocument, v: Record<string, 
   return shell(`Orçamento ${quote.numberQuote} · ${doc.establishment.name}`, css, body);
 }
 
-// ── Modelo personalizado ──────────────────────────────────
+// modelo personalizado
 function customTemplate(quote: DocQuote, doc: QuoteDocument, v: Record<string, string>, accent: string): string {
   const s = doc.settings;
   const body = s.quoteBodyHtml?.trim() ? s.quoteBodyHtml : CUSTOM_STARTER.body;

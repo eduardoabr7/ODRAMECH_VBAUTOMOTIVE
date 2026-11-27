@@ -10,17 +10,10 @@ export const DEFAULT_BRAND = {
   accent: '#e4531c',
 };
 
-/**
- * Versões anteriores guardavam a marca da última oficina neste navegador e mostravam no login —
- * num computador compartilhado, a próxima pessoa via a oficina de outra. Não guardamos mais nada;
- * estas chaves só são apagadas de navegadores que ainda as tenham.
- */
+// chaves de quando a marca ficava salva no navegador; só apagamos se ainda existirem
 const LEGACY_KEYS = ['odramech.brandingKey', 'odramech.brandingCache'];
 
-/**
- * Tema da empresa (logo, nome, cor). Aplica a cor nas variáveis CSS do sistema e troca
- * "Odramech" pelo nome da oficina no menu e no título da aba.
- */
+// tema da empresa: cor nas variáveis CSS e nome da oficina no menu e na aba
 @Injectable({ providedIn: 'root' })
 export class BrandingService {
   private readonly api = inject(SettingsService);
@@ -55,10 +48,7 @@ export class BrandingService {
     this.retitle();
   }
 
-  /**
-   * Volta tudo para o padrão do Odramech (nome, cor, ícone e título da aba).
-   * Chamado ao sair e sempre que a tela de login abre — fora da sessão nenhuma oficina aparece.
-   */
+  // volta tudo pro Odramech (chamado no logout e ao abrir o login)
   reset(pageTitle = 'Entrar · Odramech'): void {
     this.branding.set(null);
     this.applyAccent(null);
@@ -73,7 +63,7 @@ export class BrandingService {
     return `${this.doc.location.origin}/login?marca=${key}`;
   }
 
-  // ── cor de destaque ───────────────────────────────────────
+  // cor de destaque
   applyAccent(hex: string | null): void {
     if (!this.isBrowser) return;
     const root = this.doc.documentElement.style;
@@ -90,14 +80,10 @@ export class BrandingService {
     root.setProperty('--accent-ring', `rgba(${r},${g},${b},.22)`);
   }
 
-  // ── ícone da aba (favicon) ───────────────────────────────
+  // favicon
   private faviconToken = 0;
 
-  /**
-   * Troca o ícone da aba. `src` = foto/logo (data URL ou caminho); null = ícone do Odramech.
-   * A imagem é recortada num quadrado de 64 px com cantos arredondados (foto retangular não
-   * fica distorcida). Chrome, Edge e Firefox atualizam na hora; o Safari pode manter o ícone antigo.
-   */
+  // troca o favicon (null = Odramech). Recorta em quadrado de 64px pra foto não distorcer
   async setFavicon(src: string | null): Promise<void> {
     if (!this.isBrowser) return;
     const token = ++this.faviconToken;
@@ -126,7 +112,7 @@ export class BrandingService {
   }
 }
 
-/** recorta a imagem num quadrado (cover) de 64 px com cantos arredondados → PNG data URL */
+// recorta em quadrado de 64px com cantos arredondados e devolve PNG
 function squareIcon(src: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();

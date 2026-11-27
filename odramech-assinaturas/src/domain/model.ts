@@ -15,7 +15,7 @@ export interface Plan {
   description: string | null;
   active: boolean;
   sortOrder: number;
-  /** nível do plano (1 = Basic … 4 = Ultra) */
+  /** 1 = Basic ... 4 = Ultra */
   tier: number;
   /** limite de estabelecimentos; null = ilimitado */
   maxEstablishments: number | null;
@@ -23,7 +23,7 @@ export interface Plan {
   features: string[];
 }
 
-/** Resumo do plano que o backend da oficina usa para liberar recursos e limites. */
+// resumo do plano que o backend da oficina usa
 export interface PlanEntitlements {
   code: string;
   name: string;

@@ -96,9 +96,17 @@ export class ClientsComponent implements OnInit {
     this._router.navigate(['/clients', user.id]);
   }
 
+  get selectedEstablishmentName(): string | null {
+    return this.establishments.find(e => e.id === this.selectedEstablishmentId)?.name ?? null;
+  }
+
   openModalCreateUser() {
     const modalRef = this._bsModalService.show(ModalCreateUserComponent, {
-      initialState: { title: 'Novo cliente' },
+      initialState: {
+        title: this.selectedEstablishmentName ? `Novo cliente · ${this.selectedEstablishmentName}` : 'Novo cliente',
+        // cadastra no estabelecimento que está selecionado na tela (não só no da sessão)
+        establishmentId: this.selectedEstablishmentId ?? undefined,
+      },
       class: 'modal-lg'
     });
 

@@ -1,13 +1,5 @@
-/**
- * Imprime um documento HTML num iframe invisível e resolve quando a janela de impressão fecha.
- *
- * O iframe é `sandbox` sem `allow-scripts`: HTML personalizado pelo usuário nunca executa
- * JavaScript (defesa extra além da limpeza feita no backend).
- *
- * Observação: nenhum navegador informa se a pessoa clicou em "Imprimir"/"Salvar PDF" ou em
- * "Cancelar" — só que a janela de impressão foi fechada. Por isso o retorno é "a impressão
- * foi aberta e concluída (fechada)".
- */
+// Imprime o HTML num iframe escondido (sandbox, sem scripts) e resolve quando a janela fecha.
+// Não tem como saber se a pessoa imprimiu ou cancelou.
 export function printHtml(html: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const frame = document.createElement('iframe');

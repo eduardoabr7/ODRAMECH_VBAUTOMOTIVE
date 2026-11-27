@@ -137,7 +137,7 @@ export class QuoteEditorComponent implements OnInit, OnDestroy {
     this.watchPendingEmail();
   }
 
-  // ── E-mail ao cliente ───────────────────────────────────
+  // e-mail ao cliente
   get clientEmail(): string | null { return this.quote?.client.email || null; }
   get autoEmail(): boolean { return !!this.doc?.settings.autoEmailQuote; }
   /** a versão atual já foi enviada? (a mesma versão nunca é reenviada) */
@@ -332,10 +332,7 @@ export class QuoteEditorComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * O navegador só avisa que a janela de impressão FECHOU — não se a pessoa imprimiu ou cancelou.
-   * Por isso o status só muda depois que ela confirma que imprimiu.
-   */
+  // o navegador só avisa que a janela fechou, então pergunta antes de mudar o status
   private afterPrint(doc: QuoteDocument): void {
     if (!this.quote || !doc.settings.markQuoteSentOnPrint || this.quote.status !== 'RASCUNHO' || this.locked) return;
     this.askPrinted = true;

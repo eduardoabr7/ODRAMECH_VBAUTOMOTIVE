@@ -4,12 +4,12 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 const prisma = new PrismaClient();
 
-/** Recursos que dependem do plano (o backend da oficina libera/bloqueia por estes códigos). */
+// códigos de recurso que o backend da oficina confere
 const QUOTE_DOCUMENT_EDITOR = 'QUOTE_DOCUMENT_EDITOR'; // editar cabeçalho/corpo/rodapé do orçamento (HTML)
 const LOGIN_CUSTOMIZATION = 'LOGIN_CUSTOMIZATION';     // imagem e textos próprios na tela de login
 
 /**
- * Planos padrão (todos mensais). Valores em centavos — ajuste aqui e rode `npm run seed` de novo
+ // valores em centavos. Pode rodar o seed de novo, ele atualiza os planos pelo código
  * (idempotente: atualiza os planos existentes pelo código).
  */
 const PLANS = [
@@ -59,10 +59,7 @@ const PLANS = [
   },
 ];
 
-/**
- * Planos antigos (Mensal/Anual) — desativados. Assinaturas pagas neles migram para o Basic
- * (preço mais próximo); quem ainda está no teste grátis migra para o plano do teste.
- */
+// planos antigos (mensal/anual): quem pagava vai pro Basic, quem está no teste vai pro plano do teste
 const LEGACY_TO_NEW: Record<string, string> = { MENSAL: 'BASIC', ANUAL: 'BASIC' };
 const TRIAL_PLAN = process.env.DEFAULT_PLAN_CODE || 'INTERMEDIARIO';
 

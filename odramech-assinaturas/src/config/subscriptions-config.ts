@@ -28,7 +28,8 @@ const schema = Joi.object({
   RENEWAL_LEAD_DAYS: Joi.number().integer().min(0).default(5),
   SCHEDULER_INTERVAL_SECONDS: Joi.number().integer().min(5).default(60),
   DEFAULT_PLAN_CODE: Joi.string().default('INTERMEDIARIO'),
-  NODE_ENV: Joi.string().default('development'),
+  // vazio no .env conta como desenvolvimento
+  NODE_ENV: Joi.string().allow('').empty('').default('development'),
 }).unknown(true);
 
 /** SINGLETON — configuração do serviço, carregada e validada uma única vez. */
