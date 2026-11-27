@@ -5,6 +5,7 @@ import { EnterpriseWithEstablishmentDTO } from "../dto/enterprise-with-establish
 import { AuthPayload } from "src/auth/interfaces/auth-payload.interface";
 import { CurrentAuth } from "src/core/auth/current-auth.decorator";
 import { assertManager } from "src/shared/utils/role.util";
+import { AllowWhenBlocked } from 'src/subscription/allow-when-blocked.decorator';
 
 @Controller('enterprise')
 export class EnterpriseController {
@@ -14,6 +15,7 @@ export class EnterpriseController {
     ){}
 
     /** todas as empresas, só pro super usuário (suporte) */
+    @AllowWhenBlocked()
     @Get()
     getAllEnterprises(@CurrentAuth() auth: AuthPayload) {
         if (auth.role !== Role.SUPERUSER) throw new ForbiddenException('Sem permissão.');
@@ -21,6 +23,7 @@ export class EnterpriseController {
     }
 
     /** estabelecimentos da empresa, só se o usuário tem vínculo ativo com ela */
+    @AllowWhenBlocked()
     @Get('establishments/:idEnterprise')
     async getAllEstablishmentsFromEnterprise(@Param('idEnterprise', ParseIntPipe) idEnterprise: number, @CurrentAuth() auth: AuthPayload) {
         if (!(await this._enterpriseService.userBelongsTo(auth.sub, idEnterprise))) {

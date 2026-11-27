@@ -10,6 +10,7 @@ import { WorkOrderCommandFactory } from '../commands/work-order.commands';
 import { WoCreateFrontDTO } from '../dto/wo-create-front.dto';
 import { WoListQueryDTO, WoUpdateResponsibleDTO, WoUpdateStatusDTO } from '../dto/wo-update.dto';
 import { AppointmentCreateFrontDTO } from '../dto/appointment-create-front.dto';
+import { AllowWhenBlocked } from 'src/subscription/allow-when-blocked.decorator';
 
 class UndoDTO {
   @IsUUID()
@@ -31,6 +32,7 @@ export class WorkOrderController {
     return this.workOrders.open(auth, dto);
   }
 
+  @AllowWhenBlocked()
   @Get()
   async list(@Query() query: WoListQueryDTO, @CurrentAuth() auth: AuthPayload) {
     return this.workOrders.list(await this.scope.resolve(auth, query.establishmentId), query);
@@ -43,6 +45,7 @@ export class WorkOrderController {
     return { undone: label };
   }
 
+  @AllowWhenBlocked()
   @Get(':id')
   getById(@Param('id', ParseIntPipe) id: number, @CurrentAuth() auth: AuthPayload) {
     return this.workOrders.getById(auth, id);

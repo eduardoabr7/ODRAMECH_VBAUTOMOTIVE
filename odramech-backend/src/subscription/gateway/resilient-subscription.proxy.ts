@@ -1,6 +1,7 @@
 import { Logger, ServiceUnavailableException } from '@nestjs/common';
 import { AccessDecision, PaymentMethod, SubscriptionGateway } from './subscription.gateway';
 import { SubscriptionServiceUnavailable } from './http-subscription.gateway';
+import { LastKnownAccessStore } from './last-known-access.store';
 
 /**
  * PROXY — controla o ACESSO ao serviço remoto com um circuit breaker.
@@ -21,6 +22,7 @@ export class ResilientSubscriptionProxy extends SubscriptionGateway {
     private readonly real: SubscriptionGateway,
     private readonly failureThreshold = 3,
     private readonly cooldownMs = 30_000,
+    private readonly lastKnown: LastKnownAccessStore | null = null,
   ) {
     super();
   }
@@ -62,9 +64,15 @@ export class ResilientSubscriptionProxy extends SubscriptionGateway {
 
   async access(enterpriseId: number): Promise<AccessDecision> {
     try {
-      return await this.guard(() => this.real.access(enterpriseId));
+      const decision = await this.guard(() => this.real.access(enterpriseId));
+      this.lastKnown?.remember(enterpriseId, decision);
+      return decision;
     } catch (err) {
       if (err instanceof SubscriptionServiceUnavailable) {
+        // fora do ar: vale a última situação conhecida da empresa (bloqueado continua bloqueado)
+        const known = await this.lastKnown?.recall(enterpriseId);
+        if (known) return { ...known, degraded: true, reason: `${known.reason} (última situação conhecida — serviço de assinaturas indisponível)` };
+        // nunca vista: falha aberta (cobrança fora do ar não para a oficina)
         return { status: 'UNKNOWN', level: 'full', until: null, reason: 'Serviço de assinaturas indisponível.', degraded: true };
       }
       throw err;

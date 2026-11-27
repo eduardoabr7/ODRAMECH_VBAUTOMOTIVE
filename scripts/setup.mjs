@@ -6,7 +6,7 @@
 //   5. sobe o banco, aplica migrations, gera o Prisma Client e roda o seed (oficina + assinaturas)
 import { copyFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
-import { BACKEND, FRONTEND, ROOT, SUBSCRIPTIONS, fail, ok, run, step, warn, color } from './lib.mjs';
+import { BACKEND, FRONTEND, ROOT, SUBSCRIPTIONS, ADMIN, fail, ok, run, step, warn, color } from './lib.mjs';
 
 const NPM = 'npm';
 const NPX = 'npx';
@@ -41,6 +41,8 @@ await run(NPM, ['install', '--no-audit', '--no-fund', '--legacy-peer-deps'], { c
 ok('frontend');
 await run(NPM, ['install', '--no-audit', '--no-fund'], { cwd: SUBSCRIPTIONS });
 ok('assinaturas');
+await run(NPM, ['install', '--no-audit', '--no-fund'], { cwd: ADMIN });
+ok('painel de licenças');
 
 // 4. Scripts nativos bloqueados pelo npm 11 (allowScripts)
 step('Compilando dependências nativas');

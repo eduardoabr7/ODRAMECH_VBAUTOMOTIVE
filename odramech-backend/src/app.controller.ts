@@ -2,6 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Public } from './shared/decorators/public-routes.decorator';
 import { PrismaService } from './prisma/prisma-service';
+import { AllowWhenBlocked } from 'src/subscription/allow-when-blocked.decorator';
 
 @Controller()
 export class AppController {
@@ -10,6 +11,7 @@ export class AppController {
     private readonly _prisma: PrismaService,
   ) {}
 
+  @AllowWhenBlocked()
   @Get()
   getHello(): string {
     return this.appService.getHello();

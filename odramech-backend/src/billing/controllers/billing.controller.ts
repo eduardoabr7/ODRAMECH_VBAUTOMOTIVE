@@ -20,6 +20,7 @@ import {
   NoteDTO, PaymentDTO, QuoteCreateDTO, QuoteListQueryDTO, QuoteUpdateDTO, ReviewDTO,
   ServiceItemDTO, UpdateServiceItemDTO,
 } from '../dto/billing.dto';
+import { AllowWhenBlocked } from 'src/subscription/allow-when-blocked.decorator';
 
 // Controllers finos: só traduzem HTTP ↔ caso de uso. Regras ficam nos serviços.
 
@@ -39,9 +40,11 @@ export class QuoteController {
     return { result, quote: await this.quotes.get(auth, id) };
   }
 
+  @AllowWhenBlocked()
   @Get()
   list(@Query() q: QuoteListQueryDTO, @CurrentAuth() auth: AuthPayload) { return this.quotes.list(auth, q); }
 
+  @AllowWhenBlocked()
   @Get(':id')
   get(@Param('id', ParseIntPipe) id: number, @CurrentAuth() auth: AuthPayload) { return this.quotes.get(auth, id); }
 
@@ -161,6 +164,7 @@ export class PublicQuoteController {
 export class NotesController {
   constructor(private readonly notes: NoteService) {}
 
+  @AllowWhenBlocked()
   @Get()
   get(@CurrentAuth() auth: AuthPayload) { return this.notes.get(auth); }
 

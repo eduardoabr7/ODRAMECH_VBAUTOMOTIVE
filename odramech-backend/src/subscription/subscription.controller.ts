@@ -26,6 +26,8 @@ class SubscriptionEventDTO {
   @IsOptional() status?: string;
   @IsOptional() data?: unknown;
   @IsOptional() occurredAt?: string;
+  /** autor da ação quando veio do painel administrativo */
+  @IsOptional() @IsString() @MaxLength(200) actor?: string;
 }
 
 @Controller('subscription')

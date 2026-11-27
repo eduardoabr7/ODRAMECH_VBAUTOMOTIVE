@@ -46,6 +46,15 @@ model Subscription {
   currentPeriodEnd   DateTime           @map("current_period_end")
   cancelAtPeriodEnd  Boolean            @default(false) @map("cancel_at_period_end")
   canceledAt         DateTime?          @map("canceled_at")
+  /// licença cortesia (concedida pelo administrador, sem cobrança)
+  complimentary      Boolean            @default(false)
+  /// fim da cortesia (null = sem prazo)
+  complimentaryUntil DateTime?          @map("complimentary_until")
+  /// suspensa pelo administrador: bloqueia tudo, independentemente de pagamento
+  suspended          Boolean            @default(false)
+  suspendedReason    String?            @map("suspended_reason")
+  /// anotação interna do administrador (nunca exibida para a oficina)
+  adminNote          String?            @map("admin_note")
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
 
@@ -117,4 +126,37 @@ enum PaymentMethod {
   PIX
   CARD
   BOLETO
+}
+
+/// Administradores do painel de assinaturas (site separado, só para o dono do sistema).
+model AdminUser {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  name         String
+  /// scrypt: "salt:hash" em hex
+  passwordHash String    @map("password_hash")
+  /// segredo TOTP (base32) — com ele o login exige o código do autenticador
+  totpSecret   String?   @map("totp_secret")
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  sessions AdminSession[]
+
+  @@map("admin_users")
+}
+
+/// Sessões do painel: o cookie guarda um token aleatório; aqui fica só o hash dele (revogável).
+model AdminSession {
+  id        String   @id // sha256 do token
+  adminId   Int      @map("admin_id")
+  expiresAt DateTime @map("expires_at")
+  ip        String?
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  admin AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@map("admin_sessions")
 }

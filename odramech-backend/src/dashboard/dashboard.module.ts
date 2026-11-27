@@ -4,11 +4,13 @@ import { CurrentAuth } from 'src/core/auth/current-auth.decorator';
 import { WorkOrderModule } from 'src/work-order/work-order.module';
 import { BillingModule } from 'src/billing/billing.module';
 import { DashboardFacade } from './dashboard.facade';
+import { AllowWhenBlocked } from 'src/subscription/allow-when-blocked.decorator';
 
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboard: DashboardFacade) {}
 
+  @AllowWhenBlocked()
   @Get()
   overview(@CurrentAuth() auth: AuthPayload) {
     return this.dashboard.overview(auth);

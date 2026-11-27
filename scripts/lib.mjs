@@ -9,6 +9,7 @@ export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 export const BACKEND = path.join(ROOT, 'odramech-backend');
 export const FRONTEND = path.join(ROOT, 'odramech-frontend');
 export const SUBSCRIPTIONS = path.join(ROOT, 'odramech-assinaturas');
+export const ADMIN = path.join(ROOT, 'odramech-admin');
 export const IS_WIN = process.platform === 'win32';
 
 const C = { reset: '\x1b[0m', dim: '\x1b[2m', bold: '\x1b[1m', red: '\x1b[31m', green: '\x1b[32m', yellow: '\x1b[33m', cyan: '\x1b[36m', orange: '\x1b[38;5;208m' };

@@ -48,7 +48,7 @@ export class SubscriptionBannerComponent implements OnInit {
     const days = this.facade.daysLeft();
 
     if (a.level === 'blocked') {
-      return { tone: 'bad', icon: 'fa-solid fa-lock', text: `${a.reason} O sistema pode ficar em modo somente leitura.`, cta: 'Regularizar' };
+      return { tone: 'bad', icon: 'fa-solid fa-lock', text: `${a.reason.replace(/\.?\s*$/, '.')} O sistema está em modo somente leitura: sem cadastros, alterações, exportações ou impressões.`, cta: 'Regularizar' };
     }
     if (a.level === 'grace') {
       return { tone: 'warn', icon: 'fa-solid fa-triangle-exclamation', text: 'Pagamento da assinatura pendente.', cta: 'Pagar agora' };

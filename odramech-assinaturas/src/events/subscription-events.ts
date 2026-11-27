@@ -15,11 +15,25 @@ export interface SubscriptionChanged {
     | 'subscription.canceled'
     | 'invoice.created'
     | 'invoice.paid'
-    | 'invoice.payment_failed';
+    | 'invoice.payment_failed'
+    | 'invoice.amount_mismatch'
+    | 'invoice.voided'
+    // ações do administrador no painel
+    | 'license.created'
+    | 'license.complimentary_granted'
+    | 'license.complimentary_revoked'
+    | 'license.plan_changed'
+    | 'license.period_changed'
+    | 'license.suspended'
+    | 'license.unsuspended'
+    | 'license.note_changed'
+    | 'license.invoice_marked_paid';
   subscriptionId: string;
   enterpriseId: number;
   status: SubscriptionStatus;
   data?: Record<string, unknown>;
+  /** quem fez: "admin:<id> <e-mail>" nas ações do painel; ausente = sistema/oficina */
+  actor?: string;
   occurredAt: string;
 }
 

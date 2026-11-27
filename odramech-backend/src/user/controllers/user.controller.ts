@@ -7,6 +7,7 @@ import { UserService } from '../services/user.service';
 import { FrontEndCreateUser } from '../dto/create-user.dto';
 import { CreateWorkerDTO } from '../dto/create-worker-dto';
 import { UpdateUserDTO } from '../dto/update-user.dto';
+import { AllowWhenBlocked } from 'src/subscription/allow-when-blocked.decorator';
 
 @Controller('user')
 export class UserController {
@@ -22,12 +23,14 @@ export class UserController {
     return this.users.createStaff(auth, data);
   }
 
+  @AllowWhenBlocked()
   @Get('search')
   search(@Query('term') term: string, @CurrentAuth() auth: AuthPayload) {
     assertStaff(auth.role);
     return this.users.search(auth, term ?? '');
   }
 
+  @AllowWhenBlocked()
   @Get(':id')
   getById(@Param('id', ParseIntPipe) id: number, @Query() q: EstablishmentScopeQueryDTO, @CurrentAuth() auth: AuthPayload) {
     return this.users.view(auth, id, q.establishmentId);

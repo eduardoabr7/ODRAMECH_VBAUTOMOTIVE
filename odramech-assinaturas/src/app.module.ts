@@ -14,15 +14,19 @@ import { SubscriptionEventPublisher } from './events/subscription-events';
 import { AuditTrailObserver, ConsoleObserver, MainBackendWebhookObserver } from './events/observers';
 import { ApiKeyGuard } from './http/api-key.guard';
 import {
-  AdminController, EnterpriseSubscriptionController, GatewayController, HealthController, PlansController, SUBSCRIPTION_SERVICE,
+  EnterpriseSubscriptionController, GatewayController, HealthController, PlansController, SUBSCRIPTION_SERVICE,
 } from './http/controllers';
+import { AdminAuthService } from './admin/admin-auth.service';
+import { ADMIN_LICENSE_SERVICE, AdminAuthController, AdminLicensesController } from './admin/admin.controllers';
+import { AdminLicenseService } from './application/admin-license.service';
+import { EnterpriseDirectory, HttpEnterpriseDirectory } from './application/enterprise-directory';
 
 /** Escolhe a família de provedor de pagamento pela configuração (Abstract Factory). */
 function providerFactory(): PaymentProviderFactory {
   switch (SubscriptionsConfig.get().values.paymentProvider) {
     case 'sandbox':
     default:
-      return new SandboxProviderFactory();
+      return new SandboxProviderFactory(SubscriptionsConfig.get().values.sandboxWebhookSecret);
   }
 }
 
@@ -31,7 +35,7 @@ function providerFactory(): PaymentProviderFactory {
  * Nada fora deste arquivo sabe que o banco é Prisma ou que o gateway é o sandbox.
  */
 @Module({
-  controllers: [HealthController, PlansController, EnterpriseSubscriptionController, GatewayController, AdminController],
+  controllers: [HealthController, PlansController, EnterpriseSubscriptionController, GatewayController, AdminAuthController, AdminLicensesController],
   providers: [
     { provide: APP_GUARD, useClass: ApiKeyGuard },
     PrismaService,
@@ -63,8 +67,29 @@ function providerFactory(): PaymentProviderFactory {
           provider.createGateway(),
           provider.createWebhookParser(),
           events, clock,
-          { trialDays: cfg.trialDays, graceDays: cfg.graceDays, renewalLeadDays: cfg.renewalLeadDays, defaultPlanCode: cfg.defaultPlanCode },
+          {
+            trialDays: cfg.trialDays, graceDays: cfg.graceDays, renewalLeadDays: cfg.renewalLeadDays,
+            defaultPlanCode: cfg.defaultPlanCode, paymentsEnabled: cfg.paymentsEnabled,
+          },
         );
+      },
+    },
+    AdminAuthService,
+    {
+      provide: EnterpriseDirectory,
+      useFactory: () => {
+        const cfg = SubscriptionsConfig.get().values;
+        return new HttpEnterpriseDirectory(cfg.mainBackendUrl, cfg.apiKey);
+      },
+    },
+    {
+      provide: ADMIN_LICENSE_SERVICE,
+      inject: [PlanRepository, SubscriptionRepository, InvoiceRepository, EventLogRepository, SubscriptionEventPublisher, SUBSCRIPTION_SERVICE, EnterpriseDirectory, Clock],
+      useFactory: (plans, subs, invoices, log, events, billing, directory, clock) => {
+        const cfg = SubscriptionsConfig.get().values;
+        return new AdminLicenseService(plans, subs, invoices, log, events, billing, directory, clock, {
+          trialDays: cfg.trialDays, graceDays: cfg.graceDays, defaultPlanCode: cfg.defaultPlanCode,
+        });
       },
     },
     LifecycleScheduler,

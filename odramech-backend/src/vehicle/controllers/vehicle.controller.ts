@@ -6,6 +6,7 @@ import { CustomLogger } from "src/shared/services/custom-logger.service";
 import { AuthPayload } from "src/auth/interfaces/auth-payload.interface";
 import { assertStaff } from "src/shared/utils/role.util";
 import { EstablishmentScope, EstablishmentScopeQueryDTO } from "src/core/auth/establishment-scope.service";
+import { AllowWhenBlocked } from 'src/subscription/allow-when-blocked.decorator';
 
 @Controller('vehicle')
 export class VehicleController {
@@ -26,11 +27,13 @@ export class VehicleController {
         return this._vehicleService.createVehicle(auth, data)
     }
 
+    @AllowWhenBlocked()
     @Get()
     listByEstablishment(@Req() req, @Query('search') search?: string) {
         return this._vehicleService.listByEstablishment(req.authContext as AuthPayload, search);
     }
 
+    @AllowWhenBlocked()
     @Get('check-plate/:plate')
     checkPlate(@Param('plate') plate: string, @Req() req) {
         assertStaff((req.authContext as AuthPayload).role);
@@ -45,6 +48,7 @@ export class VehicleController {
     }
 
     /** veículos de uma pessoa: a própria pessoa, ou a equipe do estabelecimento onde ela é cliente */
+    @AllowWhenBlocked()
     @Get('user/:userId')
     getUserVehicles(@Param('userId', ParseIntPipe) userId: number, @Req() req) {
         return this._vehicleService.getByUser(req.authContext as AuthPayload, userId)

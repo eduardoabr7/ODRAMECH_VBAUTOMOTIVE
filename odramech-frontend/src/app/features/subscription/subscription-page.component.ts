@@ -83,7 +83,7 @@ export class SubscriptionPageComponent implements OnInit {
     const o = this.o();
     const next = this.selectedPlan();
     if (!o || !next || next.code === o.plan.code) return null;
-    if (o.subscription.status === 'TRIALING') return 'A troca vale agora; a cobrança começa só no fim do teste grátis.';
+    if (o.subscription.status === 'TRIALING') return 'O plano escolhido começa assim que o pagamento for confirmado (o teste grátis termina na hora).';
     if (o.subscription.status !== 'ACTIVE') return 'O plano novo começa assim que o pagamento for confirmado.';
     return next.tier > o.plan.tier
       ? 'Upgrade: começa assim que o pagamento for confirmado. O que sobrou do período atual vira desconto.'

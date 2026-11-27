@@ -31,6 +31,9 @@
         <h2>{{ o.plan.name }}</h2>
         <div class="hero-meta">
           <span class="pill {{ o.subscription.status }}">{{ STATUS_LABEL[o.subscription.status] }}</span>
+          @if (o.subscription.complimentary && o.access.level === 'full') {
+            <span>Licença cortesia{{ o.subscription.complimentaryUntil ? ' até ' : ' sem prazo' }}<b>{{ o.subscription.complimentaryUntil | date:'dd/MM/yyyy' }}</b></span>
+          } @else {
           @switch (o.subscription.status) {
             @case ('TRIALING') { <span>Teste grátis até <b>{{ o.subscription.currentPeriodEnd | date:'dd/MM/yyyy' }}</b> · {{ facade.daysLeft() }} dia(s)</span> }
             @case ('ACTIVE') {
@@ -42,15 +45,16 @@
             @case ('PAST_DUE') { <span>{{ o.access.reason }} Acesso pleno até <b>{{ o.access.until | date:'dd/MM' }}</b>.</span> }
             @default { <span>{{ o.access.reason }}</span> }
           }
+          }
         </div>
       </div>
       <div class="hero-side">
-        <span class="hero-price">{{ money(o.plan.priceCents) }}</span>
-        <span class="hero-per">/ mês · {{ o.establishmentCount }} de {{ o.plan.maxEstablishments ?? '∞' }} estabelecimento(s)</span>
+        <span class="hero-price">{{ o.subscription.complimentary && o.access.level === 'full' ? 'Cortesia' : money(o.plan.priceCents) }}</span>
+        <span class="hero-per">{{ o.subscription.complimentary && o.access.level === 'full' ? '' : '/ mês · ' }}{{ o.establishmentCount }} de {{ o.plan.maxEstablishments ?? '∞' }} estabelecimento(s)</span>
         @if (o.canManage) {
           @if (o.subscription.cancelAtPeriodEnd) {
             <button class="btn-x btn-outline sm hero-btn" [disabled]="!!facade.busy()" (click)="facade.resume()">Manter assinatura</button>
-          } @else if (o.subscription.status === 'ACTIVE' || o.subscription.status === 'TRIALING') {
+          } @else if (!o.subscription.complimentary && (o.subscription.status === 'ACTIVE' || o.subscription.status === 'TRIALING')) {
             <button class="btn-x btn-ghost sm hero-btn ghost-dark" [disabled]="!!facade.busy()" (click)="cancel()">Cancelar assinatura</button>
           }
         }
@@ -99,7 +103,11 @@
             }
           </div>
 
-          @if (o.canManage && needsNewInvoice()) {
+          @if (o.subscription.complimentary && o.access.level === 'full') {
+            <p class="hint mt">Sua licença é cortesia e é gerenciada pelo suporte Odramech.</p>
+          } @else if (o.subscription.suspended) {
+            <p class="hint mt">Licença suspensa. Fale com o suporte Odramech.</p>
+          } @else if (o.canManage && needsNewInvoice()) {
             <button class="btn-x btn-accent lg block mt" [disabled]="!!facade.busy()" (click)="subscribe()">
               @if (facade.busy() === 'plan') { <span class="spinner-x"></span> }
               {{ o.subscription.status === 'TRIALING' ? 'Garantir' : 'Assinar' }} plano {{ selectedPlan()?.name }} · {{ money(selectedPlan()?.priceCents) }}
@@ -107,7 +115,7 @@
             @if (changeHint(); as h) {
               <p class="hint">{{ h }}</p>
             } @else if (o.subscription.status === 'TRIALING') {
-              <p class="hint">A cobrança começa só no fim do teste grátis.</p>
+              <p class="hint">Ao pagar, o plano começa na hora e o teste grátis termina.</p>
             }
           }
         </div>

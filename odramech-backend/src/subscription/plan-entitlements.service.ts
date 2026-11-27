@@ -12,7 +12,8 @@ export class PlanEntitlementsService {
   async of(enterpriseId: number): Promise<PlanEntitlements | null> {
     try {
       const decision = await this.gateway.access(enterpriseId);
-      return decision.degraded ? null : decision.plan ?? null;
+      // serviço fora: usa o plano da última situação conhecida; nunca vista → libera
+      return decision.plan ?? null;
     } catch {
       return null;
     }

@@ -48,8 +48,22 @@ export interface Subscription {
   currentPeriodEnd: Date;
   cancelAtPeriodEnd: boolean;
   canceledAt: Date | null;
+  /** licença cortesia concedida pelo administrador (sem cobrança) */
+  complimentary: boolean;
+  /** fim da cortesia; null = sem prazo */
+  complimentaryUntil: Date | null;
+  /** suspensa pelo administrador: bloqueia mesmo com pagamento em dia */
+  suspended: boolean;
+  suspendedReason: string | null;
+  /** anotação interna do administrador */
+  adminNote: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+/** cortesia vigente agora? */
+export function complimentaryActive(sub: Pick<Subscription, 'complimentary' | 'complimentaryUntil'>, now: Date): boolean {
+  return sub.complimentary && (!sub.complimentaryUntil || now < sub.complimentaryUntil);
 }
 
 export interface PaymentInstructions {

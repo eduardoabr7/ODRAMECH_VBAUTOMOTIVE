@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Invoice, NewInvoice, NewSubscription, Plan, Subscription } from '../domain/model';
-import { EventLogRepository, InvoiceRepository, PlanRepository, SubscriptionRepository } from './repositories';
+import { EventLogRepository, InvoiceRepository, LoggedEvent, PlanChanges, PlanRepository, SubscriptionRepository } from './repositories';
 
 /**
  * REPOSITORIES em memória — mesmo contrato das versões Prisma.
@@ -8,10 +8,23 @@ import { EventLogRepository, InvoiceRepository, PlanRepository, SubscriptionRepo
  */
 
 export class InMemoryPlanRepository extends PlanRepository {
-  constructor(private readonly plans: Plan[]) { super(); }
+  private readonly plans: Plan[];
+  constructor(plans: Plan[]) { super(); this.plans = plans.map(p => ({ ...p })); }
   async listActive() { return this.plans.filter(p => p.active).sort((a, b) => a.sortOrder - b.sortOrder); }
+  async listAll() { return [...this.plans].sort((a, b) => a.sortOrder - b.sortOrder); }
   async findByCode(code: string) { return this.plans.find(p => p.code === code) ?? null; }
   async findById(id: number) { return this.plans.find(p => p.id === id) ?? null; }
+  async create(data: Omit<Plan, 'id'>) {
+    const row = { ...data, id: Math.max(0, ...this.plans.map(p => p.id)) + 1 };
+    this.plans.push(row);
+    return { ...row };
+  }
+  async update(id: number, data: PlanChanges) {
+    const row = this.plans.find(p => p.id === id);
+    if (!row) throw new Error('not found');
+    Object.assign(row, data);
+    return { ...row };
+  }
 }
 
 export class InMemorySubscriptionRepository extends SubscriptionRepository {
@@ -63,8 +76,12 @@ export class InMemoryInvoiceRepository extends InvoiceRepository {
 }
 
 export class InMemoryEventLogRepository extends EventLogRepository {
-  readonly rows: { subscriptionId: string; type: string; payload: unknown }[] = [];
+  readonly rows: LoggedEvent[] = [];
   async append(subscriptionId: string, type: string, payload: unknown) {
-    this.rows.push({ subscriptionId, type, payload });
+    this.rows.push({ id: this.rows.length + 1, subscriptionId, type, payload, createdAt: new Date() });
   }
+  async listBySubscription(subscriptionId: string, take: number) {
+    return this.rows.filter(r => r.subscriptionId === subscriptionId).reverse().slice(0, take);
+  }
+  async listRecent(take: number) { return [...this.rows].reverse().slice(0, take); }
 }

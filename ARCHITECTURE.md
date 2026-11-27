@@ -1,12 +1,13 @@
 # Arquitetura do Odramech
 
-Três aplicações, cada uma com uma responsabilidade:
+Quatro aplicações, cada uma com uma responsabilidade:
 
 | App | Porta | O que faz | Banco |
 |---|---|---|---|
 | `odramech-frontend` (Angular 19) | 4200 | Interface da oficina | — |
 | `odramech-backend` (NestJS) | 3004 | Regras da oficina: OS, orçamentos, clientes, financeiro | `odramech` (schema `odramech`) |
 | `odramech-assinaturas` (NestJS) | 3010 | **Gerenciamento de Assinaturas Odramech**: planos, ciclos, faturas, pagamentos | `odramech_assinaturas` (schema `assinaturas`) |
+| `odramech-admin` (Angular 19) | 4300 | **Painel de licenças** (só o dono do sistema): cortesias, suspensão, planos, prazos, faturas, auditoria | — (fala com o serviço de assinaturas) |
 
 ```
  Navegador ──► Backend da oficina ──► (x-api-key) ──► Serviço de assinaturas
@@ -90,16 +91,35 @@ SubscriptionFacade
 
 | Situação | Status | Acesso |
 |---|---|---|
-| Primeiro acesso da empresa | `TRIALING` (14 dias) | pleno |
-| Pagou | `ACTIVE` | pleno |
-| Período acabou sem pagamento | `PAST_DUE` | pleno até **7 dias** de tolerância |
+| Primeiro acesso da empresa | `TRIALING` (**7 dias**, sem cartão) | pleno |
+| Teste acabou sem pagar | `EXPIRED` **na hora** (sem tolerância) | **bloqueado** |
+| Pagou (inclusive durante o teste) | `ACTIVE` no plano pago, a partir do pagamento | pleno |
+| Período pago acabou sem pagamento | `PAST_DUE` | pleno até **7 dias** de tolerância |
 | Tolerância esgotada | `EXPIRED` | **bloqueado** |
 | Cancelou | agenda o fim; `CANCELED` na data | pleno até o fim do período pago |
+| Cortesia (painel) | `ACTIVE` + `complimentary` | pleno, com ou sem prazo; venceu → bloqueado sem tolerância |
+| Suspensa (painel) | qualquer + `suspended` | **bloqueado**, e a oficina não consegue pagar para sair |
 
-- Planos: **Mensal R$ 149,90** e **Anual R$ 1.438,80** (= R$ 119,90/mês, 20% off). Ajuste em `odramech-assinaturas/prisma/seed.ts` e rode o seed de novo.
+- A decisão olha as **datas**, não só o status: teste/cortesia vencidos bloqueiam no mesmo instante, sem esperar o agendador.
+- Escolher um plano **nunca** libera o plano antes de pagar (nem no teste).
+- **Bloqueado = somente leitura de verdade**: no backend só passam as rotas marcadas com `@AllowWhenBlocked()` (consultas). Escritas, exportação, PDF/impressão, anexos e aprovação pelo link público recebem **402**. Rota nova nasce bloqueada.
+- **Serviço de assinaturas fora do ar**: vale a última decisão conhecida de cada empresa (memória + tabela `subscription_access_snapshot`). Só empresa nunca vista entra em "falha aberta".
+- **Webhook de pagamento**: assinatura HMAC sobre o corpo cru → a cobrança é **consultada no provedor** (`fetchCharge`) → valor e moeda precisam bater com a fatura (divergência gera `invoice.amount_mismatch` e não libera).
+- **Sandbox em produção** (`NODE_ENV=production` + `PAYMENT_PROVIDER=sandbox`): nenhum pagamento é processado. Dá para operar só com teste grátis e cortesias até plugar o provedor real.
+- Preços e recursos dos planos são editados no **painel** (o seed só cria os que faltam; `SEED_OVERWRITE_PLANS=true` força os valores do arquivo).
 - A fatura de renovação é gerada **5 dias antes** do fim do período (`RENEWAL_LEAD_DAYS`).
-- Pagamentos usam o provedor **sandbox** (nada é cobrado de verdade). Cartão: token `tok_recusado` simula recusa.
-- `SUBSCRIPTION_ENFORCEMENT` no backend: `off` (ignora), `warn` (padrão local: só avisa) e `block` (empresa bloqueada fica **somente leitura**; as telas de assinatura continuam liberadas para regularizar).
+- `SUBSCRIPTION_ENFORCEMENT` no backend: `off`, `warn` (só avisa) e `block` (use em produção).
+
+## Painel de licenças (`odramech-admin`)
+
+- Acesso só para administradores criados por linha de comando (não existe tela nem API de cadastro):
+  `npm --prefix odramech-assinaturas run admin:create -- --email voce@dominio.com --name "Seu Nome" --totp`
+  (`--reset-password`, `--totp` para ativar/trocar o 2FA, `--disable` para desativar e derrubar as sessões).
+- Login: senha com scrypt, 2FA TOTP, 5 falhas por e-mail/IP → 15 min de bloqueio. Sessão em cookie `httpOnly` + `SameSite=Strict`, guardada como hash no banco (logout revoga). Toda escrita exige o header `x-odramech-admin: 1` (anti-CSRF).
+- As rotas `/admin/*` do serviço de assinaturas aceitam **só** sessão de administrador — a `x-api-key` do backend não abre o painel.
+- Toda ação vira evento na auditoria (`subscription_events`) com o autor, e avisa o backend para limpar o cache na hora.
+- A anotação interna (`adminNote`) nunca é enviada para a oficina.
+- **Produção**: sirva o build (`odramech-admin/dist/odramech-admin/browser`) num subdomínio próprio (ex.: `admin.seudominio.com`) e faça o Nginx encaminhar `/api/` → `http://127.0.0.1:3010/` (mesma origem, sem CORS). Exponha para a internet só `/api/admin/` e `/api/webhooks/payments`; o resto da porta 3010 fica interno. Se puder, restrinja o subdomínio por IP/VPN.
 
 ### Plugar um provedor real (ex.: Mercado Pago)
 

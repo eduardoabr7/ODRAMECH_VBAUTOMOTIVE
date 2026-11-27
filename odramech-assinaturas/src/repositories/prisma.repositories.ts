@@ -2,7 +2,7 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { SubscriptionsConfig } from '../config/subscriptions-config';
 import { Invoice, NewInvoice, NewSubscription, PaymentInstructions, Plan, Subscription } from '../domain/model';
-import { EventLogRepository, InvoiceRepository, PlanRepository, SubscriptionRepository } from './repositories';
+import { EventLogRepository, InvoiceRepository, LoggedEvent, PlanChanges, PlanRepository, SubscriptionRepository } from './repositories';
 
 /** Única conexão do serviço com o banco. */
 @Injectable()
@@ -23,6 +23,15 @@ export class PrismaPlanRepository extends PlanRepository {
   constructor(private readonly db: PrismaService) { super(); }
   listActive(): Promise<Plan[]> {
     return this.db.plan.findMany({ where: { active: true }, orderBy: { sortOrder: 'asc' } });
+  }
+  listAll(): Promise<Plan[]> {
+    return this.db.plan.findMany({ orderBy: { sortOrder: 'asc' } });
+  }
+  create(data: Omit<Plan, 'id'>): Promise<Plan> {
+    return this.db.plan.create({ data });
+  }
+  update(id: number, data: PlanChanges): Promise<Plan> {
+    return this.db.plan.update({ where: { id }, data });
   }
   findByCode(code: string): Promise<Plan | null> {
     return this.db.plan.findUnique({ where: { code } });
@@ -93,5 +102,11 @@ export class PrismaEventLogRepository extends EventLogRepository {
   constructor(private readonly db: PrismaService) { super(); }
   async append(subscriptionId: string, type: string, payload: unknown) {
     await this.db.subscriptionEvent.create({ data: { subscriptionId, type, payload: json(payload) } });
+  }
+  listBySubscription(subscriptionId: string, take: number): Promise<LoggedEvent[]> {
+    return this.db.subscriptionEvent.findMany({ where: { subscriptionId }, orderBy: { createdAt: 'desc' }, take });
+  }
+  listRecent(take: number): Promise<LoggedEvent[]> {
+    return this.db.subscriptionEvent.findMany({ orderBy: { createdAt: 'desc' }, take });
   }
 }

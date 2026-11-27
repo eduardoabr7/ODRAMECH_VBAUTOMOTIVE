@@ -6,7 +6,7 @@ import { SubscriptionChanged, SubscriptionObserver } from './subscription-events
 export class AuditTrailObserver implements SubscriptionObserver {
   constructor(private readonly log: EventLogRepository) {}
   onEvent(e: SubscriptionChanged) {
-    return this.log.append(e.subscriptionId, e.type, { status: e.status, ...e.data });
+    return this.log.append(e.subscriptionId, e.type, { status: e.status, ...(e.actor && { actor: e.actor }), ...e.data });
   }
 }
 
