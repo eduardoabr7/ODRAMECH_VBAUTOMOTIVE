@@ -1,4 +1,5 @@
 import { ItemKind, PaymentMethod, QuoteStatus } from '@prisma/client';
+import { StockContext } from 'src/inventory/domain/stock';
 
 /**
  * REPOSITORIES (portas) do módulo financeiro — uma por agregado (Interface Segregation):
@@ -11,6 +12,8 @@ export interface ItemData {
   quantity: number;
   unitPrice: number;
   discount: number;
+  /** peça do estoque vinculada (módulo Estoque) */
+  partId?: number | null;
 }
 
 export interface QuoteScope {
@@ -41,15 +44,18 @@ export abstract class QuoteRepository {
   abstract create(data: CreateQuoteData): Promise<{ id: number }>;
   abstract update(id: number, data: { status?: QuoteStatus; validUntil?: Date | null; notes?: string | null }): Promise<void>;
   /** aprova: abre a OS, move os itens e liga orçamento ↔ OS numa única transação */
-  abstract convertToWorkOrder(quoteId: number, userId: number, firstNoteHtml: string): Promise<{ id: number; numberOs: number }>;
+  abstract convertToWorkOrder(quoteId: number, userId: number, firstNoteHtml: string, stock: StockContext): Promise<{ id: number; numberOs: number }>;
 }
 
 export abstract class ServiceItemRepository {
   abstract addToQuote(quoteId: number, item: ItemData): Promise<any>;
-  abstract addToWorkOrder(workOrderId: number, item: ItemData): Promise<any>;
+  /** item de OS com peça: grava e baixa do estoque na MESMA transação */
+  abstract addToWorkOrder(workOrderId: number, item: ItemData, stock: StockContext): Promise<any>;
   abstract findWithOwner(itemId: number): Promise<{ item: any; establishmentId: number | null; lockedQuote: boolean } | null>;
-  abstract update(itemId: number, data: Partial<ItemData>): Promise<any>;
-  abstract delete(itemId: number): Promise<void>;
+  /** acerta o estoque pela nova quantidade/peça na mesma transação */
+  abstract update(itemId: number, data: Partial<ItemData>, stock: StockContext): Promise<any>;
+  /** devolve ao estoque o que a linha tinha tirado e apaga, atomicamente */
+  abstract delete(itemId: number, stock: StockContext): Promise<void>;
 }
 
 export abstract class PaymentRepository {

@@ -8,6 +8,8 @@ import { AppConfig } from 'src/core/config/app-config';
 import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
 import { isStaff } from 'src/shared/utils/role.util';
 import { AppointmentAccess } from 'src/work-order/domain/appointment-access';
+import { DomainEventBus } from 'src/core/events/domain-event-bus';
+import { WorkOrderContentChanged } from 'src/work-order/domain/work-order.events';
 
 /** pasta dos anexos (AppConfig.uploadDir ou ./uploads) */
 export function uploadDir(): string {
@@ -37,7 +39,17 @@ function typeFromMime(mime: string): ArchiveType {
 
 @Injectable()
 export class AttachmentService {
-  constructor(private readonly _prisma: PrismaService, private readonly access: AppointmentAccess) {}
+  constructor(
+    private readonly _prisma: PrismaService,
+    private readonly access: AppointmentAccess,
+    private readonly events: DomainEventBus,
+  ) {}
+
+  /** quem está com a OS aberta recebe o aviso "Recarregar" (anexo de nota interna: só a equipe) */
+  private async touched(appointmentId: number, auth: AuthPayload) {
+    const appt = await this._prisma.appointment.findUnique({ where: { id: appointmentId }, select: { workOrderId: true, appointmentType: true } });
+    if (appt) await this.events.publish(new WorkOrderContentChanged(appt.workOrderId, auth.sub, appt.appointmentType === TypeAppointment.INTERNO));
+  }
 
   async attach(auth: AuthPayload, appointmentId: number, files: Express.Multer.File[]) {
     if (!files?.length) throw new BadRequestException('Nenhum arquivo enviado.');
@@ -60,6 +72,7 @@ export class AttachmentService {
       })),
     });
 
+    await this.touched(appointmentId, auth);
     return this._prisma.archiveAppointment.findMany({ where: { appointmentId }, orderBy: { id: 'asc' } });
   }
 
@@ -104,6 +117,7 @@ export class AttachmentService {
     }
     await this._prisma.archiveAppointment.delete({ where: { id: archive.id } });
     this.safeUnlink(path);
+    await this.touched(archive.appointmentId, auth);
     return { deleted: true };
   }
 

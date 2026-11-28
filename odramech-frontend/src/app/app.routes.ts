@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/login/login.component';
 import { LayoutComponent } from './pages/layout/layout.component';
 import { AuthGuard } from './guards/Authentication.guard';
+import { requireModule } from './features/modules/module.guard';
 
 export const routes: Routes = [
 
@@ -60,6 +61,13 @@ export const routes: Routes = [
         path: 'vehicles',
         title: 'Veículos · Odramech',
         loadComponent: () => import('./pages/vehicles/vehicles.component').then(m => m.VehiclesComponent),
+      },
+      {
+        // módulo contratado à parte: sem contrato nem carrega a tela (e o backend recusa)
+        path: 'inventory',
+        title: 'Estoque · Odramech',
+        canActivate: [requireModule('INVENTORY')],
+        loadComponent: () => import('./features/inventory/inventory-page.component').then(m => m.InventoryPageComponent),
       },
       {
         path: 'settings/subscription',

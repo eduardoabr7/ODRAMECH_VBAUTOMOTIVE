@@ -45,6 +45,7 @@ export abstract class WorkOrderRepository {
 
   abstract findDetail(criteria: WorkOrderCriteria, id: number, includeInternal: boolean): Promise<any | null>;
   abstract findRef(id: number, establishmentId: number): Promise<WorkOrderRef | null>;
+  abstract userName(userId: number): Promise<string | null>;
 
   abstract setStatus(id: number, status: OrderStatus, closedBy: number | null): Promise<void>;
   abstract setResponsible(id: number, userId: number | null): Promise<void>;

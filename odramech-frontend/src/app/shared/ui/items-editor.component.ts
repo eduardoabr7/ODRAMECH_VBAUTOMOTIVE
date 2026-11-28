@@ -1,11 +1,14 @@
-import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ITEM_KIND_LABEL, ItemKind, lineTotal, ServiceItem, ServiceItemInput } from '@shared/models/Billing';
+import { catchError, debounceTime, distinctUntilChanged, Observable, of, Subject, Subscription, switchMap } from 'rxjs';
+import { ITEM_KIND_LABEL, ItemKind, lineTotal, PartOption, ServiceItem, ServiceItemInput } from '@shared/models/Billing';
 
 /**
  * Tabela de peças e serviços com inclusão inline.
  * Não chama API: emite eventos e o componente pai decide onde salvar (orçamento ou OS).
+ * Com `partSearch` (módulo Estoque contratado), a descrição de uma Peça sugere peças do
+ * estoque; escolher uma preenche nome e preço e vincula o item (a OS dá baixa).
  */
 @Component({
   selector: 'app-items-editor',
@@ -28,7 +31,10 @@ import { ITEM_KIND_LABEL, ItemKind, lineTotal, ServiceItem, ServiceItemInput } f
       <tbody>
         <tr *ngFor="let it of items; trackBy: trackById" class="item-row" [class.removing]="removingId === it.id">
           <td><span class="kind" [class.svc]="it.kind === 'SERVICO'">{{ KIND[it.kind] }}</span></td>
-          <td class="desc">{{ it.description }}</td>
+          <td class="desc">
+            {{ it.description }}
+            <span class="stock-link" *ngIf="it.partId" [title]="'Peça do estoque' + (it.part?.code ? ' · ' + it.part?.code : '')"><i class="fa-solid fa-boxes-stacked"></i></span>
+          </td>
           <td class="num tnum">{{ it.quantity | number:'1.0-2' }}</td>
           <td class="num tnum">{{ it.unitPrice | currency:'BRL' }}</td>
           <td class="num tnum hide-sm" [class.faint]="!it.discount">{{ it.discount ? ('− ' + (it.discount | currency:'BRL')) : '—' }}</td>
@@ -46,7 +52,23 @@ import { ITEM_KIND_LABEL, ItemKind, lineTotal, ServiceItem, ServiceItemInput } f
               <button type="button" [class.on]="draft.kind === 'SERVICO'" (click)="draft.kind = 'SERVICO'" title="Serviço">Serv.</button>
             </div>
           </td>
-          <td><input #descRef class="input sm" placeholder="Ex.: Pastilha de freio dianteira" [(ngModel)]="draft.description" (keydown.enter)="submit()"></td>
+          <td class="desc-cell">
+            <input #descRef class="input sm" autocomplete="off"
+              [placeholder]="stockSearch ? 'Buscar no estoque ou digitar a peça' : 'Ex.: Pastilha de freio dianteira'"
+              [(ngModel)]="draft.description" (ngModelChange)="onDescription($event)"
+              (keydown.arrowdown)="moveHighlight(1, $event)" (keydown.arrowup)="moveHighlight(-1, $event)"
+              (keydown.escape)="suggestions = []" (keydown.enter)="onEnter()" (blur)="closeSoon()">
+            <span class="linked" *ngIf="draft.partId && linked">
+              <i class="fa-solid fa-boxes-stacked"></i> Estoque: {{ linked.quantity | number:'1.0-2' }} {{ linked.unit }}
+              <button type="button" (mousedown)="unlink($event)" title="Desvincular do estoque">×</button>
+            </span>
+            <ul class="suggest" *ngIf="suggestions.length" role="listbox">
+              <li *ngFor="let p of suggestions; let i = index" role="option" [class.hl]="i === highlight" (mousedown)="pick(p, $event)">
+                <span class="s-name">{{ p.name }}<small *ngIf="p.code"> · {{ p.code }}</small><small *ngIf="p.brand"> · {{ p.brand }}</small></span>
+                <span class="s-meta tnum" [class.zero]="p.quantity <= 0">{{ p.quantity | number:'1.0-2' }} {{ p.unit }} · {{ p.salePrice | currency:'BRL' }}</span>
+              </li>
+            </ul>
+          </td>
           <td><input class="input sm num" type="number" min="0.01" step="0.01" [(ngModel)]="draft.quantity" (keydown.enter)="submit()"></td>
           <td><input class="input sm num" type="number" min="0" step="0.01" placeholder="0,00" [(ngModel)]="draft.unitPrice" (keydown.enter)="submit()"></td>
           <td class="hide-sm"><input class="input sm num" type="number" min="0" step="0.01" placeholder="0,00" [(ngModel)]="draft.discount" (keydown.enter)="submit()"></td>
@@ -97,14 +119,26 @@ import { ITEM_KIND_LABEL, ItemKind, lineTotal, ServiceItem, ServiceItemInput } f
     .t-row { display: flex; gap: 24px; font-size: 13px; color: var(--muted); min-width: 220px; justify-content: space-between; }
     .t-row.grand { color: var(--ink); font-size: 17px; font-weight: 600; letter-spacing: -0.02em; margin-top: 6px; padding-top: 8px; border-top: 1px dashed var(--line); }
     .empty.slim { padding: 22px; }
+    .stock-link { margin-left: 6px; font-size: 11px; color: var(--muted); }
+    .desc-cell { position: relative; }
+    .linked { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 11.5px; color: var(--ok); }
+    .linked button { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
+    .suggest { position: absolute; left: 8px; width: max(100% - 16px, 340px); max-width: calc(100vw - 32px); top: calc(100% - 6px); overflow-x: hidden; z-index: 20; list-style: none; margin: 0; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-2); max-height: 260px; overflow-y: auto; }
+    .suggest li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+    .suggest li.hl, .suggest li:hover { background: var(--surface-3); }
+    .s-name small { color: var(--muted); }
+    .s-meta { color: var(--muted); white-space: nowrap; font-size: 12px; }
+    .s-meta.zero { color: var(--danger); }
     .hide-sm { }
     @media (max-width: 640px) { .hide-sm { display: none; } }
   `],
 })
-export class ItemsEditorComponent {
+export class ItemsEditorComponent implements OnDestroy {
   @Input() items: ServiceItem[] = [];
   @Input() editable = false;
   @Input() busy = false;
+  /** busca no estoque (null = módulo Estoque não contratado) */
+  @Input() partSearch: ((term: string) => Observable<PartOption[]>) | null = null;
 
   @Output() add = new EventEmitter<ServiceItemInput>();
   @Output() remove = new EventEmitter<ServiceItem>();
@@ -114,11 +148,57 @@ export class ItemsEditorComponent {
   readonly KIND = ITEM_KIND_LABEL;
   removingId: number | null = null;
 
-  draft: { kind: ItemKind; description: string; quantity: number; unitPrice: number | null; discount: number | null } = this.blank();
+  draft: { kind: ItemKind; description: string; quantity: number; unitPrice: number | null; discount: number | null; partId: number | null } = this.blank();
+
+  suggestions: PartOption[] = [];
+  highlight = -1;
+  linked: PartOption | null = null;
+  private readonly term$ = new Subject<string>();
+  private readonly sub: Subscription = this.term$.pipe(
+    debounceTime(200),
+    distinctUntilChanged(),
+    switchMap(term => (term.length >= 2 && this.stockSearch ? this.partSearch!(term).pipe(catchError(() => of([]))) : of([]))),
+  ).subscribe(list => { this.suggestions = list; this.highlight = list.length ? 0 : -1; });
+
+  get stockSearch(): boolean { return !!this.partSearch && this.draft.kind === 'PECA'; }
 
   private blank() {
-    return { kind: 'PECA' as ItemKind, description: '', quantity: 1, unitPrice: null, discount: null };
+    return { kind: 'PECA' as ItemKind, description: '', quantity: 1, unitPrice: null, discount: null, partId: null as number | null };
   }
+
+  ngOnDestroy(): void { this.sub.unsubscribe(); }
+
+  onDescription(text: string): void {
+    // mexeu no texto depois de escolher a peça: deixa de ser a peça do estoque
+    if (this.draft.partId && this.linked && text !== this.linked.name) this.unlink();
+    this.term$.next(text.trim());
+  }
+
+  pick(p: PartOption, e?: Event): void {
+    e?.preventDefault();
+    this.linked = p;
+    this.draft = { ...this.draft, kind: 'PECA', description: p.name, partId: p.id, unitPrice: p.salePrice };
+    this.suggestions = [];
+  }
+
+  unlink(e?: Event): void {
+    e?.preventDefault();
+    this.draft = { ...this.draft, partId: null };
+    this.linked = null;
+  }
+
+  moveHighlight(step: number, e: Event): void {
+    if (!this.suggestions.length) return;
+    e.preventDefault();
+    this.highlight = (this.highlight + step + this.suggestions.length) % this.suggestions.length;
+  }
+
+  onEnter(): void {
+    if (this.suggestions.length && this.highlight >= 0) { this.pick(this.suggestions[this.highlight]); return; }
+    this.submit();
+  }
+
+  closeSoon(): void { setTimeout(() => (this.suggestions = []), 150); }
 
   get draftTotal(): number {
     return lineTotal({ quantity: this.draft.quantity, unitPrice: this.draft.unitPrice ?? 0, discount: this.draft.discount ?? 0 });
@@ -144,6 +224,8 @@ export class ItemsEditorComponent {
       quantity: Number(this.draft.quantity),
       unitPrice: Number(this.draft.unitPrice ?? 0),
       discount: Number(this.draft.discount ?? 0),
+      // só Peça vai vinculada ao estoque
+      ...(this.draft.partId && this.draft.kind === 'PECA' ? { partId: this.draft.partId } : {}),
     });
   }
 
@@ -151,6 +233,8 @@ export class ItemsEditorComponent {
   reset(): void {
     const kind = this.draft.kind;
     this.draft = { ...this.blank(), kind };
+    this.linked = null;
+    this.suggestions = [];
     setTimeout(() => this.descRef?.nativeElement.focus());
   }
 

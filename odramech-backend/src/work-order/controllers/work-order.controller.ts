@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query, Sse } from '@nestjs/common';
 import { IsUUID } from 'class-validator';
 import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
 import { CurrentAuth } from 'src/core/auth/current-auth.decorator';
@@ -49,6 +49,16 @@ export class WorkOrderController {
   @Get(':id')
   getById(@Param('id', ParseIntPipe) id: number, @CurrentAuth() auth: AuthPayload) {
     return this.workOrders.getById(auth, id);
+  }
+
+  /**
+   * "Ao vivo" da tela da OS (Server-Sent Events): uma conexão por tela aberta.
+   * O servidor só manda algo quando a OS muda ou quando alguém entra/sai — nada de consulta periódica.
+   */
+  @AllowWhenBlocked()
+  @Sse(':id/live')
+  live(@Param('id', ParseIntPipe) id: number, @CurrentAuth() auth: AuthPayload) {
+    return this.workOrders.stream(auth, id);
   }
 
   @Put(':id/status')

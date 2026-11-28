@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { ItemKind } from '@prisma/client';
 import { round } from 'src/shared/utils/money.util';
 import { ItemData } from '../repositories/billing.repositories';
 import { ServiceItemDTO, UpdateServiceItemDTO } from '../dto/billing.dto';
@@ -16,6 +17,7 @@ export class ServiceItemFactory {
       quantity: round(dto.quantity),
       unitPrice: round(dto.unitPrice),
       discount: round(dto.discount ?? 0),
+      partId: dto.partId ?? null,
     };
     ServiceItemFactory.assertValid(item);
     return item;
@@ -29,6 +31,7 @@ export class ServiceItemFactory {
       quantity: dto.quantity !== undefined ? round(dto.quantity) : Number(current.quantity),
       unitPrice: dto.unitPrice !== undefined ? round(dto.unitPrice) : Number(current.unitPrice),
       discount: dto.discount !== undefined ? round(dto.discount) : Number(current.discount),
+      partId: dto.partId !== undefined ? dto.partId : current.partId ?? null,
     };
     ServiceItemFactory.assertValid(merged);
     return merged;
@@ -36,6 +39,9 @@ export class ServiceItemFactory {
 
   private static assertValid(item: ItemData): void {
     if (!item.description) throw new BadRequestException('Descrição do item é obrigatória.');
+    if (item.partId && item.kind !== ItemKind.PECA) {
+      throw new BadRequestException('Só itens do tipo Peça podem ser vinculados ao estoque.');
+    }
     if (item.discount > round(item.quantity * item.unitPrice)) {
       throw new BadRequestException('O desconto não pode ser maior que o valor do item.');
     }

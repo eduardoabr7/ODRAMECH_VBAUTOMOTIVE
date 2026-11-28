@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpInterceptorFn } from '@angular/commo
 import { inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, firstValueFrom, throwError } from 'rxjs';
-import { Admin, Dashboard, LicenseDetail, LicenseRow, Plan } from './models';
+import { Admin, Dashboard, LicenseDetail, LicenseRow, ModuleContractSummary, ModuleContractView, Plan } from './models';
 
 /**
  * Tudo vai para /api (mesma origem): em dev o proxy do Angular manda para o serviço de assinaturas;
@@ -91,6 +91,16 @@ export class Api {
   plans() { return firstValueFrom(this.http.get<Plan[]>(`${API}/plans`)); }
   updatePlan(id: number, body: Partial<Plan>) { return firstValueFrom(this.http.put<Plan>(`${API}/plans/${id}`, body)); }
   createPlan(body: Partial<Plan>) { return firstValueFrom(this.http.post<Plan>(`${API}/plans`, body)); }
+  // módulos adicionais (contrato à parte)
+  moduleContracts(id: number) { return firstValueFrom(this.http.get<ModuleContractView[]>(API + '/licenses/' + id + '/modules')); }
+  moduleSummary() { return firstValueFrom(this.http.get<ModuleContractSummary[]>(API + '/module-contracts')); }
+  activateModule(id: number, module: string, body: { endsAt: string | null; priceCents: number | null; note: string; enterpriseName?: string }) {
+    return firstValueFrom(this.http.put(API + '/licenses/' + id + '/modules/' + encodeURIComponent(module), body));
+  }
+  suspendModule(id: number, module: string, reason: string) { return firstValueFrom(this.http.post(API + '/licenses/' + id + '/modules/' + encodeURIComponent(module) + '/suspend', { reason })); }
+  unsuspendModule(id: number, module: string) { return firstValueFrom(this.http.delete(API + '/licenses/' + id + '/modules/' + encodeURIComponent(module) + '/suspend')); }
+  cancelModule(id: number, module: string) { return firstValueFrom(this.http.post(API + '/licenses/' + id + '/modules/' + encodeURIComponent(module) + '/cancel', {})); }
+
   runLifecycle() { return firstValueFrom(this.http.post<{ ok: number; failed: number }>(`${API}/run-lifecycle`, {})); }
 }
 

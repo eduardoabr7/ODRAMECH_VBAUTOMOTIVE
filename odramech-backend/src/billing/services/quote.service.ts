@@ -11,6 +11,8 @@ import { QuoteCreateDTO, QuoteListQueryDTO, QuoteUpdateDTO, ServiceItemDTO } fro
 import { SettingsService } from 'src/settings/services/settings.service';
 import { QuoteMailService } from './quote-mail.service';
 import { DocQuote, renderQuoteDocument } from '../document/quote-document.renderer';
+import { ItemStockPolicy } from 'src/inventory/item-stock.policy';
+import { ItemData } from '../repositories/billing.repositories';
 
 /** Casos de uso de orçamento. */
 @Injectable()
@@ -21,7 +23,16 @@ export class QuoteService {
     private readonly prisma: PrismaService,
     private readonly settings: SettingsService,
     private readonly mail: QuoteMailService,
+    private readonly stock: ItemStockPolicy,
   ) {}
+
+  /** itens que apontam para o estoque: módulo contratado e peça deste estabelecimento */
+  private async assertPartLinks(auth: AuthPayload, items: ItemData[]) {
+    const linked = items.filter(i => i.partId);
+    if (!linked.length) return;
+    const ctx = await this.stock.context(auth);
+    for (const i of linked) await this.stock.assertLinkable(auth, ctx, i.partId!, i.kind);
+  }
 
   private scope(auth: AuthPayload): QuoteScope {
     return { establishmentId: auth.establishmentId, ...(isStaff(auth.role) ? {} : { onlyClientId: auth.sub }) };
@@ -45,6 +56,8 @@ export class QuoteService {
   async create(auth: AuthPayload, dto: QuoteCreateDTO) {
     assertStaff(auth.role);
     await this.assertClientOwnsVehicle(auth.establishmentId, dto.clientId, dto.vehicleId);
+    const items = dto.items.map(ServiceItemFactory.create);
+    await this.assertPartLinks(auth, items);
 
     // sem data informada, usa a validade padrão do estabelecimento (15 dias se não configurada)
     let validUntil = dto.validUntil ? new Date(dto.validUntil) : null;
@@ -62,7 +75,7 @@ export class QuoteService {
       userCreationId: auth.sub,
       validUntil,
       notes: dto.notes?.trim() || null,
-      items: dto.items.map(ServiceItemFactory.create),
+      items,
     });
     await this.mail.onCreated(id, auth.establishmentId);
     return this.get(auth, id);
@@ -96,7 +109,9 @@ export class QuoteService {
 
   async addItem(auth: AuthPayload, id: number, dto: ServiceItemDTO) {
     await this.editable(auth, id);
-    await this.items.addToQuote(id, ServiceItemFactory.create(dto));
+    const item = ServiceItemFactory.create(dto);
+    await this.assertPartLinks(auth, [item]);
+    await this.items.addToQuote(id, item);
     await this.mail.onContentChanged(id);
     return this.get(auth, id);
   }
@@ -121,7 +136,8 @@ export class QuoteService {
     if (!quote.items.length) throw new BadRequestException('O orçamento não tem itens.');
 
     const note = `<p>OS aberta a partir do <b>orçamento #${quote.numberQuote}</b>.</p>${quote.notes ? `<p>${escapeHtml(quote.notes)}</p>` : ''}`;
-    const wo = await this.quotes.convertToWorkOrder(id, auth.sub, note);
+    // peças vinculadas saem do estoque na conversão (mesma transação); sem saldo → 409 e nada muda
+    const wo = await this.quotes.convertToWorkOrder(id, auth.sub, note, await this.stock.context(auth));
     return { workOrderId: wo.id, numberOs: wo.numberOs };
   }
 

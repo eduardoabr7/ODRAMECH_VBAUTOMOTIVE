@@ -2,7 +2,7 @@ import { Component, computed, inject, input, OnInit, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Api, Toast } from '../core/api.service';
-import { badgeOf, isForever, LicenseRow } from '../core/models';
+import { badgeOf, isForever, LicenseRow, MODULE_NAME } from '../core/models';
 
 type Filter = 'all' | 'paid' | 'trial' | 'complimentary' | 'grace' | 'blocked' | 'none';
 
@@ -46,7 +46,7 @@ const FILTERS: { key: Filter; label: string }[] = [
       } @else if (visible().length) {
         <table class="grid">
           <thead>
-            <tr><th>Oficina</th><th>Situação</th><th>Plano</th><th>Vale até</th><th></th></tr>
+            <tr><th>Oficina</th><th>Situação</th><th>Plano</th><th>Módulos</th><th>Vale até</th><th></th></tr>
           </thead>
           <tbody>
             @for (r of visible(); track r.enterpriseId) {
@@ -57,6 +57,9 @@ const FILTERS: { key: Filter; label: string }[] = [
                 </td>
                 <td><span class="pill {{ badge(r).cls }}">{{ badge(r).label }}</span></td>
                 <td>{{ r.plan?.name ?? '—' }}</td>
+                <td>
+                  @for (m of modulesOf(r.enterpriseId); track m) { <span class="pill paid">{{ m }}</span> } @empty { <span class="faint">—</span> }
+                </td>
                 <td class="mono">{{ until(r) }}</td>
                 <td class="go">›</td>
               </tr>
@@ -80,7 +83,7 @@ const FILTERS: { key: Filter; label: string }[] = [
     .chip.on span { color: #bbb; }
     .note { padding: 10px 14px; border-radius: var(--r); background: var(--warn-soft); color: var(--warn); font-size: 13px; margin: 0 0 14px; }
     .go { width: 24px; color: var(--faint); font-size: 18px; }
-    @media (max-width: 640px) { table.grid th:nth-child(3), table.grid td:nth-child(3) { display: none; } }
+    @media (max-width: 640px) { table.grid th:nth-child(3), table.grid td:nth-child(3), table.grid th:nth-child(4), table.grid td:nth-child(4) { display: none; } }
   `,
 })
 export class LicensesPage implements OnInit {
@@ -97,6 +100,8 @@ export class LicensesPage implements OnInit {
   readonly search = signal('');
   readonly active = signal<Filter>('all');
   readonly badge = badgeOf;
+  /** módulos adicionais ATIVOS por empresa */
+  private readonly modules = signal(new Map<number, string[]>());
 
   readonly visible = computed(() => {
     const term = this.search().trim().toLowerCase();
@@ -117,12 +122,19 @@ export class LicensesPage implements OnInit {
       const r = await this.api.licenses();
       this.rows.set(r.licenses);
       this.directoryAvailable.set(r.directoryAvailable);
+      const map = new Map<number, string[]>();
+      for (const c of await this.api.moduleSummary()) {
+        if (c.active) map.set(c.enterpriseId, [...(map.get(c.enterpriseId) ?? []), MODULE_NAME[c.module] ?? c.module]);
+      }
+      this.modules.set(map);
     } catch (err) {
       this.toast.error(err);
     } finally {
       this.loading.set(false);
     }
   }
+
+  modulesOf(id: number): string[] { return this.modules().get(id) ?? []; }
 
   count(f: Filter) { return this.rows().filter(r => this.matches(r, f)).length; }
 

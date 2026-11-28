@@ -6,10 +6,14 @@ interface FlatError {
   constraints: Record<string, string>;
 }
 
+/** nunca devolver na resposta o que foi digitado em campos sensíveis (senha, token…) */
+const SENSITIVE = /pass(word)?|senha|token|secret|cvv|card/i;
+
 function flatten(errors: ValidationError[], parent = ''): FlatError[] {
   return errors.flatMap(error => {
     const path = parent ? `${parent}.${error.property}` : error.property;
-    const own = error.constraints ? [{ property: path, value: error.value, constraints: error.constraints }] : [];
+    const value = SENSITIVE.test(error.property) ? '[oculto]' : error.value;
+    const own = error.constraints ? [{ property: path, value, constraints: error.constraints }] : [];
     return [...own, ...flatten(error.children ?? [], path)];
   });
 }

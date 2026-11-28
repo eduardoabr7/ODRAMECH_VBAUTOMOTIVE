@@ -1,3 +1,6 @@
+@if (mustChangePassword()) {
+  <app-first-password-modal></app-first-password-modal>
+} @else {
 <div class="shell" [class.is-collapsed]="collapsed" [class.is-mobile-open]="mobileOpen">
 
   <app-left-menu
@@ -22,3 +25,4 @@
   </div>
 
 </div>
+}

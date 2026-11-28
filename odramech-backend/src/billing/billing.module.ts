@@ -14,6 +14,7 @@ import {
   NoteRepository, PaymentRepository, QuoteRepository, ReviewRepository, ServiceItemRepository,
 } from './repositories/billing.repositories';
 import { SubscriptionModule } from 'src/subscription/subscription.module';
+import { InventoryModule } from 'src/inventory/inventory.module';
 import {
   PrismaNoteRepository, PrismaPaymentRepository, PrismaQuoteRepository, PrismaReviewRepository,
   PrismaServiceItemRepository,
@@ -24,7 +25,7 @@ import {
  * aqui — trocar de banco/ORM é mudar estas linhas, não os serviços (Dependency Inversion).
  */
 @Module({
-  imports: [WorkOrderModule, SettingsModule, MailModule, SubscriptionModule],
+  imports: [WorkOrderModule, SettingsModule, MailModule, SubscriptionModule, InventoryModule],
   controllers: [QuoteController, WorkOrderMoneyController, NotesController, PublicQuoteController],
   providers: [
     QuoteService,

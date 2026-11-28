@@ -47,5 +47,7 @@ export function serializeItem<T extends ItemLike>(item: T) {
     unitPrice: toNum(item.unitPrice),
     discount: toNum(item.discount),
     total: itemTotal(item),
+    // quanto a linha já tirou do estoque (módulo Estoque) — Decimal vira número
+    ...('stockQuantity' in item && { stockQuantity: toNum((item as { stockQuantity?: DecimalLike }).stockQuantity) }),
   };
 }

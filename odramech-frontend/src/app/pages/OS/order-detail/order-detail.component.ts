@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -16,6 +16,9 @@ import { AppointmentTypeEnum } from '@shared/enums/type-appointment.enum';
 import { StatusBadgeComponent } from '@shared/ui/status-badge.component';
 import { InitialsPipe, PhonePipe, PlatePipe, RelativeTimePipe } from '@shared/ui/pipes';
 import { ItemsEditorComponent } from '@shared/ui/items-editor.component';
+import { WorkOrderLive } from '../../../features/work-order-live/work-order-live';
+import { ContractedModulesService } from '../../../features/modules/contracted-modules.service';
+import { InventoryRepository, partSearchFn } from '../../../features/inventory/inventory.repository';
 import { BillingService } from '@shared/services/billing.service';
 import { PAYMENT_LABEL, PaymentMethod, ServiceItem, ServiceItemInput } from '@shared/models/Billing';
 import { ArchiveAppointment } from '@shared/models/WorkOrder';
@@ -43,6 +46,8 @@ type TimelineItem =
     CommonModule, FormsModule, RouterModule, StatusBadgeComponent, ItemsEditorComponent, InitialsPipe, PhonePipe, PlatePipe, RelativeTimePipe,
     MediaPickerComponent, ResizableImageComponent, ImageLightboxComponent,
   ],
+  // uma instância por tela: conexão ao vivo (quem está vendo + aviso de alteração por outra pessoa)
+  providers: [WorkOrderLive],
   templateUrl: './order-detail.component.html',
   styleUrl: './order-detail.component.scss',
 })
@@ -58,6 +63,8 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   wo: WorkOrderDetail | null = null;
   loading = true;
   notFound = false;
+  reloading = false;
+  readonly live = inject(WorkOrderLive);
   isStaff = false;
   myUserId: number | null = null;
 
@@ -75,6 +82,9 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
 
   // financeiro
   @ViewChild(ItemsEditorComponent) itemsEditor?: ItemsEditorComponent;
+  /** busca de peças do estoque — só existe com o módulo contratado */
+  readonly stock = inject(ContractedModulesService);
+  readonly partSearch = partSearchFn(inject(InventoryRepository));
   savingItem = false;
   payMethod: PaymentMethod = 'PIX';
   payAmount: number | null = null;
@@ -139,9 +149,22 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
     this._workOrders.getById(id).subscribe(wo => this.setWo(wo));
   }
 
+  viewerNames(): string { return this.live.viewers().map(v => v.name).join(', '); }
+
+  /** botão "Recarregar": traz o que outra pessoa mudou (rascunho do apontamento não é perdido) */
+  reloadChanges(): void {
+    if (!this.wo || this.reloading) return;
+    this.reloading = true;
+    this._workOrders.getById(this.wo.id).subscribe({
+      next: wo => { this.setWo(wo); this.reloading = false; },
+      error: err => { this.reloading = false; this._toastr.error(err?.error?.message ?? 'Não foi possível recarregar a OS.'); },
+    });
+  }
+
   private setWo(wo: WorkOrderDetail): void {
     this.wo = wo;
     this.loading = false;
+    this.live.loaded(wo.id);
     if (!this.canWriteInternal) this.noteType = AppointmentTypeEnum.PUBLICO;
     this._title.setTitle(`OS #${wo.numberOs} · ${wo.client.name} · Odramech`);
   }
@@ -241,7 +264,8 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
         who: this.wo.userEnd?.name,
       });
     }
-    return items.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+    // mais novo em cima, mais antigo descendo
+    return items.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
   }
 
   // o getter `timeline` monta objetos novos a cada ciclo: sem trackBy o Angular recriaria

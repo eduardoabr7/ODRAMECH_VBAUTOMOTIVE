@@ -89,6 +89,8 @@ export class UserFactory {
         gender: input.gender,
         email,
         password,
+        // quem definiu a senha foi a oficina: a pessoa troca no primeiro acesso
+        mustChangePassword: !!password,
         principalPhone: onlyDigits(input.principalPhone),
         secondaryPhone: input.secondaryPhone ? onlyDigits(input.secondaryPhone) : undefined,
         address: input.address

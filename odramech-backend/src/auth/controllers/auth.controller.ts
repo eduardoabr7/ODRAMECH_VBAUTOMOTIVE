@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common'
 import { AuthService } from '../services/auth.service'
 import { CustomLogger } from 'src/shared/services/custom-logger.service';
 import { EmailMaskService } from 'src/shared/services/mask-email.service';
@@ -10,6 +10,8 @@ import { PreLoginDTO } from '../dto/pre-login.dto';
 import { LoginDTO } from '../dto/login.dto';
 import { AuthPayload } from '../interfaces/auth-payload.interface';
 import { AppConfig } from 'src/core/config/app-config';
+import { CurrentAuth } from 'src/core/auth/current-auth.decorator';
+import { FirstPasswordDTO } from '../dto/first-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -54,6 +56,14 @@ export class AuthController {
         });
         
         return user;
+    }
+
+    /** primeiro acesso: troca obrigatória da senha provisória */
+    @Post('change-password')
+    @HttpCode(200)
+    changePassword(@Body() dto: FirstPasswordDTO, @CurrentAuth() auth: AuthPayload) {
+        if (auth.context !== 'AUTH') throw new UnauthorizedException('Escolha o estabelecimento para continuar.');
+        return this._authService.changeFirstPassword(auth, dto.newPassword, dto.confirmPassword);
     }
 
     @Post('logout')

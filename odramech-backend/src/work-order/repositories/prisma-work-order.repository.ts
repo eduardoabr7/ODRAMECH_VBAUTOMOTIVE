@@ -180,12 +180,16 @@ export class PrismaWorkOrderRepository extends WorkOrderRepository {
           orderBy: { dateTime: 'asc' },
           include: { userAppointment: { select: { id: true, name: true } }, archives: true },
         },
-        items: { orderBy: { id: 'asc' } },
+        items: { orderBy: { id: 'asc' }, include: { part: { select: { id: true, name: true, code: true, unit: true } } } },
         payments: { orderBy: { paidAt: 'asc' }, include: { user: { select: { id: true, name: true } } } },
         review: true,
         quote: { select: { id: true, numberQuote: true } },
       },
     });
+  }
+
+  async userName(userId: number): Promise<string | null> {
+    return (await this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }))?.name ?? null;
   }
 
   findRef(id: number, establishmentId: number): Promise<WorkOrderRef | null> {

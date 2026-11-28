@@ -1,5 +1,5 @@
 import { LoginDTO } from "../dto/login.dto";
-import { BadRequestException, Injectable, Req, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, Req, UnauthorizedException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma-service";
 import { BcryptService } from "src/crypto/bcrypt.service";
 import { JWTService } from "./jwt.service"
@@ -104,6 +104,28 @@ export class AuthService {
       return { message: 'Session terminated' }
     }
 
+    /**
+     * Primeiro acesso: troca a senha provisória (definida por quem cadastrou).
+     * Só vale enquanto a troca está pendente — com a sessão de outra pessoa aberta não dá para
+     * trocar a senha dela sem saber a atual.
+     */
+    async changeFirstPassword(auth: AuthPayload, newPassword: string, confirmPassword: string) {
+      if (newPassword !== confirmPassword) throw new BadRequestException('As senhas não conferem.');
+
+      const user = await this._prisma.user.findUnique({ where: { id: auth.sub }, select: { password: true, mustChangePassword: true } });
+      if (!user) throw new UnauthorizedException('Usuário não encontrado.');
+      if (!user.mustChangePassword) throw new ConflictException('Sua senha já foi definida.');
+      if (user.password && (await this._bcryptService.hashPasswordCompare(newPassword, user.password))) {
+        throw new BadRequestException('A nova senha precisa ser diferente da senha provisória.');
+      }
+
+      await this._prisma.user.update({
+        where: { id: auth.sub },
+        data: { password: await this._bcryptService.hashPassword(newPassword), mustChangePassword: false },
+      });
+      return { changed: true };
+    }
+
     async getMeAuthContext(payloadJwt: AuthPayload): Promise<any> {
       const value = await this._prisma.user.findUnique({
         where: {
@@ -113,7 +135,8 @@ export class AuthService {
           id: true,
           name: true,
           email: true,
-          principalPhone: true
+          principalPhone: true,
+          mustChangePassword: true,
         }
       });
 

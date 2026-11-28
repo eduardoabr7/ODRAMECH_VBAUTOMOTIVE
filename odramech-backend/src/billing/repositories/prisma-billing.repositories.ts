@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { OrderStatus, PaymentMethod, Prisma, QuoteStatus, TypeAppointment } from '@prisma/client';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { toNum } from 'src/shared/utils/money.util';
+import { StockLedger } from 'src/inventory/stock-ledger';
+import { StockContext } from 'src/inventory/domain/stock';
 import {
   CreateQuoteData, ItemData, NoteRepository, PaymentRepository, QuoteFilter, QuoteRepository,
   QuoteScope, ReviewRepository, ServiceItemRepository,
@@ -15,7 +17,7 @@ const QUOTE_INCLUDE = {
   vehicle: VEHICLE,
   userCreation: { select: { id: true, name: true } },
   workOrder: { select: { id: true, numberOs: true, status: true } },
-  items: { orderBy: { id: 'asc' } },
+  items: { orderBy: { id: 'asc' }, include: { part: { select: { id: true, name: true, code: true, unit: true } } } },
   // últimos e-mails enviados ao cliente (histórico na tela do orçamento)
   emails: { orderBy: { createdAt: 'desc' }, take: 5, select: { id: true, version: true, kind: true, trigger: true, status: true, toEmail: true, error: true, createdAt: true } },
 } satisfies Prisma.QuoteInclude;
@@ -26,7 +28,7 @@ function scopeWhere(s: QuoteScope): Prisma.QuoteWhereInput {
 
 @Injectable()
 export class PrismaQuoteRepository extends QuoteRepository {
-  constructor(private readonly prisma: PrismaService) { super(); }
+  constructor(private readonly prisma: PrismaService, private readonly ledger: StockLedger) { super(); }
 
   list(f: QuoteFilter, take: number) {
     const where: Prisma.QuoteWhereInput = { ...scopeWhere(f), ...(f.status ? { status: f.status } : {}) };
@@ -74,7 +76,7 @@ export class PrismaQuoteRepository extends QuoteRepository {
     await this.prisma.quote.update({ where: { id }, data });
   }
 
-  convertToWorkOrder(quoteId: number, userId: number, firstNoteHtml: string) {
+  convertToWorkOrder(quoteId: number, userId: number, firstNoteHtml: string, stock: StockContext) {
     return this.prisma.$transaction(async tx => {
       const quote = await tx.quote.findUniqueOrThrow({ where: { id: quoteId } });
       const counter = await tx.establishmentOsCounter.upsert({
@@ -97,6 +99,8 @@ export class PrismaQuoteRepository extends QuoteRepository {
         select: { id: true, numberOs: true },
       });
       await tx.serviceItem.updateMany({ where: { quoteId }, data: { workOrderId: wo.id } });
+      // peças vinculadas saem do estoque agora (orçamento não baixa). Sem saldo → nada é convertido.
+      await this.ledger.syncWorkOrder(tx, wo.id, stock);
       await tx.quote.update({ where: { id: quoteId }, data: { status: QuoteStatus.APROVADO, workOrderId: wo.id } });
       return wo;
     });
@@ -105,14 +109,19 @@ export class PrismaQuoteRepository extends QuoteRepository {
 
 @Injectable()
 export class PrismaServiceItemRepository extends ServiceItemRepository {
-  constructor(private readonly prisma: PrismaService) { super(); }
+  constructor(private readonly prisma: PrismaService, private readonly ledger: StockLedger) { super(); }
 
   addToQuote(quoteId: number, item: ItemData) {
     return this.prisma.serviceItem.create({ data: { ...item, quoteId } });
   }
 
-  addToWorkOrder(workOrderId: number, item: ItemData) {
-    return this.prisma.serviceItem.create({ data: { ...item, workOrderId } });
+  addToWorkOrder(workOrderId: number, item: ItemData, stock: StockContext) {
+    return this.prisma.$transaction(async tx => {
+      const created = await tx.serviceItem.create({ data: { ...item, workOrderId } });
+      if (!created.partId) return created;
+      await this.ledger.syncItem(tx, created.id, stock);
+      return tx.serviceItem.findUniqueOrThrow({ where: { id: created.id } });
+    });
   }
 
   async findWithOwner(itemId: number) {
@@ -127,12 +136,22 @@ export class PrismaServiceItemRepository extends ServiceItemRepository {
     return { item, establishmentId, lockedQuote };
   }
 
-  update(itemId: number, data: Partial<ItemData>) {
-    return this.prisma.serviceItem.update({ where: { id: itemId }, data });
+  update(itemId: number, data: Partial<ItemData>, stock: StockContext) {
+    return this.prisma.$transaction(async tx => {
+      const before = await tx.serviceItem.findUniqueOrThrow({ where: { id: itemId }, select: { partId: true } });
+      // trocou/desvinculou a peça: a anterior recebe de volta o que tinha saído
+      if (data.partId !== undefined && data.partId !== before.partId) await this.ledger.syncItem(tx, itemId, stock, { release: true });
+      await tx.serviceItem.update({ where: { id: itemId }, data });
+      await this.ledger.syncItem(tx, itemId, stock);
+      return tx.serviceItem.findUniqueOrThrow({ where: { id: itemId } });
+    });
   }
 
-  async delete(itemId: number) {
-    await this.prisma.serviceItem.delete({ where: { id: itemId } });
+  async delete(itemId: number, stock: StockContext) {
+    await this.prisma.$transaction(async tx => {
+      await this.ledger.syncItem(tx, itemId, stock, { release: true });
+      await tx.serviceItem.delete({ where: { id: itemId } });
+    });
   }
 }
 

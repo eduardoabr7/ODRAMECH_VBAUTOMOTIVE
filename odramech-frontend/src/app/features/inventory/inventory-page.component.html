@@ -1,0 +1,215 @@
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <div class="eyebrow reveal">Módulo contratado</div>
+      <h1 class="page-title reveal" style="--i:1">Estoque de peças</h1>
+      <p class="page-sub reveal" style="--i:2">
+        Saldo deste estabelecimento. Peças lançadas em OS saem do estoque automaticamente.
+      </p>
+    </div>
+    <div class="page-actions reveal" style="--i:3" *ngIf="isManager()">
+      <button type="button" class="btn-x btn-solid" (click)="newPart()"><i class="fa-solid fa-plus"></i> Nova peça</button>
+    </div>
+  </div>
+
+  <!-- Indicadores -->
+  <div class="kpis reveal" style="--i:3" *ngIf="summary() as s">
+    <div class="kpi"><span class="kpi-label">Peças ativas</span><span class="kpi-value tnum">{{ s.totalParts }}</span></div>
+    <button type="button" class="kpi clickable" [class.warn]="s.lowStock" (click)="setFilter('low')">
+      <span class="kpi-label">No mínimo ou abaixo</span><span class="kpi-value tnum">{{ s.lowStock }}</span>
+    </button>
+    <div class="kpi" [class.danger]="s.outOfStock"><span class="kpi-label">Sem saldo</span><span class="kpi-value tnum">{{ s.outOfStock }}</span></div>
+    <div class="kpi"><span class="kpi-label">Valor em estoque (custo)</span><span class="kpi-value tnum">{{ s.stockValue | currency:'BRL' }}</span></div>
+  </div>
+
+  <div class="toolbar reveal" style="--i:4">
+    <div class="input-icon list-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input class="input" placeholder="Nome, código, código do fabricante, marca ou local" [(ngModel)]="search" (ngModelChange)="onSearch()" maxlength="100">
+    </div>
+    <div class="segmented">
+      <button type="button" [class.active]="filter === 'all'" (click)="setFilter('all')">Todas</button>
+      <button type="button" [class.active]="filter === 'low'" (click)="setFilter('low')">Repor</button>
+    </div>
+    <label class="inactive-toggle" *ngIf="isManager()">
+      <input type="checkbox" [(ngModel)]="includeInactive" (ngModelChange)="onSearch()"> Mostrar desativadas
+    </label>
+  </div>
+
+  <div class="panel reveal" style="--i:5">
+    <div class="table-scroll" *ngIf="!loading() && parts().length">
+      <table class="dtable">
+        <thead>
+          <tr>
+            <th class="hide-sm">Código</th>
+            <th>Peça</th>
+            <th class="hide-sm">Local</th>
+            <th class="num">Saldo</th>
+            <th class="num hide-sm">Mínimo</th>
+            <th class="num hide-sm">Venda</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of parts(); trackBy: trackById" class="clickable" [class.off]="!p.active" (click)="open(p)">
+            <td class="hide-sm mono">{{ p.code || '—' }}</td>
+            <td>
+              <span class="cell-main">{{ p.name }}</span>
+              <span class="cell-sub" *ngIf="p.brand || p.oemCode"> · {{ p.brand }}<ng-container *ngIf="p.brand && p.oemCode"> </ng-container>{{ p.oemCode }}</span>
+              <span class="tag off-tag" *ngIf="!p.active">Desativada</span>
+            </td>
+            <td class="hide-sm">{{ p.location || '—' }}</td>
+            <td class="num tnum">
+              <span class="qty" [class.low]="p.lowStock" [class.zero]="p.quantity <= 0">{{ p.quantity | number:'1.0-2' }}</span>
+              <span class="unit">{{ p.unit }}</span>
+            </td>
+            <td class="num tnum hide-sm faint">{{ p.minQuantity ? (p.minQuantity | number:'1.0-2') : '—' }}</td>
+            <td class="num tnum hide-sm">{{ p.salePrice | currency:'BRL' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="more" *ngIf="hasMore() && !loading()">
+      <button type="button" class="btn-x btn-ghost" (click)="loadMore()">Carregar mais ({{ parts().length }} de {{ total() }})</button>
+    </div>
+
+    <div class="empty" *ngIf="!loading() && !parts().length">
+      <i class="fa-solid fa-boxes-stacked"></i>
+      <p *ngIf="search || filter === 'low'">Nenhuma peça encontrada com esse filtro.</p>
+      <p *ngIf="!search && filter === 'all'">Nenhuma peça cadastrada ainda.</p>
+      <button type="button" class="btn-x btn-outline" *ngIf="isManager() && !search && filter === 'all'" (click)="newPart()">Cadastrar a primeira peça</button>
+    </div>
+
+    <div class="loading" *ngIf="loading()"><span class="spinner-x"></span></div>
+  </div>
+</div>
+
+<!-- Painel lateral: detalhe / cadastro -->
+<div class="drawer-backdrop" *ngIf="drawer()" appBodyPortal (click)="close()"></div>
+<aside class="drawer" *ngIf="drawer() as d" appBodyPortal role="dialog" aria-modal="true" [attr.aria-label]="d.mode === 'form' ? 'Cadastro de peça' : 'Detalhe da peça'">
+
+  <!-- Detalhe -->
+  <ng-container *ngIf="d.mode === 'detail'">
+    <header class="drawer-head">
+      <div>
+        <span class="eyebrow">{{ d.part.code || 'Sem código' }}</span>
+        <h2>{{ d.part.name }}</h2>
+        <p class="faint" *ngIf="d.part.brand || d.part.oemCode">{{ d.part.brand }} {{ d.part.oemCode }}</p>
+      </div>
+      <button type="button" class="btn-x btn-ghost" (click)="close()" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+
+    <div class="drawer-body">
+      <div class="balance" [class.low]="d.part.lowStock" [class.zero]="d.part.quantity <= 0">
+        <span class="kpi-label">Saldo</span>
+        <span class="big tnum">{{ d.part.quantity | number:'1.0-2' }} <small>{{ UNIT[d.part.unit] }}</small></span>
+        <span class="faint" *ngIf="d.part.minQuantity">Mínimo {{ d.part.minQuantity | number:'1.0-2' }}</span>
+      </div>
+
+      <dl class="kv-grid">
+        <div><dt>Custo</dt><dd class="tnum">{{ d.part.costPrice | currency:'BRL' }}</dd></div>
+        <div><dt>Venda</dt><dd class="tnum">{{ d.part.salePrice | currency:'BRL' }}</dd></div>
+        <div><dt>Local</dt><dd>{{ d.part.location || '—' }}</dd></div>
+        <div><dt>Situação</dt><dd>{{ d.part.active ? 'Ativa' : 'Desativada' }}</dd></div>
+      </dl>
+      <p class="notes" *ngIf="d.part.notes">{{ d.part.notes }}</p>
+
+      <div class="actions" *ngIf="d.part.active && !move">
+        <button type="button" class="btn-x btn-solid" (click)="startMove('ENTRADA')"><i class="fa-solid fa-arrow-down"></i> Entrada</button>
+        <button type="button" class="btn-x btn-outline" (click)="startMove('SAIDA')"><i class="fa-solid fa-arrow-up"></i> Saída</button>
+        <button type="button" class="btn-x btn-outline" *ngIf="isManager()" (click)="startMove('AJUSTE')"><i class="fa-solid fa-scale-balanced"></i> Ajustar</button>
+      </div>
+
+      <form class="move-form" *ngIf="move" (ngSubmit)="submitMove(d.part)">
+        <span class="field-label">{{ MOVE[move.type] }}</span>
+        <div class="row">
+          <label class="field">
+            <span>{{ move.type === 'AJUSTE' ? 'Saldo contado' : 'Quantidade' }}</span>
+            <input class="input num" type="number" name="qty" min="0" step="0.01" [(ngModel)]="move.quantity" required autofocus>
+          </label>
+          <label class="field" *ngIf="move.type === 'ENTRADA'">
+            <span>Custo unitário (opcional)</span>
+            <input class="input num" type="number" name="cost" min="0" step="0.01" [(ngModel)]="move.unitCost">
+          </label>
+        </div>
+        <label class="field">
+          <span>{{ move.type === 'AJUSTE' ? 'Motivo (obrigatório)' : 'Observação' }}</span>
+          <input class="input" name="note" maxlength="300" [(ngModel)]="move.note" [placeholder]="move.type === 'ENTRADA' ? 'Ex.: NF 1234 — Fornecedor X' : move.type === 'AJUSTE' ? 'Ex.: contagem de inventário' : 'Ex.: uso interno, avaria'">
+        </label>
+        <div class="row end">
+          <button type="button" class="btn-x btn-ghost" (click)="move = null">Cancelar</button>
+          <button type="submit" class="btn-x btn-solid" [disabled]="busy() || move.quantity === null || (move.type === 'AJUSTE' && !move.note.trim())">
+            <span class="spinner-x" *ngIf="busy()"></span> Registrar
+          </button>
+        </div>
+      </form>
+
+      <h3 class="section">Movimentações recentes</h3>
+      <ul class="moves" *ngIf="d.part.movements.length; else noMoves">
+        <li *ngFor="let m of d.part.movements">
+          <span class="mv-type" [class.in]="m.quantity > 0" [class.out]="m.quantity < 0">{{ MOVE[m.type] }}</span>
+          <span class="mv-qty tnum">{{ m.quantity > 0 ? '+' : '' }}{{ m.quantity | number:'1.0-2' }}</span>
+          <span class="mv-meta faint">
+            {{ m.createdAt | date:'dd/MM/yy HH:mm' }} · {{ m.userName || '—' }}
+            <a *ngIf="m.workOrderId" [routerLink]="['/orders', m.workOrderId]" (click)="close()">OS #{{ m.numberOs ?? m.workOrderId }}</a>
+          </span>
+          <span class="mv-bal tnum faint">saldo {{ m.balanceAfter | number:'1.0-2' }}</span>
+          <span class="mv-note" *ngIf="m.note">{{ m.note }}</span>
+        </li>
+      </ul>
+      <ng-template #noMoves><p class="faint">Nenhuma movimentação ainda.</p></ng-template>
+    </div>
+
+    <footer class="drawer-foot" *ngIf="isManager()">
+      <button type="button" class="btn-x btn-ghost" [class.btn-danger-ghost]="d.part.active" (click)="toggleActive(d.part)">
+        {{ d.part.active ? 'Desativar' : 'Reativar' }}
+      </button>
+      <button type="button" class="btn-x btn-outline" (click)="edit(d.part)"><i class="fa-regular fa-pen-to-square"></i> Editar</button>
+    </footer>
+  </ng-container>
+
+  <!-- Cadastro / edição -->
+  <form *ngIf="d.mode === 'form'" class="form-wrap" (ngSubmit)="save()">
+    <header class="drawer-head">
+      <h2>{{ d.part ? 'Editar peça' : 'Nova peça' }}</h2>
+      <button type="button" class="btn-x btn-ghost" (click)="d.part ? open(d.part) : close()" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+
+    <div class="drawer-body">
+      <label class="field"><span>Nome *</span><input class="input" name="name" maxlength="120" [(ngModel)]="form.name" required autofocus placeholder="Ex.: Filtro de óleo"></label>
+      <div class="row">
+        <label class="field"><span>Código interno</span><input class="input" name="code" maxlength="40" [(ngModel)]="form.code"></label>
+        <label class="field"><span>Unidade</span>
+          <select class="input" name="unit" [(ngModel)]="form.unit">
+            <option *ngFor="let u of UNITS" [value]="u">{{ u }} — {{ UNIT[u] }}</option>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <label class="field"><span>Marca</span><input class="input" name="brand" maxlength="60" [(ngModel)]="form.brand"></label>
+        <label class="field"><span>Código do fabricante</span><input class="input" name="oem" maxlength="60" [(ngModel)]="form.oemCode"></label>
+      </div>
+      <div class="row">
+        <label class="field"><span>Custo (R$)</span><input class="input num" type="number" name="cost" min="0" step="0.01" [(ngModel)]="form.costPrice"></label>
+        <label class="field"><span>Venda (R$)</span><input class="input num" type="number" name="sale" min="0" step="0.01" [(ngModel)]="form.salePrice"></label>
+      </div>
+      <div class="row">
+        <label class="field"><span>Estoque mínimo</span><input class="input num" type="number" name="min" min="0" step="0.01" [(ngModel)]="form.minQuantity"></label>
+        <label class="field"><span>Local</span><input class="input" name="loc" maxlength="60" [(ngModel)]="form.location" placeholder="Ex.: Prateleira B3"></label>
+      </div>
+      <label class="field" *ngIf="!d.part">
+        <span>Saldo inicial</span>
+        <input class="input num" type="number" name="initial" min="0" step="0.01" [(ngModel)]="form.initialQuantity">
+        <small class="faint">Registrado como entrada no histórico.</small>
+      </label>
+      <label class="field"><span>Observações</span><textarea class="input" name="notes" rows="3" maxlength="1000" [(ngModel)]="form.notes"></textarea></label>
+      <p class="faint" *ngIf="d.part">O saldo só muda por movimentação (entrada, saída, ajuste ou OS).</p>
+    </div>
+
+    <footer class="drawer-foot">
+      <button type="button" class="btn-x btn-ghost" (click)="d.part ? open(d.part) : close()">Cancelar</button>
+      <button type="submit" class="btn-x btn-solid" [disabled]="!formValid || busy()"><span class="spinner-x" *ngIf="busy()"></span> Salvar</button>
+    </footer>
+  </form>
+</aside>

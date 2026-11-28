@@ -10,6 +10,7 @@ import { provideClientHydration, withEventReplay } from '@angular/platform-brows
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ConnectionInterceptor } from '@shared/interceptors/connection-interceptor.service';
 import { SubscriptionRequiredInterceptor } from '@shared/interceptors/subscription-required.interceptor';
+import { ModuleRequiredInterceptor } from '@shared/interceptors/module-required.interceptor';
 import { initializeApp } from './app.initializer';
 import { AuthService } from '@shared/services/auth.service';
 import { ConnectionService } from '@shared/services/connection.service';
@@ -39,6 +40,7 @@ export const appConfig: ApplicationConfig = {
         ConnectionInterceptor,
         AuthSessionExpiredInterceptor,
         SubscriptionRequiredInterceptor,
+        ModuleRequiredInterceptor,
       ])
     ),
     importProvidersFrom(

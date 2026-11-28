@@ -20,6 +20,11 @@ import { AdminAuthService } from './admin/admin-auth.service';
 import { ADMIN_LICENSE_SERVICE, AdminAuthController, AdminLicensesController } from './admin/admin.controllers';
 import { AdminLicenseService } from './application/admin-license.service';
 import { EnterpriseDirectory, HttpEnterpriseDirectory } from './application/enterprise-directory';
+import { HttpModuleContractNotifier, ModuleContractService } from './application/module-contract.service';
+import {
+  ModuleContractEventLog, ModuleContractRepository, PrismaModuleContractEventLog, PrismaModuleContractRepository,
+} from './repositories/module-contract.repositories';
+import { AdminModuleContractsController, EnterpriseModulesController, MODULE_CONTRACT_SERVICE } from './http/module-contracts.controller';
 
 /** Escolhe a família de provedor de pagamento pela configuração (Abstract Factory). */
 function providerFactory(): PaymentProviderFactory {
@@ -35,7 +40,9 @@ function providerFactory(): PaymentProviderFactory {
  * Nada fora deste arquivo sabe que o banco é Prisma ou que o gateway é o sandbox.
  */
 @Module({
-  controllers: [HealthController, PlansController, EnterpriseSubscriptionController, GatewayController, AdminAuthController, AdminLicensesController],
+  controllers: [HealthController, PlansController, EnterpriseSubscriptionController, GatewayController, AdminAuthController, AdminLicensesController,
+    EnterpriseModulesController, AdminModuleContractsController,
+  ],
   providers: [
     { provide: APP_GUARD, useClass: ApiKeyGuard },
     PrismaService,
@@ -90,6 +97,17 @@ function providerFactory(): PaymentProviderFactory {
         return new AdminLicenseService(plans, subs, invoices, log, events, billing, directory, clock, {
           trialDays: cfg.trialDays, graceDays: cfg.graceDays, defaultPlanCode: cfg.defaultPlanCode,
         });
+      },
+    },
+    // contratos de módulos adicionais (estoque): agregado próprio, separado da assinatura
+    { provide: ModuleContractRepository, useClass: PrismaModuleContractRepository },
+    { provide: ModuleContractEventLog, useClass: PrismaModuleContractEventLog },
+    {
+      provide: MODULE_CONTRACT_SERVICE,
+      inject: [ModuleContractRepository, ModuleContractEventLog, Clock],
+      useFactory: (repo: ModuleContractRepository, log: ModuleContractEventLog, clock: Clock) => {
+        const cfg = SubscriptionsConfig.get().values;
+        return new ModuleContractService(repo, log, new HttpModuleContractNotifier(cfg.mainBackendUrl, cfg.apiKey), clock);
       },
     },
     LifecycleScheduler,

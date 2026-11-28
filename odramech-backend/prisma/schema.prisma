@@ -13,6 +13,8 @@ model User {
   gender         Gender
   email          String?  @unique
   password       String?
+  /// senha definida por outra pessoa (cadastro feito pela oficina): troca obrigatória no primeiro acesso
+  mustChangePassword Boolean @default(false) @map("must_change_password")
   principalPhone String   @map("principal_phone")
   secondaryPhone String?  @map("secondary_phone")
   createdAt      DateTime @default(now()) @map("created_at")
@@ -45,7 +47,7 @@ model Enterprise {
   cnpj      String  @unique
   addressId Int     @unique
 
-  address        Address           @relation(fields: [addressId], references: [id])
+  address        Address                 @relation(fields: [addressId], references: [id])
   establishments Establishment[]
   users          UserCorporation[]
   branding       EnterpriseBranding?
@@ -72,6 +74,7 @@ model Establishment {
   quotes     Quote[]
   notes      UserNote[]
   settings   EstablishmentSettings?
+  parts      Part[]
 
   @@map("cad_establishment")
 }
@@ -99,7 +102,7 @@ model UserCorporation {
   idEnterprise    Int
   idEstablishment Int
 
-  role Role
+  role   Role
   /// desativado = o usuário não consegue mais entrar neste estabelecimento
   active Boolean @default(true)
 
@@ -254,14 +257,14 @@ model Quote {
   updatedAt       DateTime    @updatedAt @map("updated_at")
 
   /// sobe a cada alteração de conteúdo (itens, observações, validade)
-  version          Int       @default(1)
+  version           Int       @default(1)
   /// link público do cliente (ver/aprovar/recusar), criado no primeiro envio
-  publicToken      String?   @unique @map("public_token")
+  publicToken       String?   @unique @map("public_token")
   /// quando e qual versão foi por e-mail (a mesma versão não é reenviada)
-  emailSentAt      DateTime? @map("email_sent_at")
-  emailSentVersion Int?      @map("email_sent_version")
+  emailSentAt       DateTime? @map("email_sent_at")
+  emailSentVersion  Int?      @map("email_sent_version")
   /// envio automático agendado (espera 10 min pra juntar edições seguidas)
-  emailPendingAt   DateTime? @map("email_pending_at")
+  emailPendingAt    DateTime? @map("email_pending_at")
   /// resposta do cliente pelo link (aprovou/recusou)
   clientRespondedAt DateTime? @map("client_responded_at")
 
@@ -280,16 +283,16 @@ model Quote {
 
 /// Histórico de e-mails de orçamento enviados ao cliente.
 model QuoteEmail {
-  id        Int              @id @default(autoincrement())
-  quoteId   Int              @map("id_quote")
+  id        Int               @id @default(autoincrement())
+  quoteId   Int               @map("id_quote")
   version   Int
   kind      QuoteEmailKind
   trigger   QuoteEmailTrigger
   status    QuoteEmailStatus
-  toEmail   String           @map("to_email")
+  toEmail   String            @map("to_email")
   error     String?
-  userId    Int?             @map("id_user")
-  createdAt DateTime         @default(now()) @map("created_at")
+  userId    Int?              @map("id_user")
+  createdAt DateTime          @default(now()) @map("created_at")
 
   quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 
@@ -315,21 +318,27 @@ enum QuoteEmailStatus {
 }
 
 model ServiceItem {
-  id          Int      @id @default(autoincrement())
-  kind        ItemKind
-  description String
-  quantity    Decimal  @db.Decimal(10, 2)
-  unitPrice   Decimal  @map("unit_price") @db.Decimal(10, 2)
-  discount    Decimal  @default(0) @db.Decimal(10, 2)
-  quoteId     Int?     @map("id_quote")
-  workOrderId Int?     @map("id_work_order")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id            Int      @id @default(autoincrement())
+  kind          ItemKind
+  description   String
+  quantity      Decimal  @db.Decimal(10, 2)
+  unitPrice     Decimal  @map("unit_price") @db.Decimal(10, 2)
+  discount      Decimal  @default(0) @db.Decimal(10, 2)
+  quoteId       Int?     @map("id_quote")
+  workOrderId   Int?     @map("id_work_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+  /// peça do estoque (módulo Estoque); só itens do tipo PECA
+  partId        Int?     @map("id_part")
+  /// quanto desta linha já saiu do estoque (a OS baixa; orçamento não). Mantém devoluções exatas.
+  stockQuantity Decimal  @default(0) @map("stock_quantity") @db.Decimal(12, 2)
 
   quote     Quote?     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
   workOrder WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  part      Part?      @relation(fields: [partId], references: [id])
 
   @@index([quoteId])
   @@index([workOrderId])
+  @@index([partId])
   @@map("service_items")
 }
 
@@ -406,19 +415,19 @@ enum ArchiveType {
 
 /// Configurações por estabelecimento (documento de orçamento, validade, impressão).
 model EstablishmentSettings {
-  establishmentId      Int           @id @map("id_establishment")
+  establishmentId           Int           @id @map("id_establishment")
   /// ODRAMECH | PREMIUM | CUSTOM (CUSTOM exige plano com QUOTE_DOCUMENT_EDITOR)
-  quoteTemplate        QuoteTemplate @default(ODRAMECH) @map("quote_template")
-  quoteHeaderHtml      String?       @map("quote_header_html")
-  quoteBodyHtml        String?       @map("quote_body_html")
-  quoteFooterHtml      String?       @map("quote_footer_html")
-  quoteValidityDays    Int           @default(15) @map("quote_validity_days")
-  markQuoteSentOnPrint Boolean       @default(false) @map("mark_quote_sent_on_print")
+  quoteTemplate             QuoteTemplate @default(ODRAMECH) @map("quote_template")
+  quoteHeaderHtml           String?       @map("quote_header_html")
+  quoteBodyHtml             String?       @map("quote_body_html")
+  quoteFooterHtml           String?       @map("quote_footer_html")
+  quoteValidityDays         Int           @default(15) @map("quote_validity_days")
+  markQuoteSentOnPrint      Boolean       @default(false) @map("mark_quote_sent_on_print")
   /// manda o PDF pro e-mail do cliente ao salvar (e nas atualizações)
-  autoEmailQuote       Boolean       @default(false) @map("auto_email_quote")
+  autoEmailQuote            Boolean       @default(false) @map("auto_email_quote")
   /// cliente pode escrever (e anexar fotos) na OS — só apontamentos públicos; só admin altera
-  clientAppointmentsEnabled Boolean  @default(false) @map("client_appointments_enabled")
-  updatedAt            DateTime      @updatedAt @map("updated_at")
+  clientAppointmentsEnabled Boolean       @default(false) @map("client_appointments_enabled")
+  updatedAt                 DateTime      @updatedAt @map("updated_at")
 
   establishment Establishment @relation(fields: [establishmentId], references: [id])
 
@@ -427,17 +436,17 @@ model EstablishmentSettings {
 
 /// Tema da empresa: logo, nome, cor de destaque e tela de login.
 model EnterpriseBranding {
-  enterpriseId   Int      @id @map("id_enterprise")
+  enterpriseId  Int      @id @map("id_enterprise")
   /// chave pública usada no link de login com a marca (/login?marca=<chave>)
-  publicKey      String   @unique @default(uuid()) @map("public_key")
-  displayName    String?  @map("display_name")
+  publicKey     String   @unique @default(uuid()) @map("public_key")
+  displayName   String?  @map("display_name")
   /// imagens em data URL (PNG/JPG/WebP/SVG), tamanho limitado no backend
-  logoUrl        String?  @map("logo_url")
-  accentColor    String?  @map("accent_color")
-  loginImageUrl  String?  @map("login_image_url")
-  loginHeadline  String?  @map("login_headline")
-  loginSubtitle  String?  @map("login_subtitle")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  logoUrl       String?  @map("logo_url")
+  accentColor   String?  @map("accent_color")
+  loginImageUrl String?  @map("login_image_url")
+  loginHeadline String?  @map("login_headline")
+  loginSubtitle String?  @map("login_subtitle")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   enterprise Enterprise @relation(fields: [enterpriseId], references: [id])
 
@@ -481,4 +490,88 @@ model SubscriptionAccessSnapshot {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("subscription_access_snapshot")
+}
+
+// ══════════════════════════════════════════════════════════
+// Módulo ESTOQUE DE PEÇAS (contrato à parte — ver ModuleAccessGuard)
+// Estoque é físico: cada estabelecimento tem o seu.
+// ══════════════════════════════════════════════════════════
+
+model Part {
+  id              Int      @id @default(autoincrement())
+  establishmentId Int      @map("id_establishment")
+  /// código interno da oficina (único no estabelecimento quando informado)
+  code            String?
+  name            String
+  brand           String?
+  /// código do fabricante / OEM
+  oemCode         String?  @map("oem_code")
+  /// UN | PC | PAR | JG | KIT | L | ML | KG | G | M | CX
+  unit            String   @default("UN")
+  costPrice       Decimal  @default(0) @map("cost_price") @db.Decimal(10, 2)
+  salePrice       Decimal  @default(0) @map("sale_price") @db.Decimal(10, 2)
+  /// saldo atual — só muda junto com um StockMovement (mesma transação)
+  quantity        Decimal  @default(0) @db.Decimal(12, 2)
+  minQuantity     Decimal  @default(0) @map("min_quantity") @db.Decimal(12, 2)
+  location        String?
+  notes           String?
+  /// desativada some das buscas, mas o histórico fica (nunca se apaga uma peça)
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  establishment Establishment   @relation(fields: [establishmentId], references: [id])
+  movements     StockMovement[]
+  serviceItems  ServiceItem[]
+
+  @@unique([establishmentId, code])
+  @@index([establishmentId, active, name])
+  @@map("inv_parts")
+}
+
+/// Livro-razão do estoque: toda mudança de saldo gera uma linha (imutável).
+model StockMovement {
+  id              Int               @id @default(autoincrement())
+  partId          Int               @map("id_part")
+  establishmentId Int               @map("id_establishment")
+  type            StockMovementType
+  /// variação com sinal (+ entrou, − saiu)
+  quantity        Decimal           @db.Decimal(12, 2)
+  /// saldo logo depois do movimento
+  balanceAfter    Decimal           @map("balance_after") @db.Decimal(12, 2)
+  /// custo unitário informado na entrada
+  unitCost        Decimal?          @map("unit_cost") @db.Decimal(10, 2)
+  note            String?
+  workOrderId     Int?              @map("id_work_order")
+  /// linha da OS que originou (sem FK: a linha pode ser apagada, o histórico não)
+  serviceItemId   Int?              @map("id_service_item")
+  userId          Int               @map("id_user")
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  part Part @relation(fields: [partId], references: [id])
+
+  @@index([partId, createdAt])
+  @@index([establishmentId, createdAt])
+  @@index([workOrderId])
+  @@map("inv_stock_movements")
+}
+
+enum StockMovementType {
+  ENTRADA
+  SAIDA
+  AJUSTE
+  /// baixa automática por item de OS
+  OS_BAIXA
+  /// devolução automática (item removido/reduzido, OS cancelada)
+  OS_ESTORNO
+}
+
+/// Última situação conhecida dos módulos contratados (se o serviço de assinaturas cair,
+/// quem tinha o módulo continua com ele; quem nunca foi visto fica sem — é um adicional pago).
+model ModuleAccessSnapshot {
+  enterpriseId Int      @id @map("enterprise_id")
+  modules      Json
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("module_access_snapshot")
 }

@@ -225,9 +225,8 @@
 
 // ── Composer ──────────────────────────────────────────────
 .composer {
-  padding: 4px 20px 20px;
-  border-top: 1px solid var(--line);
-  padding-top: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
 }
 
 .editor.internal { border-style: dashed; background: var(--surface-2); }
@@ -440,11 +439,52 @@
   @media (hover: none) { .file-del { opacity: .9; } }
 }
 
-.composer-off { margin: 4px 0 0; padding: 12px 14px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); i { margin-right: 6px; } }
+.composer-off { margin: 0; padding: 12px 20px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); i { margin-right: 6px; } }
 
 // Miniaturas das fotos escolhidas antes de enviar
 .picked-files .thumb {
   position: relative; width: 64px; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-3);
   img { width: 100%; height: 100%; object-fit: cover; display: block; }
   button { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 6px; border: 0; background: rgba(17,17,17,.7); color: #fff; font-size: 10px; cursor: pointer; display: grid; place-items: center; }
+}
+
+
+// ── Ao vivo: quem está vendo + aviso de alteração ─────────
+.head-side { display: flex; align-items: center; gap: 10px; }
+
+.watchers {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 30px; padding: 0 10px 0 9px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--surface);
+  color: var(--ink-2); font-size: 12.5px; cursor: default; outline: none;
+  > i { font-size: 13px; color: var(--accent); }
+  &:hover .w-pop, &:focus .w-pop, &:focus-within .w-pop { opacity: 1; transform: none; pointer-events: auto; }
+}
+.w-avatars { display: inline-flex; }
+.w-av {
+  width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 9.5px; font-weight: 600; color: #fff; background: var(--ink); border: 2px solid var(--surface);
+  margin-left: -6px; &:first-child { margin-left: 0; }
+  &.client { background: var(--info); }
+}
+.w-count { font-weight: 600; }
+.w-pop {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 200px;
+  display: flex; flex-direction: column; gap: 6px; padding: 10px 12px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-2);
+  opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity var(--dur-1), transform var(--dur-1);
+}
+.w-title { font-size: 11.5px; color: var(--muted); }
+.w-row { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink); white-space: nowrap; small { color: var(--muted); } }
+.w-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft); }
+
+.stale-bar {
+  position: sticky; top: 8px; z-index: 30;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 14px; padding: 10px 12px 10px 14px;
+  border: 1px solid var(--line-strong); border-radius: var(--r); background: var(--surface);
+  box-shadow: var(--shadow-2); font-size: 13.5px; animation: rise var(--dur-2) var(--ease-out) both;
+  > i { color: var(--info); }
+  > span { flex: 1; min-width: 200px; }
 }

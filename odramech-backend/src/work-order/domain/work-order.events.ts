@@ -8,6 +8,22 @@ export class WorkOrderOpened extends DomainEvent {
   }
 }
 
+/**
+ * Algo visível na OS mudou (apontamento, anexo, item, pagamento, avaliação).
+ * Status e responsável têm eventos próprios. Quem está com a OS aberta recebe o aviso "Recarregar".
+ */
+export class WorkOrderContentChanged extends DomainEvent {
+  readonly name = 'work-order.content-changed';
+  constructor(
+    readonly workOrderId: number,
+    readonly userId: number,
+    /** só a equipe enxerga a mudança (nota interna): o cliente não é avisado */
+    readonly staffOnly = false,
+  ) {
+    super();
+  }
+}
+
 export class WorkOrderStatusChanged extends DomainEvent {
   readonly name = 'work-order.status-changed';
   constructor(

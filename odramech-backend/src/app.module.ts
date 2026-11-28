@@ -18,6 +18,9 @@ import { SubscriptionModule } from './subscription/subscription.module';
 import { SubscriptionAccessGuard } from './subscription/subscription-access.guard';
 import { SettingsModule } from './settings/settings.module';
 import { ExportModule } from './export/export.module';
+import { ContractedModulesModule } from './contracted-modules/contracted-modules.module';
+import { InventoryModule } from './inventory/inventory.module';
+import { ModuleAccessGuard } from './contracted-modules/module-access.guard';
 
 @Module({
   imports: [
@@ -35,13 +38,16 @@ import { ExportModule } from './export/export.module';
     SubscriptionModule,
     SettingsModule,
     ExportModule,
+    ContractedModulesModule,
+    InventoryModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    // ordem importa: autentica (JWT) e só então aplica a política de assinatura
+    // ordem importa: autentica (JWT), aplica a política de assinatura e então a dos módulos contratados
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useExisting: SubscriptionAccessGuard },
+    { provide: APP_GUARD, useExisting: ModuleAccessGuard },
   ],
 })
 export class AppModule {}

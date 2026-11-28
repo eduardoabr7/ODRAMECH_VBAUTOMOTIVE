@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Api, Toast } from '../core/api.service';
 import { badgeOf, EVENT_LABEL, isForever, LicenseDetail, LicenseRow, money, Plan, STATUS_LABEL } from '../core/models';
+import { ModuleContractsCard } from './module-contracts.card';
 
 /** yyyy-mm-dd (input date) → ISO no fim do dia, horário de Brasília */
 function endOfDayIso(date: string): string {
@@ -22,7 +23,7 @@ function plusDays(days: number): string {
 
 @Component({
   selector: 'adm-license-detail',
-  imports: [DatePipe, FormsModule, RouterLink],
+  imports: [DatePipe, FormsModule, RouterLink, ModuleContractsCard],
   template: `
     <a routerLink="/licencas" class="back muted small">‹ Licenças</a>
 
@@ -165,6 +166,9 @@ function plusDays(days: number): string {
           }
         </div>
       </div>
+
+      <!-- ═══ Módulos adicionais (contrato à parte) ═══ -->
+      <adm-module-contracts [enterpriseId]="r.enterpriseId" [enterpriseName]="r.enterpriseName" />
 
       @if (d(); as d) {
         <!-- ═══ Faturas ═══ -->

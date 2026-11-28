@@ -131,6 +131,62 @@ Nenhum serviço, regra ou tela precisa mudar.
 
 ---
 
+## Módulos contratados à parte — Estoque de peças
+
+O Estoque é um **contrato separado da assinatura** (agregado próprio no serviço de assinaturas:
+tabelas `module_contracts` e `module_contract_events`). O painel de licenças ativa, define prazo/valor,
+suspende e encerra; tudo vai para a auditoria com o e‑mail do administrador e avisa o backend
+(`POST /internal/module-contract-events`) para limpar o cache na hora.
+
+| Para usar o módulo a empresa precisa de | Quem garante | Sem isso |
+|---|---|---|
+| Contrato do módulo ativo (dentro do prazo, não suspenso/encerrado) | `ModuleAccessGuard` global + `@RequiresModule('INVENTORY')` | **403** `MODULE_REQUIRED` (leitura e escrita) |
+| Assinatura do Odramech ativa | `SubscriptionAccessGuard` | **402**; consultas com `@AllowWhenBlocked` continuam (somente leitura) |
+
+- O menu/rota do frontend só **escondem** a tela (`GET /modules`); a proteção é do backend.
+- A oficina recebe só `{ module, active, until, reason }` — preço e anotação interna nunca saem do serviço.
+- Serviço de assinaturas fora do ar: vale a última situação conhecida (memória + `module_access_snapshot`).
+  Empresa **nunca vista fica sem o módulo** (falha fechada — é um adicional pago).
+- Encerrar o contrato **não apaga** peças nem histórico; reativar traz tudo de volta.
+
+**Estoque** (`backend/src/inventory`): peças por estabelecimento (`inv_parts`) e livro‑razão imutável
+(`inv_stock_movements`). O `StockLedger` é o único que altera saldo: saída por `UPDATE … WHERE quantity >= x`
+(duas baixas simultâneas da última unidade → uma recebe 409) + `CHECK (quantity >= 0)` no banco.
+
+| Evento | Estoque |
+|---|---|
+| Item de **orçamento** com peça | não baixa (só reserva o vínculo) |
+| Converter orçamento em OS | baixa tudo na mesma transação; faltou saldo → 409 e **nada** é convertido |
+| Item de **OS** com peça (incluir/alterar qtd./trocar peça/remover) | baixa ou devolve a diferença na mesma transação (`service_items.stock_quantity` guarda o que já saiu) |
+| OS cancelada / reaberta (inclusive "desfazer") | devolve tudo / baixa de novo; na reabertura, peça sem saldo fica sem baixar e vira nota INTERNA na OS |
+| Contrato vencido/suspenso | nada mais **sai** do estoque e não se vincula peça nova; devoluções continuam valendo |
+
+Permissões: equipe consulta e lança entrada/saída; **cadastro, edição, desativação e ajuste de inventário só gestores**;
+cliente nunca acessa. Ajuste exige motivo e usa checagem otimista (se o saldo mudou no meio, recusa).
+
+Novo módulo vendido à parte = valor no enum `ContractModule` (assinaturas), em `ContractedModule` (backend)
+e `@RequiresModule(...)` no controller.
+
+---
+
+## OS "ao vivo": quem está vendo + aviso de alteração
+
+Push por **Server-Sent Events** (`GET /workorder/:id/live`), sem consulta periódica: cada tela de OS aberta
+mantém UMA conexão, e o servidor só manda algo quando acontece alguma coisa. OS parada = zero consultas ao banco.
+
+- **Quem está vendo** — abrir/fechar a conexão = entrar/sair da lista (`WorkOrderLiveHub`). Ícone de olho no
+  cabeçalho da OS com as iniciais e a lista. Só a **equipe** recebe a lista; cliente nunca vê nomes da equipe.
+- **Mudou a OS** — quem altera publica um evento de domínio (OBSERVER): `WorkOrderContentChanged` (apontamento,
+  anexo, item, pagamento, avaliação), `WorkOrderStatusChanged` e `WorkOrderResponsibleChanged` (inclusive "desfazer").
+  O hub avisa só quem está com aquela OS aberta → barra "Recarregar". Alteração feita por mim não acusa; nota
+  interna não avisa o cliente. **Novo ponto que altera a OS precisa publicar `WorkOrderContentChanged`.**
+- Proteções: o stream só abre com sessão válida e acesso à OS (senão 401/404); no máximo 20 conexões por usuário;
+  `ping` a cada 25 s só para proxies (Nginx/Cloudflare) não derrubarem a conexão — não toca no banco.
+- Com mais de uma instância do backend, os eventos precisam passar por um pub/sub compartilhado (ex.: Redis) —
+  só o `WorkOrderLiveHub` muda.
+
+---
+
 ## Estabelecimento escolhido na tela (sem trocar de login)
 
 Quem é da equipe de vários estabelecimentos pode abrir dados de outro (ex.: ficha de cliente pela lista de clientes)
