@@ -6,7 +6,7 @@ import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
 import { assertStaff, isStaff } from 'src/shared/utils/role.util';
 import { sanitizeNoteHtml } from 'src/shared/utils/html.util';
 import { WorkOrderRepository } from '../repositories/work-order.repository';
-import { WorkOrderResponsibleChanged, WorkOrderStatusChanged } from '../domain/work-order.events';
+import { WorkOrderContentChanged, WorkOrderResponsibleChanged, WorkOrderStatusChanged } from '../domain/work-order.events';
 import { STATUS_LABEL } from '../domain/work-order-status';
 import { AppointmentAccess } from '../domain/appointment-access';
 
@@ -86,6 +86,7 @@ export class AddAppointmentCommand implements Command<any> {
   constructor(
     private readonly repo: WorkOrderRepository,
     private readonly access: AppointmentAccess,
+    private readonly events: DomainEventBus,
     private readonly auth: AuthPayload,
     private readonly workOrderId: number,
     private readonly contentHtml: string,
@@ -100,7 +101,9 @@ export class AddAppointmentCommand implements Command<any> {
     if (!ref || (!isStaff(this.auth.role) && ref.clientId !== this.auth.sub)) throw new NotFoundException('Ordem de serviço não encontrada');
     await this.access.assertCanWrite(this.auth, ref, this.type);
     // HTML do apontamento aparece para o cliente: remove scripts/eventos antes de gravar
-    return this.repo.addAppointment(this.workOrderId, this.auth.sub, sanitizeNoteHtml(this.contentHtml) ?? '', this.type);
+    const appointment = await this.repo.addAppointment(this.workOrderId, this.auth.sub, sanitizeNoteHtml(this.contentHtml) ?? '', this.type);
+    await this.events.publish(new WorkOrderContentChanged(this.workOrderId, this.auth.sub, this.type === TypeAppointment.INTERNO));
+    return appointment;
   }
 }
 
@@ -128,6 +131,6 @@ export class WorkOrderCommandFactory {
 
   /** equipe ou cliente: quem pode o quê é decidido pelo AppointmentAccess na execução */
   addAppointment(auth: AuthPayload, id: number, contentHtml: string, type: TypeAppointment) {
-    return new AddAppointmentCommand(this.repo, this.access, auth, id, contentHtml, type);
+    return new AddAppointmentCommand(this.repo, this.access, this.events, auth, id, contentHtml, type);
   }
 }

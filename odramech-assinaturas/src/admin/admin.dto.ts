@@ -56,3 +56,14 @@ export class CreatePlanDTO extends UpdatePlanDTO {
   @IsInt() @Min(0) @Max(100_000_000) declare priceCents: number;
   @IsIn(['MONTHLY', 'YEARLY']) interval: 'MONTHLY' | 'YEARLY';
 }
+
+export class ModuleContractDTO {
+  /** ISO; ausente = mantém (ou agora, num contrato novo) */
+  @IsOptional() @IsDateString() startsAt?: string;
+  /** ISO; null = sem prazo; ausente = mantém */
+  @IsOptional() @IsDateString() endsAt?: string | null;
+  /** valor acordado em centavos (só registro); null = não informado */
+  @IsOptional() @IsInt() @Min(0) @Max(100_000_000) priceCents?: number | null;
+  @IsOptional() @IsString() @MaxLength(200) enterpriseName?: string;
+  @IsOptional() @IsString() @MaxLength(2000) note?: string;
+}

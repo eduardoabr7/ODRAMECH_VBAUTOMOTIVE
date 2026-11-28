@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -15,6 +15,8 @@ import { lineTotal, Quote, QUOTE_STATUS_LABEL, QuoteStatus, ServiceItem, Service
 import { UserList } from '@shared/models/UserList';
 import { Vehicle } from '@shared/models/Vehicle';
 import { ItemsEditorComponent } from '@shared/ui/items-editor.component';
+import { ContractedModulesService } from '../../../features/modules/contracted-modules.service';
+import { InventoryRepository, partSearchFn } from '../../../features/inventory/inventory.repository';
 import { InitialsPipe, PhonePipe, PlatePipe, RelativeTimePipe } from '@shared/ui/pipes';
 import { CloseOnClickOutsideDirective } from '@shared/directives/close-onclick-outside.directive';
 import { KeyboardListDirective } from '@shared/directives/keyboard-list.directive';
@@ -32,6 +34,9 @@ import { printHtml } from '../../../features/quote-document/print-html';
 })
 export class QuoteEditorComponent implements OnInit, OnDestroy {
   @ViewChild(ItemsEditorComponent) itemsEditor?: ItemsEditorComponent;
+  /** busca de peças do estoque — só existe com o módulo contratado */
+  readonly stock = inject(ContractedModulesService);
+  readonly partSearch = partSearchFn(inject(InventoryRepository));
 
   readonly LABEL = QUOTE_STATUS_LABEL;
   readonly editableStatuses: QuoteStatus[] = ['RASCUNHO', 'ENVIADO', 'RECUSADO', 'EXPIRADO'];
@@ -269,7 +274,7 @@ export class QuoteEditorComponent implements OnInit, OnDestroy {
       vehicleId: this.vehicle.id,
       validUntil: this.validUntil ? new Date(this.validUntil + 'T23:59:59').toISOString() : undefined,
       notes: this.notes.trim() || undefined,
-      items: this.draftItems.map(({ kind, description, quantity, unitPrice, discount }) => ({ kind, description, quantity, unitPrice, discount })),
+      items: this.draftItems.map(({ kind, description, quantity, unitPrice, discount, partId }) => ({ kind, description, quantity, unitPrice, discount, ...(partId ? { partId } : {}) })),
     }).subscribe({
       next: q => {
         this.saving = false;

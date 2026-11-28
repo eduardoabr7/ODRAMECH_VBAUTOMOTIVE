@@ -76,7 +76,7 @@ export class PrismaUserRepository extends UserRepository {
         data: { idUser: existing.id, idEnterprise: m.enterpriseId, idEstablishment: m.establishmentId, role: m.role, active: m.active },
       }),
       ...(!existing.password && passwordHash
-        ? [this.prisma.user.update({ where: { id: existing.id }, data: { password: passwordHash } })]
+        ? [this.prisma.user.update({ where: { id: existing.id }, data: { password: passwordHash, mustChangePassword: true } })]
         : []),
     ]);
 

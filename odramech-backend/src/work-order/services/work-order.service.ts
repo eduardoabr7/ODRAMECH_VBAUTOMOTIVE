@@ -10,6 +10,7 @@ import { WorkOrderOpened } from '../domain/work-order.events';
 import { WoListQueryDTO } from '../dto/wo-update.dto';
 import { WoCreateFrontDTO } from '../dto/wo-create-front.dto';
 import { AppointmentAccess } from '../domain/appointment-access';
+import { WorkOrderLiveHub } from '../live/work-order-live.hub';
 
 /**
  * Casos de uso de LEITURA e abertura de OS.
@@ -22,6 +23,7 @@ export class WorkOrderService {
     private readonly repo: WorkOrderRepository,
     private readonly events: DomainEventBus,
     private readonly access: AppointmentAccess,
+    private readonly live: WorkOrderLiveHub,
   ) {}
 
   async open(auth: AuthPayload, dto: WoCreateFrontDTO) {
@@ -79,5 +81,17 @@ export class WorkOrderService {
       payments: payments.map((p: any) => ({ ...p, amount: toNum(p.amount) })),
       summary: summarizeMoney(items, payments),
     };
+  }
+
+  /**
+   * Conexão "ao vivo" da tela da OS (SSE): avisos de alteração e, para a equipe, quem está vendo.
+   * Mesma regra do detalhe: OS de outro estabelecimento ou de outro cliente = 404 (o stream nem abre).
+   */
+  async stream(auth: AuthPayload, id: number) {
+    const ref = await this.repo.findRef(id, auth.establishmentId);
+    const staff = isStaff(auth.role);
+    if (!ref || (!staff && ref.clientId !== auth.sub)) throw new NotFoundException('Ordem de serviço não encontrada');
+    const name = (await this.repo.userName(auth.sub)) ?? 'Usuário';
+    return this.live.connect(id, { userId: auth.sub, name, kind: staff ? 'STAFF' : 'CLIENT' }, staff);
   }
 }

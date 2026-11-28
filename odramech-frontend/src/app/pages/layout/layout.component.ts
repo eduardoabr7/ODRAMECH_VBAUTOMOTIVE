@@ -9,10 +9,11 @@ import { SubscriptionBannerComponent } from '../../features/subscription/subscri
 import { HeaderComponent } from '../../shared/components/header/header.component';
 import { LeftMenuComponent } from '../../shared/components/left-menu/left-menu.component';
 import { BrandingService } from '../../features/branding/branding.service';
+import { FirstPasswordModalComponent } from '../../features/first-password/first-password-modal.component';
 
 @Component({
   selector: 'app-layout',
-  imports: [LeftMenuComponent, HeaderComponent, RouterModule, SubscriptionBannerComponent],
+  imports: [LeftMenuComponent, HeaderComponent, RouterModule, SubscriptionBannerComponent, FirstPasswordModalComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss',
 })
@@ -25,13 +26,17 @@ export class LayoutComponent {
 
   readonly isStaff = toSignal(inject(SessionService).isStaff$, { initialValue: false });
 
+  private readonly ctx = toSignal(inject(AuthService).user$, { initialValue: null });
+  /** primeiro acesso: só o modal de criar senha (o backend recusa todo o resto até trocar) */
+  mustChangePassword(): boolean { return !!this.ctx()?.user?.mustChangePassword; }
+
   constructor(private readonly _router: Router, connection: ConnectionService) {
     // tema da empresa (logo, nome, cor) assim que entra no sistema
     const brand = inject(BrandingService);
     brand.load();
 
     // ícone da aba: foto do estabelecimento escolhido (ou logo do tema; senão o do Odramech)
-    const ctx = toSignal(inject(AuthService).user$, { initialValue: null });
+    const ctx = this.ctx;
     effect(() => {
       brand.branding(); // refaz quando o tema carregar (logo da empresa é o plano B)
       brand.faviconForSession(ctx()?.usercorp?.establishment?.logoUrl);

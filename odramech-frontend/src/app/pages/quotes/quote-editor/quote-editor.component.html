@@ -58,7 +58,7 @@
 
         <section class="panel reveal" style="--i:3">
           <div class="panel-head"><span class="panel-title">Peças e serviços <span class="count">{{ draftItems.length }}</span></span></div>
-          <app-items-editor [items]="draftItems" [editable]="true" (add)="addItem($event)" (remove)="removeItem($event)"></app-items-editor>
+          <app-items-editor [items]="draftItems" [editable]="true" [partSearch]="stock.inventory() ? partSearch : null" (add)="addItem($event)" (remove)="removeItem($event)"></app-items-editor>
         </section>
       </div>
 
@@ -133,7 +133,7 @@
         <!-- A impressão é gerada à parte (modelo do documento), sem os campos de edição desta tela -->
         <section class="panel doc reveal" style="--i:4">
           <div class="panel-head"><span class="panel-title">Peças e serviços <span class="count">{{ quote.items.length }}</span></span></div>
-          <app-items-editor [items]="quote.items" [editable]="!locked" [busy]="savingItem" (add)="addItem($event)" (remove)="removeItem($event)"></app-items-editor>
+          <app-items-editor [items]="quote.items" [editable]="!locked" [busy]="savingItem" [partSearch]="stock.inventory() ? partSearch : null" (add)="addItem($event)" (remove)="removeItem($event)"></app-items-editor>
           <div class="doc-notes" *ngIf="quote.notes">
             <span class="field-label">Observações</span>
             <p>{{ quote.notes }}</p>

@@ -8,7 +8,7 @@ import { BcryptService } from 'src/crypto/bcrypt.service';
 describe('ServiceItemFactory (Factory)', () => {
   it('normaliza texto e valores', () => {
     const item = ServiceItemFactory.create({ kind: ItemKind.PECA, description: '  Pastilha   dianteira ', quantity: 2, unitPrice: 89.905, discount: 0 });
-    expect(item).toEqual({ kind: ItemKind.PECA, description: 'Pastilha dianteira', quantity: 2, unitPrice: 89.91, discount: 0 });
+    expect(item).toEqual({ kind: ItemKind.PECA, description: 'Pastilha dianteira', quantity: 2, unitPrice: 89.91, discount: 0, partId: null });
   });
 
   it('recusa desconto maior que o valor da linha', () => {

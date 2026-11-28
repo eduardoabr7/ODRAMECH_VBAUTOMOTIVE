@@ -160,3 +160,56 @@ model AdminSession {
   @@index([adminId])
   @@map("admin_sessions")
 }
+
+// ══════════════════════════════════════════════════════════
+// Contratos de módulos adicionais (ex.: Estoque de peças)
+// Contrato À PARTE da assinatura: tem preço, prazo e estado próprios e é gerido só pelo
+// painel administrativo. O módulo exige assinatura ativa E contrato ativo.
+// ══════════════════════════════════════════════════════════
+
+model ModuleContract {
+  id              String               @id @default(uuid())
+  enterpriseId    Int                  @map("enterprise_id")
+  enterpriseName  String?              @map("enterprise_name")
+  module          ContractModule
+  status          ModuleContractStatus
+  startsAt        DateTime             @map("starts_at")
+  /// null = sem prazo
+  endsAt          DateTime?            @map("ends_at")
+  /// valor acordado (centavos, só registro — a cobrança é feita fora do sistema)
+  priceCents      Int?                 @map("price_cents")
+  suspendedReason String?              @map("suspended_reason")
+  /// anotação interna do administrador (nunca enviada para a oficina)
+  adminNote       String?              @map("admin_note")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  events ModuleContractEvent[]
+
+  @@unique([enterpriseId, module])
+  @@map("module_contracts")
+}
+
+/// Auditoria de tudo que acontece com um contrato de módulo (quem, quando, o quê).
+model ModuleContractEvent {
+  id         Int      @id @default(autoincrement())
+  contractId String   @map("contract_id")
+  type       String
+  payload    Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  contract ModuleContract @relation(fields: [contractId], references: [id])
+
+  @@index([contractId, createdAt])
+  @@map("module_contract_events")
+}
+
+enum ContractModule {
+  INVENTORY
+}
+
+enum ModuleContractStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELED
+}

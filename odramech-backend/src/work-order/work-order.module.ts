@@ -5,6 +5,7 @@ import { WorkOrderRepository } from './repositories/work-order.repository';
 import { PrismaWorkOrderRepository } from './repositories/prisma-work-order.repository';
 import { WorkOrderCommandFactory } from './commands/work-order.commands';
 import { StatusTimelineListener } from './listeners/status-timeline.listener';
+import { WorkOrderLiveHub } from './live/work-order-live.hub';
 import { SettingsModule } from 'src/settings/settings.module';
 import { AppointmentAccess, ClientParticipationSettings } from './domain/appointment-access';
 import { SettingsClientParticipation } from './adapters/settings-client-participation.adapter';
@@ -18,6 +19,8 @@ import { SettingsClientParticipation } from './adapters/settings-client-particip
     { provide: ClientParticipationSettings, useClass: SettingsClientParticipation },
     WorkOrderCommandFactory,
     StatusTimelineListener,
+    // OS "ao vivo" por SSE (memória; uma instância do backend)
+    WorkOrderLiveHub,
     { provide: WorkOrderRepository, useClass: PrismaWorkOrderRepository },
   ],
   exports: [WorkOrderRepository, WorkOrderService, AppointmentAccess],

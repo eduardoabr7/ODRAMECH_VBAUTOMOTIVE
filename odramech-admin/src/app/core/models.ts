@@ -154,3 +154,43 @@ export function money(cents: number | null | undefined): string {
 export function isForever(iso: string | null | undefined): boolean {
   return !!iso && new Date(iso).getUTCFullYear() >= 2999;
 }
+
+// ── Módulos adicionais (contrato à parte da assinatura) ──
+export interface ModuleContract {
+  id: string;
+  enterpriseId: number;
+  module: string;
+  status: 'ACTIVE' | 'SUSPENDED' | 'CANCELED';
+  startsAt: string;
+  endsAt: string | null;
+  priceCents: number | null;
+  suspendedReason: string | null;
+  adminNote: string | null;
+}
+
+export interface ModuleContractView {
+  module: string;
+  name: string;
+  contract: ModuleContract | null;
+  access: { module: string; active: boolean; until: string | null; reason: string };
+  events: { id: number; type: string; payload: { actor?: string } | null; createdAt: string }[];
+}
+
+export interface ModuleContractSummary {
+  enterpriseId: number;
+  module: string;
+  status: string;
+  endsAt: string | null;
+  active: boolean;
+}
+
+export const MODULE_NAME: Record<string, string> = { INVENTORY: 'Estoque' };
+
+export const MODULE_EVENT_LABEL: Record<string, string> = {
+  'module.contracted': 'Contrato criado',
+  'module.updated': 'Contrato alterado',
+  'module.reactivated': 'Contrato reativado',
+  'module.suspended': 'Contrato suspenso',
+  'module.unsuspended': 'Suspensão removida',
+  'module.canceled': 'Contrato encerrado',
+};

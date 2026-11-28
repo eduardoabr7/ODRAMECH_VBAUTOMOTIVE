@@ -1,10 +1,13 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { PUBLIC_KEY } from '../decorators/public-routes.decorator'
 import { Reflector } from '@nestjs/core'
 import { JWTService } from 'src/auth/services/jwt.service';
 import {  } from 'src/auth/enums/auth-context.enum';
 import { AuthPayload } from 'src/auth/interfaces/auth-payload.interface';
 import { PrismaService } from 'src/core/database/prisma.service';
+
+/** com troca de senha pendente só dá para ver a sessão, sair e trocar a senha */
+const PASSWORD_CHANGE_ROUTES = [/^\/auth\/(session|logout|change-password)\/?$/];
 
 /** o que o token de pré-login pode chamar: o fluxo de escolher empresa/estabelecimento */
 const PRE_AUTH_ROUTES = [/^\/auth\//, /^\/usercorp\/?$/, /^\/enterprise\/establishments\/\d+$/];
@@ -55,9 +58,20 @@ export class JwtAuthGuard implements CanActivate {
             idEstablishment: tokenDecodified.establishmentId,
           },
         },
-        select: { active: true, role: true },
+        select: { active: true, role: true, user: { select: { mustChangePassword: true } } },
       });
       if (!membership?.active) throw new UnauthorizedException('Seu acesso a este estabelecimento foi desativado.');
+      // senha provisória: nada funciona até trocar (o modal da tela é só a interface disso)
+      if (membership.user.mustChangePassword) {
+        const path: string = (request.path ?? request.url ?? '').split('?')[0];
+        if (!PASSWORD_CHANGE_ROUTES.some(r => r.test(path))) {
+          throw new ForbiddenException({
+            statusCode: 403,
+            code: 'PASSWORD_CHANGE_REQUIRED',
+            message: 'Troque a sua senha provisória para continuar.',
+          });
+        }
+      }
       // o perfil vale o que está no banco agora (ex.: admin rebaixado perde o acesso na hora)
       tokenDecodified.role = membership.role;
     }

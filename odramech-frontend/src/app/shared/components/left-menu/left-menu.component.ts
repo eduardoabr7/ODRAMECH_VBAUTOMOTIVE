@@ -7,6 +7,7 @@ import { AuthContext } from '@shared/models/AuthContext';
 import { RoleEnum } from '@shared/enums/role.enum';
 import { InitialsPipe, RoleLabelPipe } from '@shared/ui/pipes';
 import { BrandingService } from '../../../features/branding/branding.service';
+import { ContractedModule, ContractedModulesService } from '../../../features/modules/contracted-modules.service';
 
 interface NavItem {
   label: string;
@@ -14,6 +15,8 @@ interface NavItem {
   route: string;
   staffOnly?: boolean;
   clientLabel?: string;
+  /** só aparece para empresas que contrataram o módulo */
+  module?: ContractedModule;
 }
 
 @Component({
@@ -25,6 +28,7 @@ interface NavItem {
 export class LeftMenuComponent implements OnInit, OnDestroy {
   /** logo e nome da oficina (tema) no lugar do Odramech */
   readonly brand = inject(BrandingService);
+  private readonly modules = inject(ContractedModulesService);
 
   constructor(
     private readonly _authService: AuthService,
@@ -46,6 +50,7 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
     { label: 'Orçamentos',        icon: 'fa-solid fa-file-invoice-dollar', route: '/quotes', clientLabel: 'Meus orçamentos' },
     { label: 'Clientes',          icon: 'fa-solid fa-user-group',       route: '/clients', staffOnly: true },
     { label: 'Veículos',          icon: 'fa-solid fa-car-side',         route: '/vehicles', clientLabel: 'Meus veículos' },
+    { label: 'Estoque',           icon: 'fa-solid fa-boxes-stacked',    route: '/inventory', staffOnly: true, module: 'INVENTORY' },
   ];
 
   private readonly management: NavItem[] = [
@@ -62,6 +67,7 @@ export class LeftMenuComponent implements OnInit, OnDestroy {
   private visible(items: NavItem[]): NavItem[] {
     return items
       .filter(i => !i.staffOnly || this.isStaff)
+      .filter(i => !i.module || this.modules.has(i.module))
       .map(i => (!this.isStaff && i.clientLabel ? { ...i, label: i.clientLabel } : i));
   }
 

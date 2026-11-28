@@ -23,6 +23,8 @@ export interface ServiceItemInput {
   quantity: number;
   unitPrice: number;
   discount?: number;
+  /** peça do estoque (módulo Estoque) */
+  partId?: number | null;
 }
 
 export interface ServiceItem extends ServiceItemInput {
@@ -30,6 +32,20 @@ export interface ServiceItem extends ServiceItemInput {
   discount: number;
   total: number;
   createdAt: string;
+  /** quanto esta linha já tirou do estoque */
+  stockQuantity?: number;
+  part?: { id: number; name: string; code: string | null; unit: string } | null;
+}
+
+/** peça sugerida ao lançar um item (vem do módulo Estoque) */
+export interface PartOption {
+  id: number;
+  name: string;
+  code: string | null;
+  brand: string | null;
+  unit: string;
+  quantity: number;
+  salePrice: number;
 }
 
 export interface Payment {

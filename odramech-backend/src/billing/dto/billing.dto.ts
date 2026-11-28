@@ -26,6 +26,12 @@ export class ServiceItemDTO {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   discount?: number;
+
+  /** peça do estoque (exige o módulo Estoque contratado) */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  partId?: number;
 }
 
 export class UpdateServiceItemDTO {
@@ -34,6 +40,8 @@ export class UpdateServiceItemDTO {
   @IsOptional() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0.01) quantity?: number;
   @IsOptional() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) unitPrice?: number;
   @IsOptional() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) discount?: number;
+  /** trocar a peça vinculada; null desvincula (o que saiu do estoque volta) */
+  @IsOptional() @IsInt() @Min(1) partId?: number | null;
 }
 
 export class PaymentDTO {
